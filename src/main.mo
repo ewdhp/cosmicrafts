@@ -13,10 +13,10 @@ import Random "mo:base/Random";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 
-import PlayerTypes "PlayerTypes";
-import MatchmakingTypes "MatchmakingTypes";
-import StatisticsTypes "StatisticsTypes";
-import RewardTypes "RewardsTypes";
+import PlayerTypes "./types/PlayerTypes";
+import MatchmakingTypes "./types/MatchmakingTypes";
+import StatisticsTypes "./types/StatisticsTypes";
+import RewardTypes "./types/RewardsTypes";
 
 shared actor class Cosmicrafts() {
 
