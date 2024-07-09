@@ -13,32 +13,52 @@ import Random "mo:base/Random";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 
-import PlayerTypes "./types/PlayerTypes";
-import MatchmakingTypes "./types/MatchmakingTypes";
-import StatisticsTypes "./types/StatisticsTypes";
-import RewardTypes "./types/RewardsTypes";
-
 shared actor class Cosmicrafts() {
 
   //Players
-  type Player = PlayerTypes.Player;
-  type PlayerId = PlayerTypes.PlayerId;
-  type PlayerName = PlayerTypes.PlayerName;
-  type Level = PlayerTypes.Level;
-  type PlayerMP = PlayerTypes.Players;
-  type PlayerPreferences = PlayerTypes.PlayerPreferences;
+  public type PlayerId = Principal;
+  public type UserID = Principal;
+  public type Username = Text;
+  public type AvatarID = Nat;
+  public type Description = Text;
+  public type RegistrationDate = Time.Time;
+
+  public type PlayerName = Text;
+  public type Level = Nat;
+  public type GameID = Principal;
+  public type Players = Principal;
+  public type UserRecord = {
+    userId : UserID;
+    username : Username;
+    avatar : AvatarID;
+    friends : [UserID];
+    description : Description;
+    registrationDate : RegistrationDate;
+  };
+  public type FriendDetails = {
+    userId : UserID;
+    username : Username;
+    avatar : AvatarID;
+  };
+  public type Player = {
+    id : PlayerId;
+    name : PlayerName;
+    level : Level;
+    elo : Float;
+  };
+  public type PlayerPreferences = {
+    language : Nat;
+    playerChar : Text;
+  };
+  public type UserDetails = { user : UserRecord; friends : [FriendDetails] };
+
   private stable var _userRecords : [(UserID, UserRecord)] = [];
   var userRecords : HashMap.HashMap<UserID, UserRecord> = HashMap.fromIter(_userRecords.vals(), 0, Principal.equal, Principal.hash);
 
   //Migrated Players must decide wich register function use oldor new...
-  type UserID = PlayerTypes.UserID;
-  type Username = PlayerTypes.Username;
-  type AvatarID = PlayerTypes.AvatarID;
-  type Description = PlayerTypes.Description;
-  type RegistrationDate = PlayerTypes.RegistrationDate;
-  type UserRecord = PlayerTypes.UserRecord;
-  type FriendDetails = PlayerTypes.FriendDetails;
-  type UserDetails = PlayerTypes.UserDetails;
+
+  //type Username = PlayerTypes.Username;
+
   private stable var _players : [(PlayerId, Player)] = [];
   var players : HashMap.HashMap<PlayerId, Player> = HashMap.fromIter(_players.vals(), 0, Principal.equal, Principal.hash);
   private stable var _playerPreferences : [(PlayerId, PlayerPreferences)] = [];
@@ -360,15 +380,93 @@ shared actor class Cosmicrafts() {
   };
 
   //Statistics
-  type GameID = StatisticsTypes.GameID;
-  type BasicStats = StatisticsTypes.BasicStats;
-  type PlayerID = StatisticsTypes.PlayerID;
-  type PlayerGamesStats = StatisticsTypes.PlayerGamesStats;
-  type OverallStats = StatisticsTypes.OverallStats;
-  type GamesWithFaction = StatisticsTypes.GamesWithFaction;
-  type GamesWithGameMode = StatisticsTypes.GamesWithGameMode;
-  type GamesWithCharacter = StatisticsTypes.GamesWithCharacter;
-  type AverageStats = StatisticsTypes.AverageStats;
+  public type StastisticsGameID = Nat;
+  public type PlayerID = Principal;
+
+  public type GamesWithFaction = {
+    factionID : Nat;
+    gamesPlayed : Nat;
+    gamesWon : Nat;
+  };
+
+  public type GamesWithGameMode = {
+    gameModeID : Nat;
+    gamesPlayed : Nat;
+    gamesWon : Nat;
+  };
+
+  public type GamesWithCharacter = {
+    characterID : Text;
+    gamesPlayed : Nat;
+    gamesWon : Nat;
+  };
+
+  public type BasicStats = {
+    energyUsed : Float;
+    energyGenerated : Float;
+    energyWasted : Float;
+    energyChargeRate : Float;
+    xpEarned : Float;
+    damageDealt : Float;
+    damageTaken : Float;
+    damageCritic : Float;
+    damageEvaded : Float;
+    kills : Float;
+    deploys : Float;
+    secRemaining : Float;
+    wonGame : Bool;
+    faction : Nat;
+    characterID : Text;
+    gameMode : Nat;
+    botMode : Nat;
+    botDifficulty : Nat;
+  };
+
+  public type PlayerGamesStats = {
+    gamesPlayed : Nat;
+    gamesWon : Nat;
+    gamesLost : Nat;
+    energyGenerated : Float;
+    energyUsed : Float;
+    energyWasted : Float;
+    totalDamageDealt : Float;
+    totalDamageTaken : Float;
+    totalDamageCrit : Float;
+    totalDamageEvaded : Float;
+    totalXpEarned : Float;
+    totalGamesWithFaction : [GamesWithFaction];
+    totalGamesGameMode : [GamesWithGameMode];
+    totalGamesWithCharacter : [GamesWithCharacter];
+  };
+
+  public type OverallStats = {
+    totalGamesPlayed : Nat;
+    totalGamesSP : Nat;
+    totalGamesMP : Nat;
+    totalDamageDealt : Float;
+    totalTimePlayed : Float;
+    totalKills : Float;
+    totalEnergyGenerated : Float;
+    totalEnergyUsed : Float;
+    totalEnergyWasted : Float;
+    totalXpEarned : Float;
+    totalGamesWithFaction : [GamesWithFaction];
+    totalGamesGameMode : [GamesWithGameMode];
+    totalGamesWithCharacter : [GamesWithCharacter];
+  };
+
+  public type AverageStats = {
+    averageEnergyGenerated : Float;
+    averageEnergyUsed : Float;
+    averageEnergyWasted : Float;
+    averageDamageDealt : Float;
+    averageKills : Float;
+    averageXpEarned : Float;
+    // averageGamesWithFaction   : [GamesWithFaction];
+    // averageGamesGameMode      : [GamesWithGameMode];
+    // averageGamesWithCharacter : [GamesWithCharacter];
+  };
+
   private stable var _cosmicraftsPrincipal : Principal = Principal.fromText("woimf-oyaaa-aaaan-qegia-cai");
   private stable var k : Int = 30;
 
@@ -379,12 +477,12 @@ shared actor class Cosmicrafts() {
     return Hash.hash(a);
   };
 
-  private stable var _basicStats : [(GameID, BasicStats)] = [];
-  var basicStats : HashMap.HashMap<GameID, BasicStats> = HashMap.fromIter(_basicStats.vals(), 0, _natEqual, _natHash);
+  private stable var _basicStats : [(StastisticsGameID, BasicStats)] = [];
+  var basicStats : HashMap.HashMap<StastisticsGameID, BasicStats> = HashMap.fromIter(_basicStats.vals(), 0, _natEqual, _natHash);
   private stable var _playerGamesStats : [(PlayerID, PlayerGamesStats)] = [];
   var playerGamesStats : HashMap.HashMap<PlayerID, PlayerGamesStats> = HashMap.fromIter(_playerGamesStats.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _onValidation : [(GameID, BasicStats)] = [];
-  var onValidation : HashMap.HashMap<GameID, BasicStats> = HashMap.fromIter(_onValidation.vals(), 0, _natEqual, _natHash);
+  private stable var _onValidation : [(StastisticsGameID, BasicStats)] = [];
+  var onValidation : HashMap.HashMap<StastisticsGameID, BasicStats> = HashMap.fromIter(_onValidation.vals(), 0, _natEqual, _natHash);
 
   private func initializeNewPlayerStats(_player : Principal) : async (Bool, Text) {
     let _playerStats : PlayerGamesStats = {
@@ -470,28 +568,28 @@ shared actor class Cosmicrafts() {
     };
   };
 
-  public shared (msg) func saveFinishedGame(gameID : GameID, _basicStats : BasicStats) : async (Bool, Text) {
+  public shared (msg) func saveFinishedGame(StastisticsGameID : StastisticsGameID, _basicStats : BasicStats) : async (Bool, Text) {
     /// End game on the matchmaking canister
     var _txt : Text = "";
-    switch (basicStats.get(gameID)) {
+    switch (basicStats.get(StastisticsGameID)) {
       case (null) {
         let endingGame : (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
-        basicStats.put(gameID, _basicStats);
+        basicStats.put(StastisticsGameID, _basicStats);
         let _gameValid : (Bool, Text) = await validateGame(300 - _basicStats.secRemaining, _basicStats.energyUsed, _basicStats.xpEarned, 0.5);
         if (_gameValid.0 == false) {
-          onValidation.put(gameID, _basicStats);
+          onValidation.put(StastisticsGameID, _basicStats);
           return (false, _gameValid.1);
         };
         /// Player stats
         let _winner = if (_basicStats.wonGame == true) 1 else 0;
         let _looser = if (_basicStats.wonGame == false) 1 else 0;
         let _elo : Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-        var _progressRewards : [RewardTypes.RewardProgress] = [{
+        var _progressRewards : [RewardProgress] = [{
           rewardType = #GamesCompleted;
           progress = 1;
         }];
         if (_basicStats.wonGame == true) {
-          let _wonProgress : RewardTypes.RewardProgress = {
+          let _wonProgress : RewardProgress = {
             rewardType = #GamesWon;
             progress = 1;
           };
@@ -636,12 +734,12 @@ shared actor class Cosmicrafts() {
         let _winner = if (_basicStats.wonGame == true) 1 else 0;
         let _looser = if (_basicStats.wonGame == false) 1 else 0;
         let _elo : Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-        var _progressRewards : [RewardTypes.RewardProgress] = [{
+        var _progressRewards : [RewardProgress] = [{
           rewardType = #GamesCompleted;
           progress = 1;
         }];
         if (_basicStats.wonGame == true) {
-          let _wonProgress : RewardTypes.RewardProgress = {
+          let _wonProgress : RewardProgress = {
             rewardType = #GamesWon;
             progress = 1;
           };
@@ -844,8 +942,8 @@ shared actor class Cosmicrafts() {
     };
   };
 
-  public shared query func getBasicStats(gameID : GameID) : async ?BasicStats {
-    return basicStats.get(gameID);
+  public shared query func getBasicStats(StastisticsGameID : StastisticsGameID) : async ?BasicStats {
+    return basicStats.get(StastisticsGameID);
   };
 
   public query func getPlayerStats(_player : Principal) : async ?PlayerGamesStats {
@@ -903,18 +1001,18 @@ shared actor class Cosmicrafts() {
     };
   };
 
-  public query func getAllOnValidation() : async [(GameID, BasicStats)] {
+  public query func getAllOnValidation() : async [(StastisticsGameID, BasicStats)] {
     return _onValidation;
   };
 
-  public shared func setGameValid(gameID : GameID) : async Bool {
-    switch (onValidation.get(gameID)) {
+  public shared func setGameValid(StastisticsGameID : StastisticsGameID) : async Bool {
+    switch (onValidation.get(StastisticsGameID)) {
       case (null) {
         return false;
       };
       case (?_bs) {
-        onValidation.delete(gameID);
-        basicStats.put(gameID, _bs);
+        onValidation.delete(StastisticsGameID);
+        basicStats.put(StastisticsGameID, _bs);
         return true;
       };
     };
@@ -945,7 +1043,7 @@ shared actor class Cosmicrafts() {
     if (isScoreValid /* and isEnergyBalanceValid and isEfficiencyValid*/) {
       return (true, "Game is valid");
     } else {
-      // onValidation.put(gameID, _basicStats);
+      // onValidation.put(StastisticsGameID, _basicStats);
       if (isScoreValid == false) {
         return (false, "Score is not valid");
         // } else if(isEnergyBalanceValid == false){
@@ -959,26 +1057,67 @@ shared actor class Cosmicrafts() {
   };
 
   //Rewards
+
+  public type RewardType = {
+    #GamesCompleted;
+    #GamesWon;
+    #LevelReached;
+  };
+
+  public type PrizeType = {
+    #Chest;
+    #Flux;
+    #Shards;
+  };
+
+  public type Reward = {
+    id : Nat;
+    rewardType : RewardType;
+    name : Text;
+    prize_type : PrizeType;
+    prize_amount : Nat;
+    start_date : Nat64;
+    end_date : Nat64;
+    total : Float;
+  };
+
+  public type RewardsUser = {
+    id_reward : Nat;
+    total : Float;
+    progress : Float;
+    finished : Bool;
+    finish_date : Nat64;
+    start_date : Nat64;
+    expiration : Nat64;
+    rewardType : RewardType;
+    prize_type : PrizeType;
+    prize_amount : Nat;
+  };
+
+  public type RewardProgress = {
+    rewardType : RewardType;
+    progress : Float;
+  };
   private stable var rewardID : Nat = 1;
   private var ONE_HOUR : Nat64 = 60 * 60 * 1_000_000_000; // 24 hours in nanoseconds
   private var NULL_PRINCIPAL : Principal = Principal.fromText("aaaaa-aa");
   private var ANON_PRINCIPAL : Principal = Principal.fromText("2vxsx-fae");
-  private stable var _activeRewards : [(Nat, RewardTypes.Reward)] = [];
-  var activeRewards : HashMap.HashMap<Nat, RewardTypes.Reward> = HashMap.fromIter(_activeRewards.vals(), 0, _natEqual, _natHash);
-  private stable var _rewardsUsers : [(PlayerID, [RewardTypes.RewardsUser])] = [];
-  var rewardsUsers : HashMap.HashMap<PlayerID, [RewardTypes.RewardsUser]> = HashMap.fromIter(_rewardsUsers.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _unclaimedRewardsUsers : [(PlayerID, [RewardTypes.RewardsUser])] = [];
-  var unclaimedRewardsUsers : HashMap.HashMap<PlayerID, [RewardTypes.RewardsUser]> = HashMap.fromIter(_unclaimedRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _finishedRewardsUsers : [(PlayerID, [RewardTypes.RewardsUser])] = [];
-  var finishedRewardsUsers : HashMap.HashMap<PlayerID, [RewardTypes.RewardsUser]> = HashMap.fromIter(_finishedRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _expiredRewardsUsers : [(PlayerID, [RewardTypes.RewardsUser])] = [];
-  var expiredRewardsUsers : HashMap.HashMap<PlayerID, [RewardTypes.RewardsUser]> = HashMap.fromIter(_expiredRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
+  private stable var _activeRewards : [(Nat, Reward)] = [];
+  var activeRewards : HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_activeRewards.vals(), 0, _natEqual, _natHash);
+  private stable var _rewardsUsers : [(PlayerID, [RewardsUser])] = [];
+  var rewardsUsers : HashMap.HashMap<PlayerID, [RewardsUser]> = HashMap.fromIter(_rewardsUsers.vals(), 0, Principal.equal, Principal.hash);
+  private stable var _unclaimedRewardsUsers : [(PlayerID, [RewardsUser])] = [];
+  var unclaimedRewardsUsers : HashMap.HashMap<PlayerID, [RewardsUser]> = HashMap.fromIter(_unclaimedRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
+  private stable var _finishedRewardsUsers : [(PlayerID, [RewardsUser])] = [];
+  var finishedRewardsUsers : HashMap.HashMap<PlayerID, [RewardsUser]> = HashMap.fromIter(_finishedRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
+  private stable var _expiredRewardsUsers : [(PlayerID, [RewardsUser])] = [];
+  var expiredRewardsUsers : HashMap.HashMap<PlayerID, [RewardsUser]> = HashMap.fromIter(_expiredRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
   private stable var _userLastReward : [(PlayerID, Nat)] = [];
   var userLastReward : HashMap.HashMap<PlayerID, Nat> = HashMap.fromIter(_userLastReward.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _expiredRewards : [(Nat, RewardTypes.Reward)] = [];
-  var expiredRewards : HashMap.HashMap<Nat, RewardTypes.Reward> = HashMap.fromIter(_expiredRewards.vals(), 0, _natEqual, _natHash);
+  private stable var _expiredRewards : [(Nat, Reward)] = [];
+  var expiredRewards : HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_expiredRewards.vals(), 0, _natEqual, _natHash);
 
-  public shared (msg) func addReward(reward : RewardTypes.Reward) : async (Bool, Text, Nat) {
+  public shared (msg) func addReward(reward : Reward) : async (Bool, Text, Nat) {
     if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
       return (false, "Unauthorized", 0);
     };
@@ -988,11 +1127,11 @@ shared actor class Cosmicrafts() {
     return (true, "Reward added successfully", _newID);
   };
 
-  public query func getReward(rewardID : Nat) : async ?RewardTypes.Reward {
+  public query func getReward(rewardID : Nat) : async ?Reward {
     return (activeRewards.get(rewardID));
   };
 
-  public shared query (msg) func getUserReward(_user : PlayerID, _idReward : Nat) : async ?RewardTypes.RewardsUser {
+  public shared query (msg) func getUserReward(_user : PlayerID, _idReward : Nat) : async ?RewardsUser {
     if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
       return null;
     };
@@ -1022,7 +1161,7 @@ shared actor class Cosmicrafts() {
       case (?rewardsu) {
         var _removed : Bool = false;
         var _message : Text = "Reward not found";
-        var _userRewardsActive : [RewardTypes.RewardsUser] = [];
+        var _userRewardsActive : [RewardsUser] = [];
         for (r in rewardsu.vals()) {
           if (r.id_reward == rewardID) {
             if (r.finished == true) {
@@ -1051,7 +1190,7 @@ shared actor class Cosmicrafts() {
     };
   };
 
-  public shared func addProgressToRewards(_player : Principal, rewardsProgress : [RewardTypes.RewardProgress]) : async (Bool, Text) {
+  public shared func addProgressToRewards(_player : Principal, rewardsProgress : [RewardProgress]) : async (Bool, Text) {
 
     if (Principal.equal(_player, NULL_PRINCIPAL)) {
       return (false, "USER IS NULL. CANNOT ADD PROGRESS TO NULL USER");
@@ -1059,7 +1198,7 @@ shared actor class Cosmicrafts() {
     if (Principal.equal(_player, ANON_PRINCIPAL)) {
       return (false, "USER IS ANONYMOUS. CANNOT ADD PROGRESS TO ANONYMOUS USER");
     };
-    let _rewards_user : [RewardTypes.RewardsUser] = switch (rewardsUsers.get(_player)) {
+    let _rewards_user : [RewardsUser] = switch (rewardsUsers.get(_player)) {
       case (null) {
         addNewRewardsToUser(_player);
         // return (false, "User not found");
@@ -1074,7 +1213,7 @@ shared actor class Cosmicrafts() {
     if (rewardsProgress.size() == 0) {
       return (false, "NO PROGRESS FOUND FOR THIS USER");
     };
-    var _newUserRewards : [RewardTypes.RewardsUser] = [];
+    var _newUserRewards : [RewardsUser] = [];
     let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     for (r in _rewards_user.vals()) {
       var _finished = r.finished;
@@ -1099,7 +1238,7 @@ shared actor class Cosmicrafts() {
                 _finished := true;
                 _finishedDate := _now;
               };
-              let _r_u : RewardTypes.RewardsUser = {
+              let _r_u : RewardsUser = {
                 expiration = r.expiration;
                 start_date = r.start_date;
                 finish_date = _finishedDate;
@@ -1124,9 +1263,9 @@ shared actor class Cosmicrafts() {
     return (true, "Progress added successfully for " # Nat.toText(_newUserRewards.size()) # " rewards");
   };
 
-  func getAllUnexpiredActiveRewards(_from : ?Nat) : [RewardTypes.Reward] {
+  func getAllUnexpiredActiveRewards(_from : ?Nat) : [Reward] {
     let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-    var _activeRewards : [RewardTypes.Reward] = [];
+    var _activeRewards : [Reward] = [];
     let _fromNat : Nat = switch (_from) {
       case (null) {
         0;
@@ -1158,12 +1297,12 @@ shared actor class Cosmicrafts() {
     return _activeRewards;
   };
 
-  public query func getAllUsersRewards() : async ([(Principal, [RewardTypes.RewardsUser])]) {
+  public query func getAllUsersRewards() : async ([(Principal, [RewardsUser])]) {
     return Iter.toArray(rewardsUsers.entries());
   };
 
-  public query func getAllActiveRewards() : async (Nat, [(RewardTypes.Reward)]) {
-    var _activeRewards : [RewardTypes.Reward] = [];
+  public query func getAllActiveRewards() : async (Nat, [(Reward)]) {
+    var _activeRewards : [Reward] = [];
     var _expired : Nat = 0;
     let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     for (r in activeRewards.vals()) {
@@ -1178,16 +1317,16 @@ shared actor class Cosmicrafts() {
     return (_expired, _activeRewards);
   };
 
-  func addNewRewardsToUser(_player : Principal) : [RewardTypes.RewardsUser] {
+  func addNewRewardsToUser(_player : Principal) : [RewardsUser] {
     /// Get last reward for this user
     var _newUserRewards = switch (userLastReward.get(_player)) {
       case (null) {
         /// The user has no rewards yet
         /// Get all active rewards
         let _unexpiredRewards = getAllUnexpiredActiveRewards(null);
-        var _newUserRewards : [RewardTypes.RewardsUser] = [];
+        var _newUserRewards : [RewardsUser] = [];
         for (r in _unexpiredRewards.vals()) {
-          let _r_u : RewardTypes.RewardsUser = {
+          let _r_u : RewardsUser = {
             expiration = r.end_date;
             start_date = r.start_date;
             finish_date = r.end_date;
@@ -1206,9 +1345,9 @@ shared actor class Cosmicrafts() {
       };
       case (lastReward) {
         let _unexpiredRewards = getAllUnexpiredActiveRewards(lastReward);
-        var _newUserRewards : [RewardTypes.RewardsUser] = [];
+        var _newUserRewards : [RewardsUser] = [];
         for (r in _unexpiredRewards.vals()) {
-          let _r_u : RewardTypes.RewardsUser = {
+          let _r_u : RewardsUser = {
             expiration = r.end_date;
             start_date = r.start_date;
             finish_date = r.end_date;
@@ -1233,7 +1372,7 @@ shared actor class Cosmicrafts() {
       };
       case (?rewardsu) {
         /// Append the new rewards with the previous ones for this user
-        var _newRewards : [RewardTypes.RewardsUser] = [];
+        var _newRewards : [RewardsUser] = [];
         for (r in rewardsu.vals()) {
           _newRewards := Array.append(_newRewards, [r]);
         };
@@ -1247,14 +1386,14 @@ shared actor class Cosmicrafts() {
     };
   };
 
-  public shared func createReward(name : Text, rewardType : RewardTypes.RewardType, prizeType : RewardTypes.PrizeType, prizeAmount : Nat, total : Float, hours_active : Nat64) : async (Bool, Text) {
+  public shared func createReward(name : Text, rewardType : RewardType, prizeType : PrizeType, prizeAmount : Nat, total : Float, hours_active : Nat64) : async (Bool, Text) {
     let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     let _hoursActive = ONE_HOUR * hours_active;
     let endDate = _now + _hoursActive;
     // if(Principal.notEqual(msg.caller, _cosmicraftsPrincipal)){
     //     return (false, "Unauthorized");
     // };
-    let _newReward : RewardTypes.Reward = {
+    let _newReward : Reward = {
       end_date = endDate;
       id = rewardID;
       name = name;
@@ -1270,14 +1409,56 @@ shared actor class Cosmicrafts() {
   };
 
   //MatchMaking
-  type UserId = PlayerTypes.PlayerId;
-  type MatchmakingStatus = MatchmakingTypes.MatchmakingStatus;
-  type MatchData = MatchmakingTypes.MatchData;
-  type PlayerInfo = MatchmakingTypes.PlayerInfo;
-  type PlayerStatus = MatchmakingTypes.PlayerStatus;
-  type SearchStatus = MatchmakingTypes.SearchStatus;
-  type FullPlayerInfo = MatchmakingTypes.FullPlayerInfo;
-  type FullMatchData = MatchmakingTypes.FullMatchData;
+  public type UserId = Principal;
+  public type PlayerInfo = {
+    id : UserId;
+    matchAccepted : Bool;
+    elo : Float;
+    playerGameData : Text;
+    lastPlayerActive : Nat64;
+    // characterSelected : Nat;
+    // deckSavedKeyIds   : [Text];
+  };
+  public type FullPlayerInfo = {
+    id : UserId;
+    matchAccepted : Bool;
+    elo : Float;
+    playerGameData : Text;
+    playerName : Text;
+  };
+  public type MatchmakingStatus = {
+    #Searching;
+    #Reserved;
+    #Accepting;
+    #Accepted;
+    #InGame;
+    #Ended;
+  };
+  public type PlayerStatus = {
+    status : MatchmakingStatus;
+    matchID : Nat;
+  };
+
+  public type MatchData = {
+    gameId : Nat;
+    player1 : PlayerInfo;
+    player2 : ?PlayerInfo;
+    status : MatchmakingStatus;
+  };
+
+  public type FullMatchData = {
+    gameId : Nat;
+    player1 : FullPlayerInfo;
+    player2 : ?FullPlayerInfo;
+    status : MatchmakingStatus;
+  };
+
+  public type SearchStatus = {
+    #Assigned;
+    #Available;
+    #NotAvailable;
+  };
+
   private var ONE_SECOND : Nat64 = 1_000_000_000;
   private stable var _matchID : Nat = 1;
   private var inactiveSeconds : Nat64 = 30 * ONE_SECOND;
