@@ -24,9 +24,6 @@ dist/
 # environment variables
 .env
 
-# pretttier formatter
-.prettierrc
-
 # node
 node_modules/
 

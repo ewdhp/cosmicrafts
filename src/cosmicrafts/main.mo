@@ -20,6 +20,7 @@ import RewardTypes "RewardsTypes";
 
 shared actor class Cosmicrafts() {
 
+  //Players
   type Player = PlayerTypes.Player;
   type PlayerId = PlayerTypes.PlayerId;
   type PlayerName = PlayerTypes.PlayerName;
@@ -29,7 +30,7 @@ shared actor class Cosmicrafts() {
   private stable var _userRecords : [(UserID, UserRecord)] = [];
   var userRecords : HashMap.HashMap<UserID, UserRecord> = HashMap.fromIter(_userRecords.vals(), 0, Principal.equal, Principal.hash);
 
-  //Migrated Player from cosmicrafts
+  //Migrated Players must decide wich register function use oldor new...
   type UserID = PlayerTypes.UserID;
   type Username = PlayerTypes.Username;
   type AvatarID = PlayerTypes.AvatarID;
@@ -919,7 +920,7 @@ shared actor class Cosmicrafts() {
     };
   };
 
-  /// Game validator
+  //Game validator
   func maxPlausibleScore(timeInSeconds : Float) : Float {
     let maxScoreRate : Float = 550000.0 / (5.0 * 60.0);
     let maxPlausibleScore : Float = maxScoreRate * timeInSeconds;
