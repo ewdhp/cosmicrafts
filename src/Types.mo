@@ -213,4 +213,27 @@ module {
     #Available;
     #NotAvailable;
   };
+
+
+  //new types for Match History
+  type PlayerFaction = Text;
+  type MatchID = Nat;
+  type MatchResult = Text;
+  type MatchMap = Text;
+  type MatchOpt = { #Ranked; #Normal; #Liga };
+  type PlayerRecord = {
+    playeriD : Principal;
+    faction : PlayerFaction;
+  };
+  type MatchRecord = {
+    matchID : MatchID;
+    map : MatchMap;
+    team1 : [PlayerRecord];
+    team2 : [PlayerRecord];
+    faction1 : [PlayerFaction]; // Faccion de cada jugador del equipo 1
+    faction2 : [PlayerFaction]; // Faccion de cada jugador del equipo 2
+    result : MatchResult;
+    timestamp : Time.Time; // Representa la fecha y hora en milisegundos desde Epoch
+    mode : MatchOpt;
+  };
 }
