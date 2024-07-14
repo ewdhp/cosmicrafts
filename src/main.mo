@@ -260,9 +260,8 @@ shared actor class Cosmicrafts() {
   //////////////////////////////////
   //analize if its necesary all these three functions...
   /// PLAYERS LOGIC
-
-  public shared (msg) func getPrincipal() : async Principal {
-    return msg.caller;
+  public shared (msg) func getPlayer() : async ?Player {
+    return players.get(msg.caller);
   };
 
   public composite query func getPlayerData(player : Principal) : async ?Player {
@@ -395,8 +394,9 @@ shared actor class Cosmicrafts() {
     return a == b;
   };
 
-  // Convert Nat to a sequence of Nat8 bytes
-  func _natHash(a : Nat) : Hash.Hash {
+  
+// Convert Nat to a sequence of Nat8 bytes
+  func _natHash(a: Nat): Hash.Hash {
     return Utils._natHash(a);
   };
 
@@ -558,33 +558,21 @@ shared actor class Cosmicrafts() {
             var _totalGamesWithCharacter = Buffer.Buffer<GamesWithCharacter>(_bs.totalGamesWithCharacter.size() + 1);
             for (gf in _bs.totalGamesWithFaction.vals()) {
               if (gf.factionID == _basicStats.faction) {
-                _gamesWithFaction.add({
-                  gamesPlayed = gf.gamesPlayed + 1;
-                  factionID = gf.factionID;
-                  gamesWon = gf.gamesWon + _winner;
-                });
+                _gamesWithFaction.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner });
               } else {
                 _gamesWithFaction.add(gf);
               };
             };
             for (gm in _bs.totalGamesGameMode.vals()) {
               if (gm.gameModeID == _basicStats.gameMode) {
-                _gamesWithGameMode.add({
-                  gamesPlayed = gm.gamesPlayed + 1;
-                  gameModeID = gm.gameModeID;
-                  gamesWon = gm.gamesWon + _winner;
-                });
+                _gamesWithGameMode.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner });
               } else {
                 _gamesWithGameMode.add(gm);
               };
             };
             for (gc in _bs.totalGamesWithCharacter.vals()) {
               if (gc.characterID == _basicStats.characterID) {
-                _totalGamesWithCharacter.add({
-                  gamesPlayed = gc.gamesPlayed + 1;
-                  characterID = gc.characterID;
-                  gamesWon = gc.gamesWon + _winner;
-                });
+                _totalGamesWithCharacter.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner });
               } else {
                 _totalGamesWithCharacter.add(gc);
               };
@@ -625,33 +613,21 @@ shared actor class Cosmicrafts() {
         var _totalGamesWithCharacter = Buffer.Buffer<GamesWithCharacter>(overallStats.totalGamesWithCharacter.size() + 1);
         for (gf in overallStats.totalGamesWithFaction.vals()) {
           if (gf.factionID == _basicStats.faction) {
-            _totalGamesWithFaction.add({
-              gamesPlayed = gf.gamesPlayed + 1;
-              factionID = gf.factionID;
-              gamesWon = gf.gamesWon + _winner;
-            });
+            _totalGamesWithFaction.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner });
           } else {
             _totalGamesWithFaction.add(gf);
           };
         };
         for (gm in overallStats.totalGamesGameMode.vals()) {
           if (gm.gameModeID == _basicStats.gameMode) {
-            _totalGamesWithGameMode.add({
-              gamesPlayed = gm.gamesPlayed + 1;
-              gameModeID = gm.gameModeID;
-              gamesWon = gm.gamesWon + _winner;
-            });
+            _totalGamesWithGameMode.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner });
           } else {
             _totalGamesWithGameMode.add(gm);
           };
         };
         for (gc in overallStats.totalGamesWithCharacter.vals()) {
           if (gc.characterID == _basicStats.characterID) {
-            _totalGamesWithCharacter.add({
-              gamesPlayed = gc.gamesPlayed + 1;
-              characterID = gc.characterID;
-              gamesWon = gc.gamesWon + _winner;
-            });
+            _totalGamesWithCharacter.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner });
           } else {
             _totalGamesWithCharacter.add(gc);
           };
@@ -732,33 +708,21 @@ shared actor class Cosmicrafts() {
             var _totalGamesWithCharacter = Buffer.Buffer<GamesWithCharacter>(_bs.totalGamesWithCharacter.size() + 1);
             for (gf in _bs.totalGamesWithFaction.vals()) {
               if (gf.factionID == _basicStats.faction) {
-                _gamesWithFaction.add({
-                  gamesPlayed = gf.gamesPlayed + 1;
-                  factionID = gf.factionID;
-                  gamesWon = gf.gamesWon + _winner;
-                });
+                _gamesWithFaction.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner });
               } else {
                 _gamesWithFaction.add(gf);
               };
             };
             for (gm in _bs.totalGamesGameMode.vals()) {
               if (gm.gameModeID == _basicStats.gameMode) {
-                _gamesWithGameMode.add({
-                  gamesPlayed = gm.gamesPlayed + 1;
-                  gameModeID = gm.gameModeID;
-                  gamesWon = gm.gamesWon + _winner;
-                });
+                _gamesWithGameMode.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner });
               } else {
                 _gamesWithGameMode.add(gm);
               };
             };
             for (gc in _bs.totalGamesWithCharacter.vals()) {
               if (gc.characterID == _basicStats.characterID) {
-                _totalGamesWithCharacter.add({
-                  gamesPlayed = gc.gamesPlayed + 1;
-                  characterID = gc.characterID;
-                  gamesWon = gc.gamesWon + _winner;
-                });
+                _totalGamesWithCharacter.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner });
               } else {
                 _totalGamesWithCharacter.add(gc);
               };
@@ -798,22 +762,14 @@ shared actor class Cosmicrafts() {
         var _totalGamesWithCharacter = Buffer.Buffer<GamesWithCharacter>(overallStats.totalGamesWithCharacter.size() + 1);
         for (gf in overallStats.totalGamesWithFaction.vals()) {
           if (gf.factionID == _basicStats.faction) {
-            _totalGamesWithFaction.add({
-              gamesPlayed = gf.gamesPlayed + 1;
-              factionID = gf.factionID;
-              gamesWon = gf.gamesWon + _winner;
-            });
+            _totalGamesWithFaction.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner });
           } else {
             _totalGamesWithFaction.add(gf);
           };
         };
         for (gc in overallStats.totalGamesWithCharacter.vals()) {
           if (gc.characterID == _basicStats.characterID) {
-            _totalGamesWithCharacter.add({
-              gamesPlayed = gc.gamesPlayed + 1;
-              characterID = gc.characterID;
-              gamesWon = gc.gamesWon + _winner;
-            });
+            _totalGamesWithCharacter.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner });
           } else {
             _totalGamesWithCharacter.add(gc);
           };
@@ -838,6 +794,7 @@ shared actor class Cosmicrafts() {
       };
     };
   };
+
 
   public query func getOverallStats() : async OverallStats {
     return overallStats;
@@ -991,7 +948,17 @@ shared actor class Cosmicrafts() {
     let maxPlausibleScore : Float = maxScoreRate * timeInSeconds;
     return maxPlausibleScore;
   };
+  /**
+  func validateEnergyBalance(timeInSeconds : Float, energySpent : Float) : Bool {
+    let energyGenerated : Float = 30.0 + (0.5 * timeInSeconds);
+    return energyGenerated == energySpent;
+  };
 
+  func validateEfficiency(score : Float, energySpent : Float, efficiencyThreshold : Float) : Bool {
+    let efficiency : Float = score / energySpent;
+    return efficiency <= efficiencyThreshold;
+  };
+**/
   public shared query func validateGame(timeInSeconds : Float, _energySpent : Float, score : Float, _efficiencyThreshold : Float) : async (Bool, Text) {
     let maxScore : Float = maxPlausibleScore(timeInSeconds);
     let isScoreValid : Bool = score <= maxScore;
@@ -1064,219 +1031,224 @@ shared actor class Cosmicrafts() {
     };
   };
 
-  public shared (msg) func claimedReward(_player : Principal, rewardID : Nat) : async (Bool, Text) {
+  public shared (msg) func claimedReward(_player: Principal, rewardID: Nat): async (Bool, Text) {
     if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
-      return (false, "Unauthorized");
+        return (false, "Unauthorized");
     };
     switch (rewardsUsers.get(_player)) {
-      case (null) {
-        return (false, "User not found");
-      };
-      case (?rewardsu) {
-        var _removed : Bool = false;
-        var _message : Text = "Reward not found";
-        let _userRewardsActive = Buffer.Buffer<RewardsUser>(rewardsu.size());
-        for (r in rewardsu.vals()) {
-          if (r.id_reward == rewardID) {
-            if (r.finished == true) {
-              let newUserRewardsFinished = Buffer.Buffer<RewardsUser>(
-                switch (finishedRewardsUsers.get(_player)) {
-                  case (null) { 0 };
-                  case (?rewardsf) { rewardsf.size() };
-                }
-              );
-              _removed := true;
-              _message := "Reward claimed successfully";
-              newUserRewardsFinished.add(r);
-              finishedRewardsUsers.put(_player, Buffer.toArray(newUserRewardsFinished));
-            } else {
-              _message := "Reward not finished yet";
-            };
-          } else {
-            _userRewardsActive.add(r);
-          };
+        case (null) {
+            return (false, "User not found");
         };
-        rewardsUsers.put(_player, Buffer.toArray(_userRewardsActive));
-        return (_removed, _message);
-      };
+        case (?rewardsu) {
+            var _removed: Bool = false;
+            var _message: Text = "Reward not found";
+            let _userRewardsActive = Buffer.Buffer<RewardsUser>(rewardsu.size());
+            for (r in rewardsu.vals()) {
+                if (r.id_reward == rewardID) {
+                    if (r.finished == true) {
+                        let newUserRewardsFinished = Buffer.Buffer<RewardsUser>(
+                            switch (finishedRewardsUsers.get(_player)) {
+                                case (null) { 0 };
+                                case (?rewardsf) { rewardsf.size() };
+                            }
+                        );
+                        _removed := true;
+                        _message := "Reward claimed successfully";
+                        newUserRewardsFinished.add(r);
+                        finishedRewardsUsers.put(_player, Buffer.toArray(newUserRewardsFinished));
+                    } else {
+                        _message := "Reward not finished yet";
+                    };
+                } else {
+                    _userRewardsActive.add(r);
+                };
+            };
+            rewardsUsers.put(_player, Buffer.toArray(_userRewardsActive));
+            return (_removed, _message);
+        };
     };
-  };
+};
 
-  public shared func addProgressToRewards(_player : Principal, rewardsProgress : [RewardProgress]) : async (Bool, Text) {
+
+  public shared func addProgressToRewards(_player: Principal, rewardsProgress: [RewardProgress]): async (Bool, Text) {
     if (Principal.equal(_player, NULL_PRINCIPAL)) {
-      return (false, "USER IS NULL. CANNOT ADD PROGRESS TO NULL USER");
+        return (false, "USER IS NULL. CANNOT ADD PROGRESS TO NULL USER");
     };
     if (Principal.equal(_player, ANON_PRINCIPAL)) {
-      return (false, "USER IS ANONYMOUS. CANNOT ADD PROGRESS TO ANONYMOUS USER");
+        return (false, "USER IS ANONYMOUS. CANNOT ADD PROGRESS TO ANONYMOUS USER");
     };
-    let _rewards_user : [RewardsUser] = switch (rewardsUsers.get(_player)) {
-      case (null) {
-        addNewRewardsToUser(_player);
-      };
-      case (?rewardsu) {
-        rewardsu;
-      };
+    let _rewards_user: [RewardsUser] = switch (rewardsUsers.get(_player)) {
+        case (null) {
+            addNewRewardsToUser(_player);
+        };
+        case (?rewardsu) {
+            rewardsu;
+        };
     };
     if (_rewards_user.size() == 0) {
-      return (false, "NO REWARDS FOUND FOR THIS USER");
+        return (false, "NO REWARDS FOUND FOR THIS USER");
     };
     if (rewardsProgress.size() == 0) {
-      return (false, "NO PROGRESS FOUND FOR THIS USER");
+        return (false, "NO PROGRESS FOUND FOR THIS USER");
     };
     let _newUserRewards = Buffer.Buffer<RewardsUser>(_rewards_user.size());
-    let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+    let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     for (r in _rewards_user.vals()) {
-      var _finished = r.finished;
-      if (_finished == false and r.start_date <= _now) {
-        if (r.expiration < _now) {
-          let newUserRewardsExpired = Buffer.Buffer<RewardsUser>(
-            switch (expiredRewardsUsers.get(_player)) {
-              case (null) { 0 };
-              case (?rewardse) { rewardse.size() };
-            }
-          );
-          newUserRewardsExpired.add(r);
-          expiredRewardsUsers.put(_player, Buffer.toArray(newUserRewardsExpired));
-        } else {
-          for (rp in rewardsProgress.vals()) {
-            if (r.rewardType == rp.rewardType) {
-              let _progress = r.progress + rp.progress;
-              var _finishedDate = r.finish_date;
-              if (_progress >= r.total) {
-                _finished := true;
-                _finishedDate := _now;
-              };
-              let _r_u : RewardsUser = {
-                expiration = r.expiration;
-                start_date = r.start_date;
-                finish_date = _finishedDate;
-                finished = _finished;
-                id_reward = r.id_reward;
-                prize_amount = r.prize_amount;
-                prize_type = r.prize_type;
-                progress = _progress;
-                rewardType = r.rewardType;
-                total = r.total;
-              };
-              _newUserRewards.add(_r_u);
+        var _finished = r.finished;
+        if (_finished == false and r.start_date <= _now) {
+            if (r.expiration < _now) {
+                let newUserRewardsExpired = Buffer.Buffer<RewardsUser>(
+                    switch (expiredRewardsUsers.get(_player)) {
+                        case (null) { 0 };
+                        case (?rewardse) { rewardse.size() };
+                    }
+                );
+                newUserRewardsExpired.add(r);
+                expiredRewardsUsers.put(_player, Buffer.toArray(newUserRewardsExpired));
+            } else {
+                for (rp in rewardsProgress.vals()) {
+                    if (r.rewardType == rp.rewardType) {
+                        let _progress = r.progress + rp.progress;
+                        var _finishedDate = r.finish_date;
+                        if (_progress >= r.total) {
+                            _finished := true;
+                            _finishedDate := _now;
+                        };
+                        let _r_u: RewardsUser = {
+                            expiration = r.expiration;
+                            start_date = r.start_date;
+                            finish_date = _finishedDate;
+                            finished = _finished;
+                            id_reward = r.id_reward;
+                            prize_amount = r.prize_amount;
+                            prize_type = r.prize_type;
+                            progress = _progress;
+                            rewardType = r.rewardType;
+                            total = r.total;
+                        };
+                        _newUserRewards.add(_r_u);
+                    };
+                };
             };
-          };
+        } else {
+            _newUserRewards.add(r);
         };
-      } else {
-        _newUserRewards.add(r);
-      };
     };
     rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
     return (true, "Progress added successfully for " # Nat.toText(_newUserRewards.size()) # " rewards");
-  };
+};
 
-  func getAllUnexpiredActiveRewards(_from : ?Nat) : [Reward] {
-    let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+
+  func getAllUnexpiredActiveRewards(_from: ?Nat): [Reward] {
+    let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     let _activeRewards = Buffer.Buffer<Reward>(activeRewards.size());
-    let _fromNat : Nat = switch (_from) {
-      case (null) { 0 };
-      case (?f) { f };
+    let _fromNat: Nat = switch (_from) {
+        case (null) { 0 };
+        case (?f) { f };
     };
     for (r in activeRewards.vals()) {
-      if (r.id > _fromNat) {
-        if (r.start_date <= _now) {
-          if (r.end_date < _now) {
-            let _expR = activeRewards.remove(r.id);
-            switch (_expR) {
-              case (null) {};
-              case (?er) {
-                expiredRewards.put(er.id, er);
-              };
+        if (r.id > _fromNat) {
+            if (r.start_date <= _now) {
+                if (r.end_date < _now) {
+                    let _expR = activeRewards.remove(r.id);
+                    switch (_expR) {
+                        case (null) {
+                        };
+                        case (?er) {
+                            expiredRewards.put(er.id, er);
+                        };
+                    };
+                } else {
+                    _activeRewards.add(r);
+                };
             };
-          } else {
-            _activeRewards.add(r);
-          };
         };
-      };
     };
     return Buffer.toArray(_activeRewards);
-  };
+};
 
   public query func getAllUsersRewards() : async ([(Principal, [RewardsUser])]) {
     return Iter.toArray(rewardsUsers.entries());
   };
 
-  public query func getAllActiveRewards() : async (Nat, [(Reward)]) {
+public query func getAllActiveRewards(): async (Nat, [(Reward)]) {
     let _activeRewards = Buffer.Buffer<Reward>(activeRewards.size());
-    var _expired : Nat = 0;
-    let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+    var _expired: Nat = 0;
+    let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     for (r in activeRewards.vals()) {
-      if (r.start_date <= _now) {
-        if (r.end_date < _now) {
-          _expired := _expired + 1;
-        } else {
-          _activeRewards.add(r);
+        if (r.start_date <= _now) {
+            if (r.end_date < _now) {
+                _expired := _expired + 1;
+            } else {
+                _activeRewards.add(r);
+            };
         };
-      };
     };
     return (_expired, Buffer.toArray(_activeRewards));
-  };
+};
 
-  func addNewRewardsToUser(_player : Principal) : [RewardsUser] {
+
+  func addNewRewardsToUser(_player: Principal): [RewardsUser] {
     let _newUserRewards = Buffer.Buffer<RewardsUser>(0);
     switch (userLastReward.get(_player)) {
-      case (null) {
-        let _unexpiredRewards = getAllUnexpiredActiveRewards(null);
-        for (r in _unexpiredRewards.vals()) {
-          let _r_u : RewardsUser = {
-            expiration = r.end_date;
-            start_date = r.start_date;
-            finish_date = r.end_date;
-            finished = false;
-            id_reward = r.id;
-            prize_amount = r.prize_amount;
-            prize_type = r.prize_type;
-            progress = 0;
-            rewardType = r.rewardType;
-            total = r.total;
-          };
-          _newUserRewards.add(_r_u);
+        case (null) {
+            let _unexpiredRewards = getAllUnexpiredActiveRewards(null);
+            for (r in _unexpiredRewards.vals()) {
+                let _r_u: RewardsUser = {
+                    expiration = r.end_date;
+                    start_date = r.start_date;
+                    finish_date = r.end_date;
+                    finished = false;
+                    id_reward = r.id;
+                    prize_amount = r.prize_amount;
+                    prize_type = r.prize_type;
+                    progress = 0;
+                    rewardType = r.rewardType;
+                    total = r.total;
+                };
+                _newUserRewards.add(_r_u);
+            };
         };
-      };
-      case (lastReward) {
-        let _unexpiredRewards = getAllUnexpiredActiveRewards(lastReward);
-        for (r in _unexpiredRewards.vals()) {
-          let _r_u : RewardsUser = {
-            expiration = r.end_date;
-            start_date = r.start_date;
-            finish_date = r.end_date;
-            finished = false;
-            id_reward = r.id;
-            prize_amount = r.prize_amount;
-            prize_type = r.prize_type;
-            progress = 0;
-            rewardType = r.rewardType;
-            total = r.total;
-          };
-          _newUserRewards.add(_r_u);
+        case (lastReward) {
+            let _unexpiredRewards = getAllUnexpiredActiveRewards(lastReward);
+            for (r in _unexpiredRewards.vals()) {
+                let _r_u: RewardsUser = {
+                    expiration = r.end_date;
+                    start_date = r.start_date;
+                    finish_date = r.end_date;
+                    finished = false;
+                    id_reward = r.id;
+                    prize_amount = r.prize_amount;
+                    prize_type = r.prize_type;
+                    progress = 0;
+                    rewardType = r.rewardType;
+                    total = r.total;
+                };
+                _newUserRewards.add(_r_u);
+            };
         };
-      };
     };
     switch (rewardsUsers.get(_player)) {
-      case (null) {
-        userLastReward.put(_player, rewardID);
-        rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
-        return Buffer.toArray(_newUserRewards);
-      };
-      case (?rewardsu) {
-        let _newRewards = Buffer.Buffer<RewardsUser>(rewardsu.size() + _newUserRewards.size());
-        for (r in rewardsu.vals()) {
-          _newRewards.add(r);
+        case (null) {
+            userLastReward.put(_player, rewardID);
+            rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
+            return Buffer.toArray(_newUserRewards);
         };
-        for (r in _newUserRewards.vals()) {
-          _newRewards.add(r);
+        case (?rewardsu) {
+            let _newRewards = Buffer.Buffer<RewardsUser>(rewardsu.size() + _newUserRewards.size());
+            for (r in rewardsu.vals()) {
+                _newRewards.add(r);
+            };
+            for (r in _newUserRewards.vals()) {
+                _newRewards.add(r);
+            };
+            userLastReward.put(_player, rewardID);
+            rewardsUsers.put(_player, Buffer.toArray(_newRewards));
+            return Buffer.toArray(_newRewards);
         };
-        userLastReward.put(_player, rewardID);
-        rewardsUsers.put(_player, Buffer.toArray(_newRewards));
-        return Buffer.toArray(_newRewards);
-      };
     };
-  };
+};
+
 
   public shared func createReward(name : Text, rewardType : RewardType, prizeType : PrizeType, prizeAmount : Nat, total : Float, hours_active : Nat64) : async (Bool, Text) {
     let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
@@ -1632,7 +1604,7 @@ shared actor class Cosmicrafts() {
   };
 
   public shared composite query (msg) func getMyMatchData() : async (?FullMatchData, Nat) {
-    //assert (msg.caller != NULL_PRINCIPAL and msg.caller != ANON_PRINCIPAL);
+    assert (msg.caller != NULL_PRINCIPAL and msg.caller != ANON_PRINCIPAL);
     // public shared(msg) func getMyMatchData() : async (?FullMatchData, Nat){
     switch (playerStatus.get(msg.caller)) {
       case (null) {
@@ -1736,29 +1708,11 @@ shared actor class Cosmicrafts() {
     };
   };
 
-  public query func getAllSearching() : async [MatchData] {
+public query func getAllSearching() : async [MatchData] {
     let _searchingList = Buffer.Buffer<MatchData>(searching.size());
-    Iter.toArray<MatchData>(searching.vals());
-  };
-
-  type PlayerFaction = Text;
-  type MatchID = Nat;
-  type MatchResult = Text;
-  type MatchMap = Text;
-  type MatchOpt = { #Ranked; #Normal; #Liga };
-  type PlayerRecord = {
-    playeriD : Principal;
-    faction : PlayerFaction;
-  };
-  type MatchRecord = {
-    matchID : MatchID;
-    map : MatchMap;
-    team1 : [PlayerRecord];
-    team2 : [PlayerRecord];
-    faction1 : [PlayerFaction]; // Faccion de cada jugador del equipo 1
-    faction2 : [PlayerFaction]; // Faccion de cada jugador del equipo 2
-    result : MatchResult;
-    timestamp : Time.Time; // Representa la fecha y hora en milisegundos desde Epoch
-    mode : MatchOpt;
-  };
+    for (m in searching.vals()) {
+        _searchingList.add(m);
+    };
+    return Buffer.toArray(_searchingList);
+};
 };
