@@ -1,5 +1,4 @@
-import Array "mo:base/Array";
-import Debug "mo:base/Debug";
+// main.mo
 import Float "mo:base/Float";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
@@ -9,52 +8,57 @@ import Int64 "mo:base/Int64";
 import Nat "mo:base/Nat";
 import Nat64 "mo:base/Nat64";
 import Principal "mo:base/Principal";
-import Random "mo:base/Random";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
-
-import Nat8 "mo:base/Nat8";
-import Nat32 "mo:base/Nat32";
+import Types "Types";
+import Utils "Utils";
 
 shared actor class Cosmicrafts() {
 
+  //Types.mo
+  public type PlayerId = Types.PlayerId;
+  public type UserID = Types.UserID;
+  public type Username = Types.Username;
+  public type AvatarID = Types.AvatarID;
+  public type Description = Types.Description;
+  public type RegistrationDate = Types.RegistrationDate;
+
+  public type PlayerName = Types.PlayerName;
+  public type Level = Types.Level;
+  public type GameID = Types.GameID;
+  public type Players = Types.Players;
+  public type UserRecord = Types.UserRecord;
+  public type FriendDetails = Types.FriendDetails;
+  public type Player = Types.Player;
+  public type PlayerPreferences = Types.PlayerPreferences;
+  public type UserDetails = Types.UserDetails;
+
+  public type StastisticsGameID = Types.StastisticsGameID;
+  public type PlayerID = Types.PlayerID;
+  public type GamesWithFaction = Types.GamesWithFaction;
+  public type GamesWithGameMode = Types.GamesWithGameMode;
+  public type GamesWithCharacter = Types.GamesWithCharacter;
+  public type BasicStats = Types.BasicStats;
+  public type PlayerGamesStats = Types.PlayerGamesStats;
+  public type OverallStats = Types.OverallStats;
+  public type AverageStats = Types.AverageStats;
+
+  public type RewardType = Types.RewardType;
+  public type PrizeType = Types.PrizeType;
+  public type Reward = Types.Reward;
+  public type RewardsUser = Types.RewardsUser;
+  public type RewardProgress = Types.RewardProgress;
+
+  public type UserId = Types.UserId;
+  public type PlayerInfo = Types.PlayerInfo;
+  public type FullPlayerInfo = Types.FullPlayerInfo;
+  public type MatchmakingStatus = Types.MatchmakingStatus;
+  public type PlayerStatus = Types.PlayerStatus;
+  public type MatchData = Types.MatchData;
+  public type FullMatchData = Types.FullMatchData;
+  public type SearchStatus = Types.SearchStatus;
+
   //Players
-  public type PlayerId = Principal;
-  public type UserID = Principal;
-  public type Username = Text;
-  public type AvatarID = Nat;
-  public type Description = Text;
-  public type RegistrationDate = Time.Time;
-
-  public type PlayerName = Text;
-  public type Level = Nat;
-  public type GameID = Principal;
-  public type Players = Principal;
-  public type UserRecord = {
-    userId : UserID;
-    username : Username;
-    avatar : AvatarID;
-    friends : [UserID];
-    description : Description;
-    registrationDate : RegistrationDate;
-  };
-  public type FriendDetails = {
-    userId : UserID;
-    username : Username;
-    avatar : AvatarID;
-  };
-  public type Player = {
-    id : PlayerId;
-    name : PlayerName;
-    level : Level;
-    elo : Float;
-  };
-  public type PlayerPreferences = {
-    language : Nat;
-    playerChar : Text;
-  };
-  public type UserDetails = { user : UserRecord; friends : [FriendDetails] };
-
   private stable var _userRecords : [(UserID, UserRecord)] = [];
   var userRecords : HashMap.HashMap<UserID, UserRecord> = HashMap.fromIter(_userRecords.vals(), 0, Principal.equal, Principal.hash);
 
@@ -256,8 +260,9 @@ shared actor class Cosmicrafts() {
   //////////////////////////////////
   //analize if its necesary all these three functions...
   /// PLAYERS LOGIC
-  public shared (msg) func getPlayer() : async ?Player {
-    return players.get(msg.caller);
+
+  public shared (msg) func getPrincipal() : async Principal {
+    return msg.caller;
   };
 
   public composite query func getPlayerData(player : Principal) : async ?Player {
@@ -383,93 +388,6 @@ shared actor class Cosmicrafts() {
   };
 
   //Statistics
-  public type StastisticsGameID = Nat;
-  public type PlayerID = Principal;
-
-  public type GamesWithFaction = {
-    factionID : Nat;
-    gamesPlayed : Nat;
-    gamesWon : Nat;
-  };
-
-  public type GamesWithGameMode = {
-    gameModeID : Nat;
-    gamesPlayed : Nat;
-    gamesWon : Nat;
-  };
-
-  public type GamesWithCharacter = {
-    characterID : Text;
-    gamesPlayed : Nat;
-    gamesWon : Nat;
-  };
-
-  public type BasicStats = {
-    energyUsed : Float;
-    energyGenerated : Float;
-    energyWasted : Float;
-    energyChargeRate : Float;
-    xpEarned : Float;
-    damageDealt : Float;
-    damageTaken : Float;
-    damageCritic : Float;
-    damageEvaded : Float;
-    kills : Float;
-    deploys : Float;
-    secRemaining : Float;
-    wonGame : Bool;
-    faction : Nat;
-    characterID : Text;
-    gameMode : Nat;
-    botMode : Nat;
-    botDifficulty : Nat;
-  };
-
-  public type PlayerGamesStats = {
-    gamesPlayed : Nat;
-    gamesWon : Nat;
-    gamesLost : Nat;
-    energyGenerated : Float;
-    energyUsed : Float;
-    energyWasted : Float;
-    totalDamageDealt : Float;
-    totalDamageTaken : Float;
-    totalDamageCrit : Float;
-    totalDamageEvaded : Float;
-    totalXpEarned : Float;
-    totalGamesWithFaction : [GamesWithFaction];
-    totalGamesGameMode : [GamesWithGameMode];
-    totalGamesWithCharacter : [GamesWithCharacter];
-  };
-
-  public type OverallStats = {
-    totalGamesPlayed : Nat;
-    totalGamesSP : Nat;
-    totalGamesMP : Nat;
-    totalDamageDealt : Float;
-    totalTimePlayed : Float;
-    totalKills : Float;
-    totalEnergyGenerated : Float;
-    totalEnergyUsed : Float;
-    totalEnergyWasted : Float;
-    totalXpEarned : Float;
-    totalGamesWithFaction : [GamesWithFaction];
-    totalGamesGameMode : [GamesWithGameMode];
-    totalGamesWithCharacter : [GamesWithCharacter];
-  };
-
-  public type AverageStats = {
-    averageEnergyGenerated : Float;
-    averageEnergyUsed : Float;
-    averageEnergyWasted : Float;
-    averageDamageDealt : Float;
-    averageKills : Float;
-    averageXpEarned : Float;
-    // averageGamesWithFaction   : [GamesWithFaction];
-    // averageGamesGameMode      : [GamesWithGameMode];
-    // averageGamesWithCharacter : [GamesWithCharacter];
-  };
-
   private stable var _cosmicraftsPrincipal : Principal = Principal.fromText("woimf-oyaaa-aaaan-qegia-cai");
   private stable var k : Int = 30;
 
@@ -477,27 +395,10 @@ shared actor class Cosmicrafts() {
     return a == b;
   };
 
-  
-// Convert Nat to a sequence of Nat8 bytes
-func natToBytes(n: Nat): [Nat8] {
-    var bytes = Buffer.Buffer<Nat8>(0);
-    var num = n;
-    while (num > 0) {
-        bytes.add(Nat8.fromNat(num % 256));
-        num := num / 256;
-    };
-    return Buffer.toArray(bytes);
-};
-
-// Custom hash function
-func _natHash(a: Nat): Hash.Hash {
-    let byteArray = natToBytes(a);
-    var hash: Hash.Hash = 0;
-    for (i in Iter.range(0, byteArray.size() - 1)) {
-        hash := (hash * 31 + Nat32.fromNat(Nat8.toNat(byteArray[i])));
-    };
-    return hash;
-};
+  // Convert Nat to a sequence of Nat8 bytes
+  func _natHash(a : Nat) : Hash.Hash {
+    return Utils._natHash(a);
+  };
 
   private stable var _basicStats : [(StastisticsGameID, BasicStats)] = [];
   var basicStats : HashMap.HashMap<StastisticsGameID, BasicStats> = HashMap.fromIter(_basicStats.vals(), 0, _natEqual, _natHash);
@@ -548,7 +449,7 @@ func _natHash(a: Nat): Hash.Hash {
   };
 
   public shared (msg) func setGameOver(caller : Principal) : async (Bool, Bool, ?Principal) {
-    assert (msg.caller == Principal.fromText("ajuq4-ruaaa-aaaaa-qaaga-cai"));
+    assert (msg.caller == Principal.fromText("ajuq4-ruaaa-aaaaa-qaaga-cai")); //main canisterID
     switch (playerStatus.get(caller)) {
       case (null) {
         return (false, false, null);
@@ -657,21 +558,33 @@ func _natHash(a: Nat): Hash.Hash {
             var _totalGamesWithCharacter = Buffer.Buffer<GamesWithCharacter>(_bs.totalGamesWithCharacter.size() + 1);
             for (gf in _bs.totalGamesWithFaction.vals()) {
               if (gf.factionID == _basicStats.faction) {
-                _gamesWithFaction.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner });
+                _gamesWithFaction.add({
+                  gamesPlayed = gf.gamesPlayed + 1;
+                  factionID = gf.factionID;
+                  gamesWon = gf.gamesWon + _winner;
+                });
               } else {
                 _gamesWithFaction.add(gf);
               };
             };
             for (gm in _bs.totalGamesGameMode.vals()) {
               if (gm.gameModeID == _basicStats.gameMode) {
-                _gamesWithGameMode.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner });
+                _gamesWithGameMode.add({
+                  gamesPlayed = gm.gamesPlayed + 1;
+                  gameModeID = gm.gameModeID;
+                  gamesWon = gm.gamesWon + _winner;
+                });
               } else {
                 _gamesWithGameMode.add(gm);
               };
             };
             for (gc in _bs.totalGamesWithCharacter.vals()) {
               if (gc.characterID == _basicStats.characterID) {
-                _totalGamesWithCharacter.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner });
+                _totalGamesWithCharacter.add({
+                  gamesPlayed = gc.gamesPlayed + 1;
+                  characterID = gc.characterID;
+                  gamesWon = gc.gamesWon + _winner;
+                });
               } else {
                 _totalGamesWithCharacter.add(gc);
               };
@@ -712,21 +625,33 @@ func _natHash(a: Nat): Hash.Hash {
         var _totalGamesWithCharacter = Buffer.Buffer<GamesWithCharacter>(overallStats.totalGamesWithCharacter.size() + 1);
         for (gf in overallStats.totalGamesWithFaction.vals()) {
           if (gf.factionID == _basicStats.faction) {
-            _totalGamesWithFaction.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner });
+            _totalGamesWithFaction.add({
+              gamesPlayed = gf.gamesPlayed + 1;
+              factionID = gf.factionID;
+              gamesWon = gf.gamesWon + _winner;
+            });
           } else {
             _totalGamesWithFaction.add(gf);
           };
         };
         for (gm in overallStats.totalGamesGameMode.vals()) {
           if (gm.gameModeID == _basicStats.gameMode) {
-            _totalGamesWithGameMode.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner });
+            _totalGamesWithGameMode.add({
+              gamesPlayed = gm.gamesPlayed + 1;
+              gameModeID = gm.gameModeID;
+              gamesWon = gm.gamesWon + _winner;
+            });
           } else {
             _totalGamesWithGameMode.add(gm);
           };
         };
         for (gc in overallStats.totalGamesWithCharacter.vals()) {
           if (gc.characterID == _basicStats.characterID) {
-            _totalGamesWithCharacter.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner });
+            _totalGamesWithCharacter.add({
+              gamesPlayed = gc.gamesPlayed + 1;
+              characterID = gc.characterID;
+              gamesWon = gc.gamesWon + _winner;
+            });
           } else {
             _totalGamesWithCharacter.add(gc);
           };
@@ -807,21 +732,33 @@ func _natHash(a: Nat): Hash.Hash {
             var _totalGamesWithCharacter = Buffer.Buffer<GamesWithCharacter>(_bs.totalGamesWithCharacter.size() + 1);
             for (gf in _bs.totalGamesWithFaction.vals()) {
               if (gf.factionID == _basicStats.faction) {
-                _gamesWithFaction.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner });
+                _gamesWithFaction.add({
+                  gamesPlayed = gf.gamesPlayed + 1;
+                  factionID = gf.factionID;
+                  gamesWon = gf.gamesWon + _winner;
+                });
               } else {
                 _gamesWithFaction.add(gf);
               };
             };
             for (gm in _bs.totalGamesGameMode.vals()) {
               if (gm.gameModeID == _basicStats.gameMode) {
-                _gamesWithGameMode.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner });
+                _gamesWithGameMode.add({
+                  gamesPlayed = gm.gamesPlayed + 1;
+                  gameModeID = gm.gameModeID;
+                  gamesWon = gm.gamesWon + _winner;
+                });
               } else {
                 _gamesWithGameMode.add(gm);
               };
             };
             for (gc in _bs.totalGamesWithCharacter.vals()) {
               if (gc.characterID == _basicStats.characterID) {
-                _totalGamesWithCharacter.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner });
+                _totalGamesWithCharacter.add({
+                  gamesPlayed = gc.gamesPlayed + 1;
+                  characterID = gc.characterID;
+                  gamesWon = gc.gamesWon + _winner;
+                });
               } else {
                 _totalGamesWithCharacter.add(gc);
               };
@@ -861,14 +798,22 @@ func _natHash(a: Nat): Hash.Hash {
         var _totalGamesWithCharacter = Buffer.Buffer<GamesWithCharacter>(overallStats.totalGamesWithCharacter.size() + 1);
         for (gf in overallStats.totalGamesWithFaction.vals()) {
           if (gf.factionID == _basicStats.faction) {
-            _totalGamesWithFaction.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner });
+            _totalGamesWithFaction.add({
+              gamesPlayed = gf.gamesPlayed + 1;
+              factionID = gf.factionID;
+              gamesWon = gf.gamesWon + _winner;
+            });
           } else {
             _totalGamesWithFaction.add(gf);
           };
         };
         for (gc in overallStats.totalGamesWithCharacter.vals()) {
           if (gc.characterID == _basicStats.characterID) {
-            _totalGamesWithCharacter.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner });
+            _totalGamesWithCharacter.add({
+              gamesPlayed = gc.gamesPlayed + 1;
+              characterID = gc.characterID;
+              gamesWon = gc.gamesWon + _winner;
+            });
           } else {
             _totalGamesWithCharacter.add(gc);
           };
@@ -893,7 +838,6 @@ func _natHash(a: Nat): Hash.Hash {
       };
     };
   };
-
 
   public query func getOverallStats() : async OverallStats {
     return overallStats;
@@ -1047,17 +991,7 @@ func _natHash(a: Nat): Hash.Hash {
     let maxPlausibleScore : Float = maxScoreRate * timeInSeconds;
     return maxPlausibleScore;
   };
-  /**
-  func validateEnergyBalance(timeInSeconds : Float, energySpent : Float) : Bool {
-    let energyGenerated : Float = 30.0 + (0.5 * timeInSeconds);
-    return energyGenerated == energySpent;
-  };
 
-  func validateEfficiency(score : Float, energySpent : Float, efficiencyThreshold : Float) : Bool {
-    let efficiency : Float = score / energySpent;
-    return efficiency <= efficiencyThreshold;
-  };
-**/
   public shared query func validateGame(timeInSeconds : Float, _energySpent : Float, score : Float, _efficiencyThreshold : Float) : async (Bool, Text) {
     let maxScore : Float = maxPlausibleScore(timeInSeconds);
     let isScoreValid : Bool = score <= maxScore;
@@ -1080,47 +1014,6 @@ func _natHash(a: Nat): Hash.Hash {
   };
 
   //Rewards
-
-  public type RewardType = {
-    #GamesCompleted;
-    #GamesWon;
-    #LevelReached;
-  };
-
-  public type PrizeType = {
-    #Chest;
-    #Flux;
-    #Shards;
-  };
-
-  public type Reward = {
-    id : Nat;
-    rewardType : RewardType;
-    name : Text;
-    prize_type : PrizeType;
-    prize_amount : Nat;
-    start_date : Nat64;
-    end_date : Nat64;
-    total : Float;
-  };
-
-  public type RewardsUser = {
-    id_reward : Nat;
-    total : Float;
-    progress : Float;
-    finished : Bool;
-    finish_date : Nat64;
-    start_date : Nat64;
-    expiration : Nat64;
-    rewardType : RewardType;
-    prize_type : PrizeType;
-    prize_amount : Nat;
-  };
-
-  public type RewardProgress = {
-    rewardType : RewardType;
-    progress : Float;
-  };
   private stable var rewardID : Nat = 1;
   private var ONE_HOUR : Nat64 = 60 * 60 * 1_000_000_000; // 24 hours in nanoseconds
   private var NULL_PRINCIPAL : Principal = Principal.fromText("aaaaa-aa");
@@ -1129,8 +1022,6 @@ func _natHash(a: Nat): Hash.Hash {
   var activeRewards : HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_activeRewards.vals(), 0, _natEqual, _natHash);
   private stable var _rewardsUsers : [(PlayerID, [RewardsUser])] = [];
   var rewardsUsers : HashMap.HashMap<PlayerID, [RewardsUser]> = HashMap.fromIter(_rewardsUsers.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _unclaimedRewardsUsers : [(PlayerID, [RewardsUser])] = [];
-  var unclaimedRewardsUsers : HashMap.HashMap<PlayerID, [RewardsUser]> = HashMap.fromIter(_unclaimedRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
   private stable var _finishedRewardsUsers : [(PlayerID, [RewardsUser])] = [];
   var finishedRewardsUsers : HashMap.HashMap<PlayerID, [RewardsUser]> = HashMap.fromIter(_finishedRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
   private stable var _expiredRewardsUsers : [(PlayerID, [RewardsUser])] = [];
@@ -1173,224 +1064,219 @@ func _natHash(a: Nat): Hash.Hash {
     };
   };
 
-  public shared (msg) func claimedReward(_player: Principal, rewardID: Nat): async (Bool, Text) {
+  public shared (msg) func claimedReward(_player : Principal, rewardID : Nat) : async (Bool, Text) {
     if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
-        return (false, "Unauthorized");
+      return (false, "Unauthorized");
     };
     switch (rewardsUsers.get(_player)) {
-        case (null) {
-            return (false, "User not found");
-        };
-        case (?rewardsu) {
-            var _removed: Bool = false;
-            var _message: Text = "Reward not found";
-            let _userRewardsActive = Buffer.Buffer<RewardsUser>(rewardsu.size());
-            for (r in rewardsu.vals()) {
-                if (r.id_reward == rewardID) {
-                    if (r.finished == true) {
-                        let newUserRewardsFinished = Buffer.Buffer<RewardsUser>(
-                            switch (finishedRewardsUsers.get(_player)) {
-                                case (null) { 0 };
-                                case (?rewardsf) { rewardsf.size() };
-                            }
-                        );
-                        _removed := true;
-                        _message := "Reward claimed successfully";
-                        newUserRewardsFinished.add(r);
-                        finishedRewardsUsers.put(_player, Buffer.toArray(newUserRewardsFinished));
-                    } else {
-                        _message := "Reward not finished yet";
-                    };
-                } else {
-                    _userRewardsActive.add(r);
-                };
+      case (null) {
+        return (false, "User not found");
+      };
+      case (?rewardsu) {
+        var _removed : Bool = false;
+        var _message : Text = "Reward not found";
+        let _userRewardsActive = Buffer.Buffer<RewardsUser>(rewardsu.size());
+        for (r in rewardsu.vals()) {
+          if (r.id_reward == rewardID) {
+            if (r.finished == true) {
+              let newUserRewardsFinished = Buffer.Buffer<RewardsUser>(
+                switch (finishedRewardsUsers.get(_player)) {
+                  case (null) { 0 };
+                  case (?rewardsf) { rewardsf.size() };
+                }
+              );
+              _removed := true;
+              _message := "Reward claimed successfully";
+              newUserRewardsFinished.add(r);
+              finishedRewardsUsers.put(_player, Buffer.toArray(newUserRewardsFinished));
+            } else {
+              _message := "Reward not finished yet";
             };
-            rewardsUsers.put(_player, Buffer.toArray(_userRewardsActive));
-            return (_removed, _message);
+          } else {
+            _userRewardsActive.add(r);
+          };
         };
+        rewardsUsers.put(_player, Buffer.toArray(_userRewardsActive));
+        return (_removed, _message);
+      };
     };
-};
+  };
 
-
-  public shared func addProgressToRewards(_player: Principal, rewardsProgress: [RewardProgress]): async (Bool, Text) {
+  public shared func addProgressToRewards(_player : Principal, rewardsProgress : [RewardProgress]) : async (Bool, Text) {
     if (Principal.equal(_player, NULL_PRINCIPAL)) {
-        return (false, "USER IS NULL. CANNOT ADD PROGRESS TO NULL USER");
+      return (false, "USER IS NULL. CANNOT ADD PROGRESS TO NULL USER");
     };
     if (Principal.equal(_player, ANON_PRINCIPAL)) {
-        return (false, "USER IS ANONYMOUS. CANNOT ADD PROGRESS TO ANONYMOUS USER");
+      return (false, "USER IS ANONYMOUS. CANNOT ADD PROGRESS TO ANONYMOUS USER");
     };
-    let _rewards_user: [RewardsUser] = switch (rewardsUsers.get(_player)) {
-        case (null) {
-            addNewRewardsToUser(_player);
-        };
-        case (?rewardsu) {
-            rewardsu;
-        };
+    let _rewards_user : [RewardsUser] = switch (rewardsUsers.get(_player)) {
+      case (null) {
+        addNewRewardsToUser(_player);
+      };
+      case (?rewardsu) {
+        rewardsu;
+      };
     };
     if (_rewards_user.size() == 0) {
-        return (false, "NO REWARDS FOUND FOR THIS USER");
+      return (false, "NO REWARDS FOUND FOR THIS USER");
     };
     if (rewardsProgress.size() == 0) {
-        return (false, "NO PROGRESS FOUND FOR THIS USER");
+      return (false, "NO PROGRESS FOUND FOR THIS USER");
     };
     let _newUserRewards = Buffer.Buffer<RewardsUser>(_rewards_user.size());
-    let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+    let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     for (r in _rewards_user.vals()) {
-        var _finished = r.finished;
-        if (_finished == false and r.start_date <= _now) {
-            if (r.expiration < _now) {
-                let newUserRewardsExpired = Buffer.Buffer<RewardsUser>(
-                    switch (expiredRewardsUsers.get(_player)) {
-                        case (null) { 0 };
-                        case (?rewardse) { rewardse.size() };
-                    }
-                );
-                newUserRewardsExpired.add(r);
-                expiredRewardsUsers.put(_player, Buffer.toArray(newUserRewardsExpired));
-            } else {
-                for (rp in rewardsProgress.vals()) {
-                    if (r.rewardType == rp.rewardType) {
-                        let _progress = r.progress + rp.progress;
-                        var _finishedDate = r.finish_date;
-                        if (_progress >= r.total) {
-                            _finished := true;
-                            _finishedDate := _now;
-                        };
-                        let _r_u: RewardsUser = {
-                            expiration = r.expiration;
-                            start_date = r.start_date;
-                            finish_date = _finishedDate;
-                            finished = _finished;
-                            id_reward = r.id_reward;
-                            prize_amount = r.prize_amount;
-                            prize_type = r.prize_type;
-                            progress = _progress;
-                            rewardType = r.rewardType;
-                            total = r.total;
-                        };
-                        _newUserRewards.add(_r_u);
-                    };
-                };
-            };
+      var _finished = r.finished;
+      if (_finished == false and r.start_date <= _now) {
+        if (r.expiration < _now) {
+          let newUserRewardsExpired = Buffer.Buffer<RewardsUser>(
+            switch (expiredRewardsUsers.get(_player)) {
+              case (null) { 0 };
+              case (?rewardse) { rewardse.size() };
+            }
+          );
+          newUserRewardsExpired.add(r);
+          expiredRewardsUsers.put(_player, Buffer.toArray(newUserRewardsExpired));
         } else {
-            _newUserRewards.add(r);
+          for (rp in rewardsProgress.vals()) {
+            if (r.rewardType == rp.rewardType) {
+              let _progress = r.progress + rp.progress;
+              var _finishedDate = r.finish_date;
+              if (_progress >= r.total) {
+                _finished := true;
+                _finishedDate := _now;
+              };
+              let _r_u : RewardsUser = {
+                expiration = r.expiration;
+                start_date = r.start_date;
+                finish_date = _finishedDate;
+                finished = _finished;
+                id_reward = r.id_reward;
+                prize_amount = r.prize_amount;
+                prize_type = r.prize_type;
+                progress = _progress;
+                rewardType = r.rewardType;
+                total = r.total;
+              };
+              _newUserRewards.add(_r_u);
+            };
+          };
         };
+      } else {
+        _newUserRewards.add(r);
+      };
     };
     rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
     return (true, "Progress added successfully for " # Nat.toText(_newUserRewards.size()) # " rewards");
-};
+  };
 
-
-  func getAllUnexpiredActiveRewards(_from: ?Nat): [Reward] {
-    let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+  func getAllUnexpiredActiveRewards(_from : ?Nat) : [Reward] {
+    let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     let _activeRewards = Buffer.Buffer<Reward>(activeRewards.size());
-    let _fromNat: Nat = switch (_from) {
-        case (null) { 0 };
-        case (?f) { f };
+    let _fromNat : Nat = switch (_from) {
+      case (null) { 0 };
+      case (?f) { f };
     };
     for (r in activeRewards.vals()) {
-        if (r.id > _fromNat) {
-            if (r.start_date <= _now) {
-                if (r.end_date < _now) {
-                    let _expR = activeRewards.remove(r.id);
-                    switch (_expR) {
-                        case (null) {
-                        };
-                        case (?er) {
-                            expiredRewards.put(er.id, er);
-                        };
-                    };
-                } else {
-                    _activeRewards.add(r);
-                };
+      if (r.id > _fromNat) {
+        if (r.start_date <= _now) {
+          if (r.end_date < _now) {
+            let _expR = activeRewards.remove(r.id);
+            switch (_expR) {
+              case (null) {};
+              case (?er) {
+                expiredRewards.put(er.id, er);
+              };
             };
+          } else {
+            _activeRewards.add(r);
+          };
         };
+      };
     };
     return Buffer.toArray(_activeRewards);
-};
+  };
 
   public query func getAllUsersRewards() : async ([(Principal, [RewardsUser])]) {
     return Iter.toArray(rewardsUsers.entries());
   };
 
-public query func getAllActiveRewards(): async (Nat, [(Reward)]) {
+  public query func getAllActiveRewards() : async (Nat, [(Reward)]) {
     let _activeRewards = Buffer.Buffer<Reward>(activeRewards.size());
-    var _expired: Nat = 0;
-    let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+    var _expired : Nat = 0;
+    let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
     for (r in activeRewards.vals()) {
-        if (r.start_date <= _now) {
-            if (r.end_date < _now) {
-                _expired := _expired + 1;
-            } else {
-                _activeRewards.add(r);
-            };
+      if (r.start_date <= _now) {
+        if (r.end_date < _now) {
+          _expired := _expired + 1;
+        } else {
+          _activeRewards.add(r);
         };
+      };
     };
     return (_expired, Buffer.toArray(_activeRewards));
-};
+  };
 
-
-  func addNewRewardsToUser(_player: Principal): [RewardsUser] {
+  func addNewRewardsToUser(_player : Principal) : [RewardsUser] {
     let _newUserRewards = Buffer.Buffer<RewardsUser>(0);
     switch (userLastReward.get(_player)) {
-        case (null) {
-            let _unexpiredRewards = getAllUnexpiredActiveRewards(null);
-            for (r in _unexpiredRewards.vals()) {
-                let _r_u: RewardsUser = {
-                    expiration = r.end_date;
-                    start_date = r.start_date;
-                    finish_date = r.end_date;
-                    finished = false;
-                    id_reward = r.id;
-                    prize_amount = r.prize_amount;
-                    prize_type = r.prize_type;
-                    progress = 0;
-                    rewardType = r.rewardType;
-                    total = r.total;
-                };
-                _newUserRewards.add(_r_u);
-            };
+      case (null) {
+        let _unexpiredRewards = getAllUnexpiredActiveRewards(null);
+        for (r in _unexpiredRewards.vals()) {
+          let _r_u : RewardsUser = {
+            expiration = r.end_date;
+            start_date = r.start_date;
+            finish_date = r.end_date;
+            finished = false;
+            id_reward = r.id;
+            prize_amount = r.prize_amount;
+            prize_type = r.prize_type;
+            progress = 0;
+            rewardType = r.rewardType;
+            total = r.total;
+          };
+          _newUserRewards.add(_r_u);
         };
-        case (lastReward) {
-            let _unexpiredRewards = getAllUnexpiredActiveRewards(lastReward);
-            for (r in _unexpiredRewards.vals()) {
-                let _r_u: RewardsUser = {
-                    expiration = r.end_date;
-                    start_date = r.start_date;
-                    finish_date = r.end_date;
-                    finished = false;
-                    id_reward = r.id;
-                    prize_amount = r.prize_amount;
-                    prize_type = r.prize_type;
-                    progress = 0;
-                    rewardType = r.rewardType;
-                    total = r.total;
-                };
-                _newUserRewards.add(_r_u);
-            };
+      };
+      case (lastReward) {
+        let _unexpiredRewards = getAllUnexpiredActiveRewards(lastReward);
+        for (r in _unexpiredRewards.vals()) {
+          let _r_u : RewardsUser = {
+            expiration = r.end_date;
+            start_date = r.start_date;
+            finish_date = r.end_date;
+            finished = false;
+            id_reward = r.id;
+            prize_amount = r.prize_amount;
+            prize_type = r.prize_type;
+            progress = 0;
+            rewardType = r.rewardType;
+            total = r.total;
+          };
+          _newUserRewards.add(_r_u);
         };
+      };
     };
     switch (rewardsUsers.get(_player)) {
-        case (null) {
-            userLastReward.put(_player, rewardID);
-            rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
-            return Buffer.toArray(_newUserRewards);
+      case (null) {
+        userLastReward.put(_player, rewardID);
+        rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
+        return Buffer.toArray(_newUserRewards);
+      };
+      case (?rewardsu) {
+        let _newRewards = Buffer.Buffer<RewardsUser>(rewardsu.size() + _newUserRewards.size());
+        for (r in rewardsu.vals()) {
+          _newRewards.add(r);
         };
-        case (?rewardsu) {
-            let _newRewards = Buffer.Buffer<RewardsUser>(rewardsu.size() + _newUserRewards.size());
-            for (r in rewardsu.vals()) {
-                _newRewards.add(r);
-            };
-            for (r in _newUserRewards.vals()) {
-                _newRewards.add(r);
-            };
-            userLastReward.put(_player, rewardID);
-            rewardsUsers.put(_player, Buffer.toArray(_newRewards));
-            return Buffer.toArray(_newRewards);
+        for (r in _newUserRewards.vals()) {
+          _newRewards.add(r);
         };
+        userLastReward.put(_player, rewardID);
+        rewardsUsers.put(_player, Buffer.toArray(_newRewards));
+        return Buffer.toArray(_newRewards);
+      };
     };
-};
-
+  };
 
   public shared func createReward(name : Text, rewardType : RewardType, prizeType : PrizeType, prizeAmount : Nat, total : Float, hours_active : Nat64) : async (Bool, Text) {
     let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
@@ -1415,56 +1301,6 @@ public query func getAllActiveRewards(): async (Nat, [(Reward)]) {
   };
 
   //MatchMaking
-  public type UserId = Principal;
-  public type PlayerInfo = {
-    id : UserId;
-    matchAccepted : Bool;
-    elo : Float;
-    playerGameData : Text;
-    lastPlayerActive : Nat64;
-    // characterSelected : Nat;
-    // deckSavedKeyIds   : [Text];
-  };
-  public type FullPlayerInfo = {
-    id : UserId;
-    matchAccepted : Bool;
-    elo : Float;
-    playerGameData : Text;
-    playerName : Text;
-  };
-  public type MatchmakingStatus = {
-    #Searching;
-    #Reserved;
-    #Accepting;
-    #Accepted;
-    #InGame;
-    #Ended;
-  };
-  public type PlayerStatus = {
-    status : MatchmakingStatus;
-    matchID : Nat;
-  };
-
-  public type MatchData = {
-    gameId : Nat;
-    player1 : PlayerInfo;
-    player2 : ?PlayerInfo;
-    status : MatchmakingStatus;
-  };
-
-  public type FullMatchData = {
-    gameId : Nat;
-    player1 : FullPlayerInfo;
-    player2 : ?FullPlayerInfo;
-    status : MatchmakingStatus;
-  };
-
-  public type SearchStatus = {
-    #Assigned;
-    #Available;
-    #NotAvailable;
-  };
-
   private var ONE_SECOND : Nat64 = 1_000_000_000;
   private stable var _matchID : Nat = 1;
   private var inactiveSeconds : Nat64 = 30 * ONE_SECOND;
@@ -1592,44 +1428,6 @@ public query func getAllActiveRewards(): async (Nat, [(Reward)]) {
     };
   };
 
-  /**
-  func getGamesByELOsorted(targetELO : Float, maxELO : Float) : [MatchData] {
-    var _gamesByELO : [MatchData] = [];
-    var _now : Nat64 = Nat64.fromIntWrap(Time.now());
-    for (m in searching.vals()) {
-      /// Validate game is active
-      if ((m.player1.lastPlayerActive + inactiveSeconds) >= _now) {
-        /// Validate game is within the ELO range
-        if (m.player1.elo >= (targetELO - maxELO) and m.player1.elo <= (targetELO + maxELO)) {
-          /// To-Do: Add other loop to sort asc by ELO where all registries are passed and the new one is added in the right place
-          if (Array.size(_gamesByELO) == 0) {
-            _gamesByELO := [m];
-          } else {
-            var _orderedGamesByELO : [MatchData] = [];
-            var _added : Bool = false;
-            for (n in _gamesByELO.vals()) {
-              if (n.player1.elo > m.player1.elo) {
-                /// Add the new match in the right place
-                _orderedGamesByELO := Array.append(_gamesByELO, [m]);
-                _added := true;
-                /// Also add the current registry
-                _orderedGamesByELO := Array.append(_gamesByELO, [n]);
-              } else {
-                /// Only add the current registry
-                _orderedGamesByELO := Array.append(_gamesByELO, [n]);
-              };
-            };
-            if (_added == false) {
-              _orderedGamesByELO := Array.append(_gamesByELO, [m]);
-            };
-            _gamesByELO := _orderedGamesByELO;
-          };
-        };
-      };
-    };
-    _gamesByELO;
-  };
-**/
   public shared (msg) func getMatchSearching(pgd : Text) : async (SearchStatus, Nat, Text) {
     assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
     assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
@@ -1834,7 +1632,7 @@ public query func getAllActiveRewards(): async (Nat, [(Reward)]) {
   };
 
   public shared composite query (msg) func getMyMatchData() : async (?FullMatchData, Nat) {
-    assert (msg.caller != NULL_PRINCIPAL and msg.caller != ANON_PRINCIPAL);
+    //assert (msg.caller != NULL_PRINCIPAL and msg.caller != ANON_PRINCIPAL);
     // public shared(msg) func getMyMatchData() : async (?FullMatchData, Nat){
     switch (playerStatus.get(msg.caller)) {
       case (null) {
@@ -1934,680 +1732,33 @@ public query func getAllActiveRewards(): async (Nat, [(Reward)]) {
           status = _m.status;
         };
         return (?fm, _p);
-
-        // switch(searching.get(_s.matchID)){
-        //     case(null){
-        //         switch(inProgress.get(_s.matchID)){
-        //             case(null){
-        //                 switch(finishedGames.get(_s.matchID)){
-        //                     case(null){
-        //                         return(null, 0);
-        //                     };
-        //                     case(?_m){
-
-        //                     };
-        //                 };
-        //             };
-        //             case(?_m){
-        //                 let _p : Nat = switch(_m.player1.id == msg.caller){
-        //                     case(true){
-        //                         1;
-        //                     };
-        //                     case(false){
-        //                         switch(_m.player2){
-        //                             case(null){
-        //                                 return(null, 0);
-        //                             };
-        //                             case(?_p2){
-        //                                 2;
-        //                             };
-        //                         };
-        //                     };
-        //                 };
-        //                 return(?_m, _p);
-        //             };
-        //         };
-        //     };
-        //     case(?_m){
-        //         let _p : Nat = switch(_m.player1.id == msg.caller){
-        //             case(true){
-        //                 1;
-        //             };
-        //             case(false){
-        //                 switch(_m.player2){
-        //                     case(null){
-        //                         return(null, 0);
-        //                     };
-        //                     case(?_p2){
-        //                         2;
-        //                     };
-        //                 };
-        //             };
-        //         };
-        //         return(?_m, _p);
-        //     };
-        // };
       };
     };
   };
 
-public query func getAllSearching() : async [MatchData] {
+  public query func getAllSearching() : async [MatchData] {
     let _searchingList = Buffer.Buffer<MatchData>(searching.size());
-    for (m in searching.vals()) {
-        _searchingList.add(m);
-    };
-    return Buffer.toArray(_searchingList);
-};
-
-
-  //Tourneys
-  stable var tournaments : [Tournament] = [];
-  stable var matches : [Match] = [];
-  stable var feedback : [{
-    principal : Principal;
-    tournamentId : Nat;
-    feedback : Text;
-  }] = [];
-  stable var disputes : [{
-    principal : Principal;
-    matchId : Nat;
-    reason : Text;
-    status : Text;
-  }] = [];
-  type Tournament = {
-    id : Nat;
-    name : Text;
-    startDate : Time.Time;
-    prizePool : Text;
-    expirationDate : Time.Time;
-    participants : [Principal];
-    registeredParticipants : [Principal];
-    isActive : Bool;
-    bracketCreated : Bool;
-    matchCounter : Nat; // Add matchCounter to each tournament
-  };
-  type Match = {
-    id : Nat;
-    tournamentId : Nat;
-    participants : [Principal];
-    result : ?{ winner : Principal; score : Text };
-    status : Text;
-    nextMatchId : ?Nat; // Track the next match
-  };
-  public shared ({ caller }) func joinTournament(tournamentId : Nat) : async Bool {
-    if (tournamentId >= tournaments.size()) {
-      return false;
-    };
-
-    let tournament = tournaments[tournamentId];
-
-    if (Array.indexOf<Principal>(caller, tournament.participants, func(a : Principal, b : Principal) : Bool { a == b }) != null) {
-      return false;
-    };
-
-    var updatedParticipants = Buffer.Buffer<Principal>(tournament.participants.size() + 1);
-    for (participant in tournament.participants.vals()) {
-      updatedParticipants.add(participant);
-    };
-    updatedParticipants.add(caller);
-
-    var updatedRegisteredParticipants = Buffer.Buffer<Principal>(tournament.registeredParticipants.size() + 1);
-    for (participant in tournament.registeredParticipants.vals()) {
-      updatedRegisteredParticipants.add(participant);
-    };
-    updatedRegisteredParticipants.add(caller);
-
-    let updatedTournament = {
-      id = tournament.id;
-      name = tournament.name;
-      startDate = tournament.startDate;
-      prizePool = tournament.prizePool;
-      expirationDate = tournament.expirationDate;
-      participants = Buffer.toArray(updatedParticipants);
-      registeredParticipants = Buffer.toArray(updatedRegisteredParticipants);
-      isActive = tournament.isActive;
-      bracketCreated = tournament.bracketCreated;
-      matchCounter = tournament.matchCounter;
-    };
-
-    tournaments := Array.tabulate(
-      tournaments.size(),
-      func(i : Nat) : Tournament {
-        if (i == tournamentId) {
-          updatedTournament;
-        } else {
-          tournaments[i];
-        };
-      },
-    );
-
-    return true;
+    Iter.toArray<MatchData>(searching.vals());
   };
 
-  public query func getRegisteredUsers(tournamentId : Nat) : async [Principal] {
-    if (tournamentId >= tournaments.size()) {
-      return [];
-    };
-
-    let tournament : Tournament = tournaments[tournamentId];
-    return tournament.registeredParticipants;
+  type PlayerFaction = Text;
+  type MatchID = Nat;
+  type MatchResult = Text;
+  type MatchMap = Text;
+  type MatchOpt = { #Ranked; #Normal; #Liga };
+  type PlayerRecord = {
+    playeriD : Principal;
+    faction : PlayerFaction;
   };
-
-  public shared ({ caller }) func submitFeedback(_tournamentId : Nat, feedbackText : Text) : async Bool {
-    let newFeedback = Buffer.Buffer<{ principal : Principal; tournamentId : Nat; feedback : Text }>(feedback.size() + 1);
-    for (entry in feedback.vals()) {
-      newFeedback.add(entry);
-    };
-    newFeedback.add({
-      principal = caller;
-      tournamentId = _tournamentId;
-      feedback = feedbackText;
-    });
-    feedback := Buffer.toArray(newFeedback);
-    return true;
-  };
-
-  public shared ({ caller }) func submitMatchResult(tournamentId : Nat, matchId : Nat, score : Text) : async Bool {
-    let matchOpt = Array.find<Match>(matches, func(m : Match) : Bool { m.id == matchId and m.tournamentId == tournamentId });
-    switch (matchOpt) {
-      case (?match) {
-        let isParticipant = Array.find<Principal>(match.participants, func(p : Principal) : Bool { p == caller }) != null;
-        if (not isParticipant) {
-          return false;
-        };
-
-        var updatedMatches = Buffer.Buffer<Match>(matches.size());
-        for (m in matches.vals()) {
-          if (m.id == matchId and m.tournamentId == tournamentId) {
-            updatedMatches.add({
-              id = m.id;
-              tournamentId = m.tournamentId;
-              participants = m.participants;
-              result = ?{ winner = caller; score = score };
-              status = "pending verification";
-              nextMatchId = m.nextMatchId;
-            });
-          } else {
-            updatedMatches.add(m);
-          };
-        };
-        matches := Buffer.toArray(updatedMatches);
-        return true;
-      };
-      case null {
-        return false;
-      };
-    };
-  };
-
-  public shared ({ caller }) func disputeMatch(tournamentId : Nat, matchId : Nat, reason : Text) : async Bool {
-    let matchExists = Array.find(matches, func(m : Match) : Bool { m.id == matchId and m.tournamentId == tournamentId }) != null;
-    if (not matchExists) {
-      return false;
-    };
-
-    let newDispute = {
-      principal = caller;
-      matchId = matchId;
-      reason = reason;
-      status = "pending";
-    };
-    let updatedDisputes = Buffer.Buffer<{ principal : Principal; matchId : Nat; reason : Text; status : Text }>(disputes.size() + 1);
-    for (dispute in disputes.vals()) {
-      updatedDisputes.add(dispute);
-    };
-    updatedDisputes.add(newDispute);
-    disputes := Buffer.toArray(updatedDisputes);
-
-    return true;
-  };
-
-  public shared ({ caller }) func adminUpdateMatch(tournamentId : Nat, matchId : Nat, winnerIndex : Nat, score : Text) : async Bool {
-    if (
-      caller != Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae") and
-      caller != Principal.fromText("bdycp-b54e6-fvsng-ouies-a6zfm-khbnh-wcq3j-pv7qt-gywe2-em245-3ae")
-    ) {
-      return false;
-    };
-
-    let matchOpt = Array.find<Match>(matches, func(m : Match) : Bool { m.id == matchId and m.tournamentId == tournamentId });
-    switch (matchOpt) {
-      case (?match) {
-        if (winnerIndex >= Array.size<Principal>(match.participants)) {
-          return false; // Invalid winner index
-        };
-
-        let winnerPrincipal = match.participants[winnerIndex];
-
-        var updatedMatches = Buffer.Buffer<Match>(matches.size());
-        for (m in matches.vals()) {
-          if (m.id == matchId and m.tournamentId == tournamentId) {
-            updatedMatches.add({
-              id = m.id;
-              tournamentId = m.tournamentId;
-              participants = m.participants;
-              result = ?{ winner = winnerPrincipal; score = score };
-              status = "verified";
-              nextMatchId = m.nextMatchId;
-            });
-          } else {
-            updatedMatches.add(m);
-          };
-        };
-        matches := Buffer.toArray(updatedMatches);
-
-        // Update the bracket directly by advancing the winner
-        Debug.print("Admin verified match: " # Nat.toText(matchId) # " with winner: " # Principal.toText(winnerPrincipal));
-        ignore updateBracketAfterMatchUpdate(match.tournamentId, match.id, winnerPrincipal);
-
-        return true;
-      };
-      case null {
-        return false;
-      };
-    };
-  };
-
-  public shared func updateBracketAfterMatchUpdate(tournamentId : Nat, matchId : Nat, winner : Principal) : async () {
-    Debug.print("Starting updateBracketAfterMatchUpdate");
-    Debug.print("Updated Match ID: " # Nat.toText(matchId));
-    Debug.print("Winner: " # Principal.toText(winner));
-
-    // Log the current state of the matches
-    for (i in Iter.range(0, matches.size() - 1)) {
-      let match = matches[i];
-      Debug.print("Current Match: " # matchToString(match));
-    };
-
-    let updatedMatchOpt = Array.find<Match>(matches, func(m : Match) : Bool { m.id == matchId and m.tournamentId == tournamentId });
-    switch (updatedMatchOpt) {
-      case (?updatedMatch) {
-        switch (updatedMatch.nextMatchId) {
-          case (?nextMatchId) {
-            Debug.print("Next match ID is not null: " # Nat.toText(nextMatchId));
-
-            let nextMatchOpt = Array.find<Match>(matches, func(m : Match) : Bool { m.id == nextMatchId and m.tournamentId == tournamentId });
-            switch (nextMatchOpt) {
-              case (?nextMatch) {
-                Debug.print("Next match found with ID: " # Nat.toText(nextMatchId));
-
-                var updatedParticipants = Buffer.Buffer<Principal>(2);
-                var replaced = false;
-
-                for (p in nextMatch.participants.vals()) {
-                  if (p == Principal.fromText("2vxsx-fae") and not replaced) {
-                    updatedParticipants.add(winner);
-                    replaced := true;
-                  } else {
-                    updatedParticipants.add(p);
-                  };
-                };
-
-                Debug.print("Before update: " # participantsToString(nextMatch.participants));
-                Debug.print("After update: " # participantsToString(Buffer.toArray(updatedParticipants)));
-
-                let updatedNextMatch = {
-                  id = nextMatch.id;
-                  tournamentId = nextMatch.tournamentId;
-                  participants = Buffer.toArray(updatedParticipants);
-                  result = nextMatch.result;
-                  status = nextMatch.status;
-                  nextMatchId = nextMatch.nextMatchId;
-                };
-
-                // Update the next match in the matches array using Array.map
-                matches := Array.map<Match, Match>(
-                  matches,
-                  func(m : Match) : Match {
-                    if (m.id == nextMatchId and m.tournamentId == tournamentId) {
-                      updatedNextMatch;
-                    } else {
-                      m;
-                    };
-                  },
-                );
-                Debug.print("Updated match in the matches map with ID: " # Nat.toText(nextMatchId));
-              };
-              case null {
-                Debug.print("Error: Next match not found with ID: " # Nat.toText(nextMatchId));
-              };
-            };
-          };
-          case null {
-            Debug.print("Next match ID is null for match ID: " # Nat.toText(matchId));
-          };
-        };
-      };
-      case null {
-        Debug.print("Match not found for ID: " # Nat.toText(matchId));
-      };
-    };
-
-    // Log the updated state of the matches
-    for (i in Iter.range(0, matches.size() - 1)) {
-      let match = matches[i];
-      Debug.print("Updated Match: " # matchToString(match));
-    };
-  };
-
-  private func matchToString(match : Match) : Text {
-    return "Match ID: " # Nat.toText(match.id) # ", Participants: " # participantsToString(match.participants) # ", Result: " # (switch (match.result) { case (?res) { "Winner: " # Principal.toText(res.winner) # ", Score: " # res.score }; case null { "pending" } }) # ", Next Match ID: " # (switch (match.nextMatchId) { case (?nextId) { Nat.toText(nextId) }; case null { "none" } });
-  };
-
-  private func participantsToString(participants : [Principal]) : Text {
-    var text = "";
-    var first = true;
-    for (participant in participants.vals()) {
-      if (not first) {
-        text #= ", ";
-      };
-      first := false;
-      text #= Principal.toText(participant);
-    };
-    return text;
-  };
-
-  public shared func updateBracket(tournamentId : Nat) : async Bool {
-    if (tournamentId >= tournaments.size()) {
-      // Debug.print("Tournament does not exist.");
-      return false;
-    };
-
-    var tournament = tournaments[tournamentId];
-    let participants = tournament.participants;
-
-    // Close registration if not already closed
-    if (not tournament.bracketCreated) {
-      let updatedTournament = {
-        id = tournament.id;
-        name = tournament.name;
-        startDate = tournament.startDate;
-        prizePool = tournament.prizePool;
-        expirationDate = tournament.expirationDate;
-        participants = tournament.participants;
-        registeredParticipants = tournament.registeredParticipants;
-        isActive = false;
-        bracketCreated = true;
-        matchCounter = tournament.matchCounter;
-      };
-
-      tournaments := Array.tabulate(
-        tournaments.size(),
-        func(i : Nat) : Tournament {
-          if (i == tournamentId) {
-            updatedTournament;
-          } else {
-            tournaments[i];
-          };
-        },
-      );
-    };
-
-    // Obtain a fresh blob of entropy
-    let entropy = await Random.blob();
-    let random = Random.Finite(entropy);
-
-    // Calculate total participants including byes
-    var totalParticipants = 1;
-    while (totalParticipants < participants.size()) {
-      totalParticipants *= 2;
-    };
-
-    let byesCount = Nat.sub(totalParticipants, participants.size());
-    var allParticipants = Buffer.Buffer<Principal>(totalParticipants);
-    for (p in participants.vals()) {
-      allParticipants.add(p);
-    };
-    for (i in Iter.range(0, byesCount - 1)) {
-      allParticipants.add(Principal.fromText("2vxsx-fae"));
-    };
-
-    // Shuffle all participants and byes together
-    var shuffledParticipants = Array.thaw<Principal>(Buffer.toArray(allParticipants));
-    var i = shuffledParticipants.size();
-    while (i > 1) {
-      i -= 1;
-      let j = switch (random.range(32)) {
-        case (?value) { value % (i + 1) };
-        case null { i };
-      };
-      let temp = shuffledParticipants[i];
-      shuffledParticipants[i] := shuffledParticipants[j];
-      shuffledParticipants[j] := temp;
-    };
-
-    Debug.print("Total participants after adjustment: " # Nat.toText(totalParticipants));
-
-    // Store the total participants count for round 1
-    let totalParticipantsRound1 = totalParticipants;
-
-    // Create initial round matches with nextMatchId
-    let roundMatches = Buffer.Buffer<Match>(0);
-    var matchId = tournament.matchCounter;
-    var nextMatchIdBase = totalParticipants / 2;
-    for (i in Iter.range(0, totalParticipants / 2 - 1)) {
-      let p1 = shuffledParticipants[i * 2];
-      let p2 = shuffledParticipants[i * 2 + 1];
-      let currentNextMatchId = ?(nextMatchIdBase + (i / 2));
-      roundMatches.add({
-        id = matchId;
-        tournamentId = tournamentId;
-        participants = [p1, p2];
-        result = null;
-        status = "scheduled";
-        nextMatchId = currentNextMatchId;
-      });
-      Debug.print("Created match: " # Nat.toText(matchId) # " with participants: " # Principal.toText(p1) # " vs " # Principal.toText(p2) # " nextMatchId: " # (switch (currentNextMatchId) { case (?id) { Nat.toText(id) }; case null { "none" } }));
-      matchId += 1;
-    };
-    nextMatchIdBase /= 2;
-
-    // Update matchCounter in the tournament
-    let updatedTournament = {
-      id = tournament.id;
-      name = tournament.name;
-      startDate = tournament.startDate;
-      prizePool = tournament.prizePool;
-      expirationDate = tournament.expirationDate;
-      participants = tournament.participants;
-      registeredParticipants = tournament.registeredParticipants;
-      isActive = tournament.isActive;
-      bracketCreated = tournament.bracketCreated;
-      matchCounter = matchId // Update matchCounter
-    };
-
-    tournaments := Array.tabulate(
-      tournaments.size(),
-      func(i : Nat) : Tournament {
-        if (i == tournamentId) {
-          updatedTournament;
-        } else {
-          tournaments[i];
-        };
-      },
-    );
-
-    // Function to recursively create matches for all rounds
-    func createAllRounds(totalRounds : Nat, currentRound : Nat, matchId : Nat) : Buffer.Buffer<Match> {
-      let newMatches = Buffer.Buffer<Match>(0);
-      if (currentRound >= totalRounds) {
-        return newMatches;
-      };
-
-      let numMatches = (totalParticipantsRound1 / (2 ** (currentRound + 1)));
-      for (i in Iter.range(0, numMatches - 1)) {
-        // Calculate next match ID correctly
-        let nextMatchIdOpt = if (currentRound + 1 == totalRounds) {
-          null;
-        } else {
-          ?(matchId + (i / 2) + numMatches);
-        };
-
-        newMatches.add({
-          id = matchId + i;
-          tournamentId = tournamentId;
-          participants = [Principal.fromText("2vxsx-fae"), Principal.fromText("2vxsx-fae")];
-          result = null;
-          status = "scheduled";
-          nextMatchId = nextMatchIdOpt;
-        });
-        Debug.print("Created next round match: " # Nat.toText(matchId + i) # " with nextMatchId: " # (switch (nextMatchIdOpt) { case (?id) { Nat.toText(id) }; case null { "none" } }));
-      };
-
-      // Recursively create next round matches
-      let nextRoundMatches = createAllRounds(totalRounds, currentRound + 1, matchId + numMatches);
-      for (match in nextRoundMatches.vals()) {
-        newMatches.add(match);
-      };
-
-      return newMatches;
-    };
-
-    let totalRounds = log2(totalParticipantsRound1);
-    Debug.print("Total rounds: " # Nat.toText(totalRounds));
-    let subsequentRounds = createAllRounds(totalRounds, 1, matchId);
-
-    // Update the stable variable matches
-    var updatedMatches = Buffer.Buffer<Match>(matches.size() + roundMatches.size() + subsequentRounds.size());
-    for (match in matches.vals()) {
-      updatedMatches.add(match);
-    };
-    for (newMatch in roundMatches.vals()) {
-      updatedMatches.add(newMatch);
-    };
-    for (subsequentMatch in subsequentRounds.vals()) {
-      updatedMatches.add(subsequentMatch);
-    };
-    matches := Buffer.toArray(updatedMatches);
-
-    // Manually create text representation for matches
-    var matchesText = "";
-    var firstMatch = true;
-    for (match in matches.vals()) {
-      if (not firstMatch) {
-        matchesText #= ", ";
-      };
-      firstMatch := false;
-      let nextMatchIdText = switch (match.nextMatchId) {
-        case (?id) { Nat.toText(id) };
-        case null { "none" };
-      };
-      matchesText #= "Match ID: " # Nat.toText(match.id) # " nextMatchId: " # nextMatchIdText;
-    };
-
-    Debug.print("Bracket created with matches: " # matchesText);
-
-    return true;
-  };
-
-  public query func getActiveTournaments() : async [Tournament] {
-    return Array.filter<Tournament>(tournaments, func(t : Tournament) : Bool { t.isActive });
-  };
-
-  public query func getInactiveTournaments() : async [Tournament] {
-    return Array.filter<Tournament>(tournaments, func(t : Tournament) : Bool { not t.isActive });
-  };
-
-  public query func getAllTournaments() : async [Tournament] {
-    return tournaments;
-  };
-
-  public query func getTournamentBracket(tournamentId : Nat) : async {
-    matches : [Match];
-  } {
-    return {
-      matches = Array.filter<Match>(matches, func(m : Match) : Bool { m.tournamentId == tournamentId });
-    };
-  };
-
-  public shared func deleteAllTournaments() : async Bool {
-    tournaments := [];
-    matches := [];
-    return true;
-  };
-
-  public shared ({ caller }) func createTournament(name : Text, startDate : Time.Time, prizePool : Text, expirationDate : Time.Time) : async Nat {
-    if (
-      caller != Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae") and
-      caller != Principal.fromText("bdycp-b54e6-fvsng-ouies-a6zfm-khbnh-wcq3j-pv7qt-gywe2-em245-3ae")
-    ) {
-      return 0;
-    };
-
-    let id = tournaments.size();
-    let buffer = Buffer.Buffer<Tournament>(tournaments.size() + 1);
-    for (tournament in tournaments.vals()) {
-      buffer.add(tournament);
-    };
-    buffer.add({
-      id = id;
-      name = name;
-      startDate = startDate;
-      prizePool = prizePool;
-      expirationDate = expirationDate;
-      participants = [];
-      registeredParticipants = [];
-      isActive = true;
-      bracketCreated = false;
-      matchCounter = 0 // Initialize matchCounter
-    });
-    tournaments := Buffer.toArray(buffer);
-    return id;
-  };
-
-  func log2(x : Nat) : Nat {
-    var result = 0;
-    var value = x;
-    while (value > 1) {
-      value /= 2;
-      result += 1;
-    };
-    return result;
-  };
-
-  //System functions
-  system func preupgrade() {
-
-    _userRecords := Iter.toArray(userRecords.entries());
-    _players := Iter.toArray(players.entries());
-    _playerPreferences := Iter.toArray(playerPreferences.entries());
-
-    _activeRewards := Iter.toArray(activeRewards.entries());
-    _rewardsUsers := Iter.toArray(rewardsUsers.entries());
-    _unclaimedRewardsUsers := Iter.toArray(unclaimedRewardsUsers.entries());
-    _finishedRewardsUsers := Iter.toArray(finishedRewardsUsers.entries());
-    _expiredRewardsUsers := Iter.toArray(expiredRewardsUsers.entries());
-    _userLastReward := Iter.toArray(userLastReward.entries());
-    _expiredRewards := Iter.toArray(expiredRewards.entries());
-
-    _basicStats := Iter.toArray(basicStats.entries());
-    _playerGamesStats := Iter.toArray(playerGamesStats.entries());
-    _onValidation := Iter.toArray(onValidation.entries());
-
-    _searching := Iter.toArray(searching.entries());
-    _inProgress := Iter.toArray(inProgress.entries());
-    _finishedGames := Iter.toArray(finishedGames.entries());
-  };
-  system func postupgrade() {
-
-    userRecords := HashMap.fromIter(_userRecords.vals(), 0, Principal.equal, Principal.hash);
-    _players := [];
-    _playerPreferences := [];
-
-    _activeRewards := [];
-    _rewardsUsers := [];
-    _unclaimedRewardsUsers := [];
-    _finishedRewardsUsers := [];
-    _expiredRewardsUsers := [];
-    _userLastReward := [];
-    _expiredRewards := [];
-
-    _basicStats := [];
-    _playerGamesStats := [];
-    _onValidation := [];
-
-    _searching := [];
-    _inProgress := [];
-    _finishedGames := [];
+  type MatchRecord = {
+    matchID : MatchID;
+    map : MatchMap;
+    team1 : [PlayerRecord];
+    team2 : [PlayerRecord];
+    faction1 : [PlayerFaction]; // Faccion de cada jugador del equipo 1
+    faction2 : [PlayerFaction]; // Faccion de cada jugador del equipo 2
+    result : MatchResult;
+    timestamp : Time.Time; // Representa la fecha y hora en milisegundos desde Epoch
+    mode : MatchOpt;
   };
 };

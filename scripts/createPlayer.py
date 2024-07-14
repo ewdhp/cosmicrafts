@@ -20,7 +20,7 @@ for i in range(1, num_players + 1):
     
     if identity_name not in result.stdout:
         # Create a new identity if it doesn't exist
-        subprocess.run(["dfx", "identity", "new", identity_name], check=True)
+        subprocess.run(["dfx", "identity", "new", "--disable-encryption", identity_name], check=True)
     
     # Switch to the new or existing identity
     subprocess.run(["dfx", "identity", "use", identity_name], check=True)
