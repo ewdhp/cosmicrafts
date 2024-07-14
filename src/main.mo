@@ -548,7 +548,7 @@ func _natHash(a: Nat): Hash.Hash {
   };
 
   public shared (msg) func setGameOver(caller : Principal) : async (Bool, Bool, ?Principal) {
-    assert (msg.caller == Principal.fromText("jybso-3iaaa-aaaan-qeima-cai"));
+    assert (msg.caller == Principal.fromText("ajuq4-ruaaa-aaaaa-qaaga-cai"));
     switch (playerStatus.get(caller)) {
       case (null) {
         return (false, false, null);
