@@ -3,22 +3,6 @@
     "cosmicrafts": {
       "main": "src/main.mo",
       "type": "motoko"
-    },
-    "cxp": {
-      "main": "src/icrc1/Canisters/CXP.mo",
-      "type": "motoko"
-    },
-    "energy": {
-      "main": "src/icrc1/Canisters/Energy.mo",
-      "type": "motoko"
-    },
-    "chests": {
-      "main": "src/icrc7/Chests.mo",
-      "type": "motoko"
-    },
-    "gamenfts": {
-      "main": "src/icrc7/GameNFTs.mo",
-      "type": "motoko"
     }
   },
   "defaults": {

@@ -1,0 +1,35 @@
+{
+  "chests": {
+    "ic": "w4fdk-fiaaa-aaaap-qccgq-cai"
+  },
+  "cosmicrafts": {
+    "ic": "woimf-oyaaa-aaaan-qegia-cai"
+  },
+  "flux": {
+    "ic": "plahz-wyaaa-aaaam-accta-cai"
+  },
+  "icrc1": {
+    "ic": "svcoe-6iaaa-aaaam-ab4rq-cai"
+  },
+  "icrc7": {
+    "ic": "phgme-naaaa-aaaap-abwda-cai"
+  },
+  "matchmaking": {
+    "ic": "vqzll-jiaaa-aaaan-qegba-cai"
+  },
+  "player": {
+    "ic": "erbra-lyaaa-aaaap-qhmfa-cai"
+  },
+  "rewards": {
+    "ic": "bm5s5-qqaaa-aaaap-qcgfq-cai"
+  },
+  "statistics": {
+    "ic": "jybso-3iaaa-aaaan-qeima-cai"
+  },
+  "tournaments": {
+    "ic": "lqaq5-paaaa-aaaap-qhndq-cai"
+  },
+  "validator": {
+    "ic": "2dzox-tqaaa-aaaan-qlphq-cai"
+  }
+}
