@@ -4,6 +4,8 @@ import logging
 import re
 import random
 import time
+import sys
+import signal
 
 # Set up logging
 logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -220,9 +222,21 @@ def run_matches(num_matches):
         if not loop:
             break
 
-        time.sleep(5)  # Add a delay before starting the next loop, if desired
+        time.sleep(0)  # Add a delay before starting the next loop, if desired
 
 if __name__ == "__main__":
-    num_matches = int(input("Enter the number of matches to run: "))
-    loop = input("Do you want to loop indefinitely? (yes/no): ").strip().lower() == "yes"
-    run_matches(num_matches)
+    def exit_gracefully(signum, frame):
+        """Handle graceful exit on Ctrl+C or termination signal."""
+        switch_identity("default")
+        print("Exiting gracefully...")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, exit_gracefully)
+    signal.signal(signal.SIGTERM, exit_gracefully)
+
+    try:
+        num_matches = int(input("Enter the number of matches to run: "))
+        loop = input("Do you want to loop indefinitely? (yes/no): ").strip().lower() == "yes"
+        run_matches(num_matches)
+    finally:
+        switch_identity("default")

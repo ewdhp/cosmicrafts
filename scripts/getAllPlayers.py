@@ -1,6 +1,6 @@
 import subprocess
 import re
-import pandas as pd
+import csv
 
 def fetch_data_from_canister():
     try:
@@ -42,18 +42,16 @@ def parse_raw_output(raw_output):
     return data
 
 def format_data(data, csv_file):
-    # Convert the data to a DataFrame
-    df = pd.DataFrame(data)
+    # Print the data in a readable format
+    print("id,elo,name,level")
+    for record in data:
+        print(f"{record['id']},{record['elo']},{record['name']},{record['level']}")
     
-    # Set display options to show more rows and columns
-    pd.set_option('display.max_rows', None)  # Show all rows
-    pd.set_option('display.max_columns', None)  # Show all columns
-    
-    # Print the DataFrame in a readable format
-    print(df)
-    
-    # Save the DataFrame to a CSV file
-    df.to_csv(csv_file, index=False)
+    # Save the data to a CSV file
+    with open(csv_file, mode='w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=['id', 'elo', 'name', 'level'])
+        writer.writeheader()
+        writer.writerows(data)
     print(f"Data exported to {csv_file}")
 
 def main():
