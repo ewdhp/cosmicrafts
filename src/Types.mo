@@ -54,7 +54,8 @@ module {
     gamesWon: Nat;
   };
 
-  public type BasicStats = {
+  public type PlayerStats = {
+    playerId: PlayerId;
     energyUsed: Float;
     energyGenerated: Float;
     energyWasted: Float;
@@ -73,6 +74,10 @@ module {
     gameMode: Nat;
     botMode: Nat;
     botDifficulty: Nat;
+  };
+
+  public type BasicStats = {
+    playerStats: [PlayerStats];
   };
 
   public type PlayerGamesStats = {
