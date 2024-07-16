@@ -16,36 +16,27 @@ identity_lock = Lock()
 
 def execute_dfx_command(command, log_output=True):
     """Executes a shell command and logs the output."""
-    for attempt in range(3):  # Retry up to 3 times
-        result = subprocess.run(command, capture_output=True, text=True, shell=True)
-        if result.returncode == 0:
-            output = result.stdout.strip()
-            print(f"Command: {command}")
-            logging.info(f"Command: {command}")
-            if log_output:
-                print(f"Output: {output}\n")
-                logging.info(f"Output: {output}")
-            return output
-        else:
-            error_message = f"Command failed: {command}\n{result.stderr.strip()}"
-            logging.error(error_message)
-            if attempt < 2:  # Only retry if not the last attempt
-                logging.info("Retrying...")
-                time.sleep(1)
-            else:
-                raise Exception(error_message)  # Raise an exception to halt on error
-    return None
+    result = subprocess.run(command, capture_output=True, text=True, shell=True)
+    if result.returncode == 0:
+        output = result.stdout.strip()
+        print(f"Command: {command}")
+        logging.info(f"Command: {command}")
+        if log_output:
+            print(f"Output: {output}\n")
+            logging.info(f"Output: {output}")
+        return output
+    else:
+        error_message = f"Command failed: {command}\n{result.stderr.strip()}"
+        logging.error(error_message)
+        raise Exception(error_message)  # Raise an exception to halt on error
 
 def switch_identity(identity_name):
     """Switches the DFX identity using a lock to prevent race conditions."""
     with identity_lock:
         execute_dfx_command(f"dfx identity use {identity_name}", log_output=False)
-        for _ in range(5):  # Try up to 5 times
-            current_identity = execute_dfx_command("dfx identity whoami", log_output=False)
-            if current_identity == identity_name:
-                return
-            time.sleep(0.5)  # Wait for 0.5 seconds before checking again
-        raise Exception(f"Failed to switch identity to {identity_name}")
+        current_identity = execute_dfx_command("dfx identity whoami", log_output=False)
+        if current_identity != identity_name:
+            raise Exception(f"Failed to switch identity to {identity_name}")
 
 def get_principal(identity_name):
     """Gets the principal of the current identity."""
@@ -60,20 +51,15 @@ def get_match_searching(identity_name, player_game_data):
     command = f'dfx canister call cosmicrafts getMatchSearching \'{player_game_data_str}\''
     return execute_dfx_command(command)
 
-def is_game_matched(identity_name, retries=10):
-    """Checks if the game is matched with a maximum number of retries."""
+def is_game_matched(identity_name):
+    """Checks if the game is matched."""
     switch_identity(identity_name)
-    for _ in range(retries):
-        result = execute_dfx_command('dfx canister call cosmicrafts isGameMatched')
-        if "true" in result:
-            return result
-        time.sleep(1)  # Wait before retrying
+    result = execute_dfx_command('dfx canister call cosmicrafts isGameMatched')
     return result
 
 def save_finished_game(identity_name, game_id, stats):
     """Saves the finished game statistics."""
     switch_identity(identity_name)
-
     stats_str = (
         'record {'
         f'botDifficulty = {stats["botDifficulty"]}; '
@@ -97,7 +83,6 @@ def save_finished_game(identity_name, game_id, stats):
         f'playerId = principal "{stats["playerId"]}"; '
         '}'
     )
-
     command = (
         f'dfx canister call cosmicrafts saveFinishedGame \'({game_id}, {stats_str})\''
     )
@@ -156,92 +141,59 @@ def print_match_status(player, status):
 
 def match_worker():
     while True:
-        player1, player2 = match_queue.get()
-        if player1 is None and player2 is None:
+        player = match_queue.get()
+        if player is None:
             break  # Exit signal
-        process_match(player1, player2)
+        process_match(player)
         match_queue.task_done()
 
-def process_match(player1, player2):
-    """Processes a single match between two players."""
+def search_and_match(player):
     player_game_data = {
         "userAvatar": 1,  # Replace with actual avatar ID
         "listSavedKeys": []  # Replace with actual saved keys if needed
     }
-
-    # Start searching for a match for both players
-    print(f"{player1} starts searching for a match")
-    logging.info(f"{player1} starts searching for a match")
-    search_result1 = get_match_searching(player1, player_game_data)
-    print(f"{player1} search result: {search_result1}")
-    logging.info(f"{player1} search result: {search_result1}")
-    match_id1 = parse_match_id(search_result1)
-
-    print(f"{player2} starts searching for a match")
-    logging.info(f"{player2} starts searching for a match")
-    search_result2 = get_match_searching(player2, player_game_data)
-    print(f"{player2} search result: {search_result2}")
-    logging.info(f"{player2} search result: {search_result2}")
-    match_id2 = parse_match_id(search_result2)
-
-    # Wait until both players confirm the match
-    player1_matched = False
-    player2_matched = False
-
-    while not (player1_matched and player2_matched):
-        is_matched_result1 = is_game_matched(player1)
-        is_matched_result2 = is_game_matched(player2)
-        print_match_status(player1, is_matched_result1)
-        print_match_status(player2, is_matched_result2)
-
-        player1_matched = "true" in is_matched_result1
-        player2_matched = "true" in is_matched_result2
-
-        if not (player1_matched and player2_matched):
-            print("Waiting for both players to be matched...")
-            logging.info("Waiting for both players to be matched...")
+    search_result = get_match_searching(player, player_game_data)
+    print(f"{player} search result: {search_result}")
+    logging.info(f"{player} search result: {search_result}")
+    match_id = parse_match_id(search_result)
+    
+    for _ in range(3):  # Try to confirm match up to 3 times
+        is_matched_result = is_game_matched(player)
+        print_match_status(player, is_matched_result)
+        if "true" in is_matched_result:
+            return match_id
+        else:
             time.sleep(1)
+            search_result = get_match_searching(player, player_game_data)
+            match_id = parse_match_id(search_result)
+    raise Exception(f"{player} did not find a match after 3 attempts.")
 
-    print("Match found! Ending search.")
-    logging.info("Match found! Ending search.")
+def process_match(player):
+    """Processes a single match for a player."""
+    try:
+        match_id = search_and_match(player)
+        match_data = get_my_match_data(player)
+        print(f"Match data for {player}: {match_data}")
+        logging.info(f"Match data for {player}: {match_data}")
 
-    # Confirm both players are in the same match
-    match_data_player1 = get_my_match_data(player1)
-    match_data_player2 = get_my_match_data(player2)
-    print(f"Match data for {player1}: {match_data_player1}")
-    print(f"Match data for {player2}: {match_data_player2}")
-    logging.info(f"Match data for {player1}: {match_data_player1}")
-    logging.info(f"Match data for {player2}: {match_data_player2}")
-
-    # Send statistics immediately for the matched players
-    shared_energy_generated = random.randint(50, 210)
-    shared_sec_remaining = random.randint(30, 300)
-    won = random.choice([True, False])
-
-    for player, match_id in [(player1, match_id1), (player2, match_id2)]:
-        print(f"Sending statistics for match ID: {match_id} for {player}")
-        logging.info(f"Sending statistics for match ID: {match_id} for {player}")
-
-        stats = generate_random_stats(shared_energy_generated, shared_sec_remaining, won, get_principal(player))
-
-        try:
+        if match_data:
+            # Simulate sending statistics
+            shared_energy_generated = random.randint(50, 210)
+            shared_sec_remaining = random.randint(30, 300)
+            won = random.choice([True, False])
+            stats = generate_random_stats(shared_energy_generated, shared_sec_remaining, won, get_principal(player))
             save_finished_game(player, match_id, stats)
-        except Exception as e:
-            print(f"Error saving statistics for {player} in match {match_id}: {e}")
-            logging.error(f"Error saving statistics for {player} in match {match_id}: {e}")
-            return  # Halt on error
-
-    # Verify the basic stats after sending stats
-    for player, match_id in [(player1, match_id1), (player2, match_id2)]:
-        basic_stats = get_basic_stats(player, match_id)
-        print(f"Basic stats for match ID {match_id} after sending stats: {basic_stats}")
-        logging.info(f"Basic stats for match ID {match_id} after sending stats: {basic_stats}")
+        else:
+            print(f"Error: {player} did not find a match. Retrying search...")
+            logging.info(f"Error: {player} did not find a match. Retrying search...")
+            search_and_match(player)
+    except Exception as e:
+        print(f"Error processing match for {player}: {e}")
+        logging.error(f"Error processing match for {player}: {e}")
 
 def run_matches(num_matches):
     """Run the specified number of matches."""
-    num_players = num_matches * 2  # Each match requires 2 players
-
-    players = [f"player{i}" for i in range(1, num_players + 1)]  # Create player identities
+    players = [f"player{i}" for i in range(1, num_matches + 1)]  # Create player identities
 
     # Initialize the match queue
     global match_queue
@@ -255,16 +207,16 @@ def run_matches(num_matches):
         t.start()
         threads.append(t)
 
-    # Add matches to the queue
-    for i in range(0, num_players, 2):
-        match_queue.put((players[i], players[i + 1]))
+    # Add players to the queue
+    for player in players:
+        match_queue.put(player)
 
     # Wait for all matches to be processed
     match_queue.join()
 
     # Stop worker threads
     for _ in range(num_workers):
-        match_queue.put((None, None))
+        match_queue.put(None)
     for t in threads:
         t.join()
 
