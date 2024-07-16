@@ -1119,10 +1119,6 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
   };
 
   // Queries
-  public query func searchUserByPrincipal(PlayerId : PlayerId) : async ?Player {
-    return players.get(PlayerId);
-  };
-
   public query func searchUserByUsername(username : Username) : async [Player] {
     let result : Buffer.Buffer<Player> = Buffer.Buffer<Player>(0);
     for ((_, userRecord) in players.entries()) {
@@ -1133,6 +1129,7 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
     return Buffer.toArray(result);
   };
 
+  // Gets a list of principals
   public query ({ caller: PlayerId }) func getFriendsList() : async ?[PlayerId] {
       switch (players.get(caller)) {
           case (null) {
@@ -1250,34 +1247,9 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
     };
   };
 
-  public query func getMatchData(matchID : Nat) : async ?MatchData {
-    switch (searching.get(matchID)) {
-      case (null) {
-        switch (inProgress.get(matchID)) {
-          case (null) {
-            switch (finishedGames.get(matchID)) {
-              case (null) {
-                return (null);
-              };
-              case (?_m) {
-                return (?_m);
-              };
-            };
-          };
-          case (?_m) {
-            return (?_m);
-          };
-        };
-      };
-      case (?_m) {
-        return (?_m);
-      };
-    };
-  };
-
+  // For loading match screen
   public shared composite query (msg) func getMyMatchData() : async (?FullMatchData, Nat) {
       assert (msg.caller != NULL_PRINCIPAL and msg.caller != ANON_PRINCIPAL);
-
       switch (playerStatus.get(msg.caller)) {
           case (null) return (null, 0);
           case (?_s) {
@@ -1340,30 +1312,54 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
       };
   };
 
+
+  // QMatch History
+  //First get all the matches of a principal
+  public query func getMatchIDsByPrincipal(player: PlayerId): async [MatchID] {
+      let buffer = Buffer.Buffer<MatchID>(0);
+      for ((matchID, matchData) in finishedGames.entries()) {
+          if (matchData.player1.id == player) {
+              buffer.add(matchID);
+          } else {
+              switch (matchData.player2) {
+                  case (null) {};
+                  case (?p2) {
+                      if (p2.id == player) {
+                          buffer.add(matchID);
+                      }
+                  };
+              }
+          }
+      };
+      return Buffer.toArray(buffer);
+  };
+  // then get the info of the matches
   public shared query func getMatchStats(MatchID : MatchID) : async ?BasicStats {
     return basicStats.get(MatchID);
   };
 
-  public query func getMatchIDsByPrincipal(player: PlayerId): async [MatchID] {
-    let buffer = Buffer.Buffer<MatchID>(0);
-    for ((matchID, matchData) in finishedGames.entries()) {
-        if (matchData.player1.id == player) {
-            buffer.add(matchID);
-        } else {
-            switch (matchData.player2) {
-                case (null) {};
-                case (?p2) {
-                    if (p2.id == player) {
-                        buffer.add(matchID);
-                    }
-                };
-            }
-        }
-    };
-    return Buffer.toArray(buffer);
-};
-
   // QComposite 
+  public query func getMatchHistoryByPrincipal(player: PlayerId): async [(MatchID, ?BasicStats)] {
+      let buffer = Buffer.Buffer<(MatchID, ?BasicStats)>(0);
+      for ((matchID, matchData) in finishedGames.entries()) {
+          if (matchData.player1.id == player) {
+              let matchStats = basicStats.get(matchID);
+              buffer.add((matchID, matchStats));
+          } else {
+              switch (matchData.player2) {
+                  case (null) {};
+                  case (?p2) {
+                      if (p2.id == player) {
+                          let matchStats = basicStats.get(matchID);
+                          buffer.add((matchID, matchStats));
+                      }
+                  };
+              }
+          }
+      };
+      return Buffer.toArray(buffer);
+  };
+
   public query func getPlayerInfo(player: PlayerId) : async ?(Player, PlayerGamesStats, AverageStats) {
     switch (players.get(player)) {
       case (null) { return null; };
