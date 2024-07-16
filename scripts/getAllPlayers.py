@@ -1,6 +1,7 @@
 import subprocess
 import re
-import csv
+import pandas as pd
+import os
 
 def fetch_data_from_canister():
     try:
@@ -26,32 +27,63 @@ def fetch_data_from_canister():
 
 def parse_raw_output(raw_output):
     # Use a regex to find all records
-    pattern = re.compile(r'record\s*{\s*id\s*=\s*principal\s*"([^"]+)";\s*elo\s*=\s*([\d.]+)\s*:\s*float64;\s*name\s*=\s*"([^"]+)";\s*level\s*=\s*(\d+)\s*:\s*nat;\s*}')
+    pattern = re.compile(
+        r'record\s*{\s*id\s*=\s*principal\s*"([^"]+)";\s*'
+        r'elo\s*=\s*([\d.]+)\s*:\s*float64;\s*'
+        r'username\s*=\s*"([^"]+)";\s*'
+        r'description\s*=\s*"([^"]*)";\s*'
+        r'level\s*=\s*(\d+)\s*:\s*nat;\s*'
+        r'registrationDate\s*=\s*([\d_]+)\s*:\s*int;\s*'
+        r'friends\s*=\s*vec\s*{[^}]*};\s*'
+        r'avatar\s*=\s*(\d+)\s*:\s*nat;\s*'
+        r'}'
+    )
     matches = pattern.findall(raw_output)
+
+    # Debug output to check if matches are found
+    print(f"Matches found: {len(matches)}")
 
     # Convert matches to a list of dictionaries
     data = []
     for match in matches:
+        registration_date = int(match[5].replace('_', ''))
         data.append({
             'id': match[0],
             'elo': float(match[1]),
-            'name': match[2],
-            'level': int(match[3])
+            'username': match[2],
+            'description': match[3],
+            'level': int(match[4]),
+            'registrationDate': registration_date,
+            'avatar': int(match[6])
         })
+
+    # Debug output to check the parsed data
+    print(f"Parsed data: {data}")
 
     return data
 
 def format_data(data, csv_file):
-    # Print the data in a readable format
-    print("id,elo,name,level")
-    for record in data:
-        print(f"{record['id']},{record['elo']},{record['name']},{record['level']}")
+    # Convert the data to a DataFrame
+    df = pd.DataFrame(data)
     
-    # Save the data to a CSV file
-    with open(csv_file, mode='w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=['id', 'elo', 'name', 'level'])
-        writer.writeheader()
-        writer.writerows(data)
+    # Set display options to show more rows and columns
+    pd.set_option('display.max_rows', None)  # Show all rows
+    pd.set_option('display.max_columns', None)  # Show all columns
+    
+    # Convert the registration date to a readable format
+    df['registrationDate'] = pd.to_datetime(df['registrationDate'], unit='ns')
+    
+    # Sort the DataFrame by ELO in descending order
+    df = df.sort_values(by='elo', ascending=False)
+    
+    # Print the DataFrame in a readable format
+    print(df)
+    
+    # Ensure the logs directory exists
+    os.makedirs(os.path.dirname(csv_file), exist_ok=True)
+    
+    # Save the DataFrame to a CSV file
+    df.to_csv(csv_file, index=False)
     print(f"Data exported to {csv_file}")
 
 def main():
@@ -64,6 +96,8 @@ def main():
         
         # Format and display data
         format_data(data, csv_file)
+    else:
+        print("No data fetched from the canister.")
 
 if __name__ == "__main__":
     main()
