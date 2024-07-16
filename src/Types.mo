@@ -9,6 +9,7 @@ module {
   public type RegistrationDate = Time.Time;
   public type Level = Nat;
   public type MatchID = Nat;
+
   public type MatchResult = Text;
   public type MatchMap = Text;
   public type PlayerFaction = Text;
@@ -24,9 +25,6 @@ module {
     level: Level;
     elo: Float;
     friends: [FriendDetails];
-    stats: PlayerGamesStats;
-    averageStats: AverageStats;
-    // faction: Faction;
   };
 
     public type FriendDetails = {

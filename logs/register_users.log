@@ -4190,3 +4190,349 @@ WARN: Please add the following to dfx.json to store local candid file into metad
 )
 2024-07-15 16:39:36,451 - Switching back to default identity
 2024-07-15 16:39:36,460 - Command: dfx identity use default
+2024-07-16 03:04:13,659 - Switching to identity player1
+2024-07-16 03:04:13,691 - Command: dfx identity use player1
+2024-07-16 03:04:15,621 - Command: dfx canister call cosmicrafts registerPlayer '("jmewaxhehvza", 23)'
+2024-07-16 03:04:15,621 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+)
+2024-07-16 03:04:15,622 - Switching to identity player2
+2024-07-16 03:04:15,648 - Command: dfx identity use player2
+2024-07-16 03:04:18,009 - Command: dfx canister call cosmicrafts registerPlayer '("ciyaxvpghcqb", 19)'
+2024-07-16 03:04:18,009 - Output: (
+  true,
+  principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae",
+)
+2024-07-16 03:04:18,010 - Switching to identity player3
+2024-07-16 03:04:18,038 - Command: dfx identity use player3
+2024-07-16 03:04:19,614 - Command: dfx canister call cosmicrafts registerPlayer '("jvwnpcwdocbb", 27)'
+2024-07-16 03:04:19,614 - Output: (
+  true,
+  principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe",
+)
+2024-07-16 03:04:19,615 - Switching to identity player4
+2024-07-16 03:04:19,641 - Command: dfx identity use player4
+2024-07-16 03:04:22,151 - Command: dfx canister call cosmicrafts registerPlayer '("zgomhlikdknz", 14)'
+2024-07-16 03:04:22,152 - Output: (
+  true,
+  principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae",
+)
+2024-07-16 03:04:22,153 - Switching to identity player5
+2024-07-16 03:04:22,168 - Command: dfx identity use player5
+2024-07-16 03:04:23,888 - Command: dfx canister call cosmicrafts registerPlayer '("pldtvqmqaolz", 30)'
+2024-07-16 03:04:23,888 - Output: (
+  true,
+  principal "xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae",
+)
+2024-07-16 03:04:23,889 - Switching to identity player6
+2024-07-16 03:04:23,913 - Command: dfx identity use player6
+2024-07-16 03:04:26,446 - Command: dfx canister call cosmicrafts registerPlayer '("imnumvwqwtqp", 14)'
+2024-07-16 03:04:26,446 - Output: (
+  true,
+  principal "yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe",
+)
+2024-07-16 03:04:26,446 - Switching to identity player7
+2024-07-16 03:04:26,458 - Command: dfx identity use player7
+2024-07-16 03:04:27,979 - Command: dfx canister call cosmicrafts registerPlayer '("rqkorlhbaylm", 26)'
+2024-07-16 03:04:27,980 - Output: (
+  true,
+  principal "u27n5-2c5ef-ackpa-jyrs5-yyzkp-dukw4-p2ma5-4rmb7-a7tv6-rw42b-sqe",
+)
+2024-07-16 03:04:27,980 - Switching to identity player8
+2024-07-16 03:04:28,007 - Command: dfx identity use player8
+2024-07-16 03:04:29,652 - Command: dfx canister call cosmicrafts registerPlayer '("fwdxdynahfet", 31)'
+2024-07-16 03:04:29,652 - Output: (
+  true,
+  principal "u5clb-edy3l-xi7wd-6l2jq-xk5bp-2t4eh-3hut6-r5svq-6qqoc-d4npk-mae",
+)
+2024-07-16 03:04:29,652 - Switching to identity player9
+2024-07-16 03:04:29,675 - Command: dfx identity use player9
+2024-07-16 03:04:31,066 - Command: dfx canister call cosmicrafts registerPlayer '("lbacjmdshqhj", 9)'
+2024-07-16 03:04:31,067 - Output: (
+  true,
+  principal "vprmx-skch2-lpter-zjlzm-yymzl-6t7yu-yqokk-3khkx-73gzz-pi57f-cqe",
+)
+2024-07-16 03:04:31,067 - Switching to identity player10
+2024-07-16 03:04:31,087 - Command: dfx identity use player10
+2024-07-16 03:04:32,472 - Command: dfx canister call cosmicrafts registerPlayer '("pztetlyerzta", 16)'
+2024-07-16 03:04:32,472 - Output: (
+  true,
+  principal "jk4at-pt2hi-weyq6-xgshn-7ofm2-fag6z-7npgt-pfbwf-iomah-voxgc-oqe",
+)
+2024-07-16 03:04:32,473 - Switching back to default identity
+2024-07-16 03:04:32,499 - Command: dfx identity use default
+2024-07-16 05:48:40,864 - Switching to identity player1
+2024-07-16 05:48:40,873 - Command: dfx identity use player1
+2024-07-16 05:48:42,669 - Command: dfx canister call cosmicrafts registerPlayer '("khxtnspntwim", 10)'
+2024-07-16 05:48:42,669 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+)
+2024-07-16 05:48:42,669 - Switching to identity player2
+2024-07-16 05:48:42,680 - Command: dfx identity use player2
+2024-07-16 05:48:44,006 - Command: dfx canister call cosmicrafts registerPlayer '("epyllboyhrht", 8)'
+2024-07-16 05:48:44,006 - Output: (
+  true,
+  principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae",
+)
+2024-07-16 05:48:44,006 - Switching to identity player3
+2024-07-16 05:48:44,018 - Command: dfx identity use player3
+2024-07-16 05:48:45,841 - Command: dfx canister call cosmicrafts registerPlayer '("liznnptbgbhv", 9)'
+2024-07-16 05:48:45,842 - Output: (
+  true,
+  principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe",
+)
+2024-07-16 05:48:45,842 - Switching to identity player4
+2024-07-16 05:48:45,864 - Command: dfx identity use player4
+2024-07-16 05:48:47,334 - Command: dfx canister call cosmicrafts registerPlayer '("zlkqekggpvks", 31)'
+2024-07-16 05:48:47,334 - Output: (
+  true,
+  principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae",
+)
+2024-07-16 05:48:47,335 - Switching back to default identity
+2024-07-16 05:48:47,347 - Command: dfx identity use default
+2024-07-16 06:16:05,376 - Switching to identity player1
+2024-07-16 06:16:05,402 - Command: dfx identity use player1
+2024-07-16 06:16:07,525 - Command: dfx canister call cosmicrafts registerPlayer '("byaigxdzimic", 16)'
+2024-07-16 06:16:07,526 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+)
+2024-07-16 06:16:07,526 - Switching to identity player2
+2024-07-16 06:16:07,554 - Command: dfx identity use player2
+2024-07-16 06:16:10,157 - Command: dfx canister call cosmicrafts registerPlayer '("hiqcxxakaawa", 9)'
+2024-07-16 06:16:10,157 - Output: (
+  true,
+  principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae",
+)
+2024-07-16 06:16:10,157 - Switching to identity player3
+2024-07-16 06:16:10,163 - Command: dfx identity use player3
+2024-07-16 06:16:11,492 - Command: dfx canister call cosmicrafts registerPlayer '("bmabovcukftz", 19)'
+2024-07-16 06:16:11,492 - Output: (
+  true,
+  principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe",
+)
+2024-07-16 06:16:11,493 - Switching to identity player4
+2024-07-16 06:16:11,520 - Command: dfx identity use player4
+2024-07-16 06:16:13,918 - Command: dfx canister call cosmicrafts registerPlayer '("rrhnbrfpyzgt", 10)'
+2024-07-16 06:16:13,918 - Output: (
+  true,
+  principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae",
+)
+2024-07-16 06:16:13,919 - Switching back to default identity
+2024-07-16 06:16:13,945 - Command: dfx identity use default
+2024-07-16 12:57:15,391 - Switching to identity player1
+2024-07-16 12:57:15,423 - Command: dfx identity use player1
+2024-07-16 12:57:17,745 - Command: dfx canister call cosmicrafts registerPlayer '("dcmfldhwgadp", 11)'
+2024-07-16 12:57:17,745 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+)
+2024-07-16 12:57:17,745 - Switching to identity player2
+2024-07-16 12:57:17,773 - Command: dfx identity use player2
+2024-07-16 12:57:19,267 - Command: dfx canister call cosmicrafts registerPlayer '("kpbblnbwwmsh", 21)'
+2024-07-16 12:57:19,267 - Output: (
+  true,
+  principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae",
+)
+2024-07-16 12:57:19,268 - Switching to identity player3
+2024-07-16 12:57:19,295 - Command: dfx identity use player3
+2024-07-16 12:57:21,596 - Command: dfx canister call cosmicrafts registerPlayer '("ohzovsveaczw", 22)'
+2024-07-16 12:57:21,597 - Output: (
+  true,
+  principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe",
+)
+2024-07-16 12:57:21,597 - Switching to identity player4
+2024-07-16 12:57:21,624 - Command: dfx identity use player4
+2024-07-16 12:57:22,947 - Command: dfx canister call cosmicrafts registerPlayer '("cqizopjugvwd", 31)'
+2024-07-16 12:57:22,948 - Output: (
+  true,
+  principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae",
+)
+2024-07-16 12:57:22,948 - Switching to identity player5
+2024-07-16 12:57:22,974 - Command: dfx identity use player5
+2024-07-16 12:57:24,652 - Command: dfx canister call cosmicrafts registerPlayer '("srmmoalykhmb", 28)'
+2024-07-16 12:57:24,652 - Output: (
+  true,
+  principal "xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae",
+)
+2024-07-16 12:57:24,652 - Switching to identity player6
+2024-07-16 12:57:24,665 - Command: dfx identity use player6
+2024-07-16 12:57:27,241 - Command: dfx canister call cosmicrafts registerPlayer '("udediddbsltj", 12)'
+2024-07-16 12:57:27,241 - Output: (
+  true,
+  principal "yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe",
+)
+2024-07-16 12:57:27,241 - Switching to identity player7
+2024-07-16 12:57:27,253 - Command: dfx identity use player7
+2024-07-16 12:57:29,884 - Command: dfx canister call cosmicrafts registerPlayer '("cqobdmwxnylo", 21)'
+2024-07-16 12:57:29,884 - Output: (
+  true,
+  principal "u27n5-2c5ef-ackpa-jyrs5-yyzkp-dukw4-p2ma5-4rmb7-a7tv6-rw42b-sqe",
+)
+2024-07-16 12:57:29,885 - Switching to identity player8
+2024-07-16 12:57:29,898 - Command: dfx identity use player8
+2024-07-16 12:57:31,900 - Command: dfx canister call cosmicrafts registerPlayer '("dgcyamjcciyc", 3)'
+2024-07-16 12:57:31,900 - Output: (
+  true,
+  principal "u5clb-edy3l-xi7wd-6l2jq-xk5bp-2t4eh-3hut6-r5svq-6qqoc-d4npk-mae",
+)
+2024-07-16 12:57:31,900 - Switching to identity player9
+2024-07-16 12:57:31,908 - Command: dfx identity use player9
+2024-07-16 12:57:34,439 - Command: dfx canister call cosmicrafts registerPlayer '("itrlwthkdruz", 25)'
+2024-07-16 12:57:34,439 - Output: (
+  true,
+  principal "vprmx-skch2-lpter-zjlzm-yymzl-6t7yu-yqokk-3khkx-73gzz-pi57f-cqe",
+)
+2024-07-16 12:57:34,439 - Switching to identity player10
+2024-07-16 12:57:34,445 - Command: dfx identity use player10
+2024-07-16 12:57:36,108 - Command: dfx canister call cosmicrafts registerPlayer '("srqqgiwrycaw", 21)'
+2024-07-16 12:57:36,108 - Output: (
+  true,
+  principal "jk4at-pt2hi-weyq6-xgshn-7ofm2-fag6z-7npgt-pfbwf-iomah-voxgc-oqe",
+)
+2024-07-16 12:57:36,109 - Switching to identity player11
+2024-07-16 12:57:36,131 - Command: dfx identity use player11
+2024-07-16 12:57:37,455 - Command: dfx canister call cosmicrafts registerPlayer '("vcgaiibslydw", 32)'
+2024-07-16 12:57:37,455 - Output: (
+  true,
+  principal "owq2d-74g4m-fgfuv-edarv-4me7r-zutsu-ifayi-yvada-drs2n-a32sm-pae",
+)
+2024-07-16 12:57:37,455 - Switching to identity player12
+2024-07-16 12:57:37,463 - Command: dfx identity use player12
+2024-07-16 12:57:39,066 - Command: dfx canister call cosmicrafts registerPlayer '("bizggylzuvgy", 33)'
+2024-07-16 12:57:39,067 - Output: (
+  true,
+  principal "3qzhe-sszds-j2e4l-xlobi-x3jze-pvz7o-g2scw-opocm-tmjjv-hakpz-uqe",
+)
+2024-07-16 12:57:39,067 - Switching to identity player13
+2024-07-16 12:57:39,083 - Command: dfx identity use player13
+2024-07-16 12:57:41,103 - Command: dfx canister call cosmicrafts registerPlayer '("nuutifjxqiav", 9)'
+2024-07-16 12:57:41,103 - Output: (
+  true,
+  principal "pekaq-s2b4u-boguu-m6237-bsprn-obpu3-e7tdc-5ptst-vjn7s-crbkg-eae",
+)
+2024-07-16 12:57:41,103 - Switching to identity player14
+2024-07-16 12:57:41,111 - Command: dfx identity use player14
+2024-07-16 12:57:42,889 - Command: dfx canister call cosmicrafts registerPlayer '("clcqklpiyuho", 13)'
+2024-07-16 12:57:42,889 - Output: (
+  true,
+  principal "5mixo-jd2qz-rgdby-5ymy3-fz5va-okspk-7nknc-vqw2k-huoqg-fa3h7-fqe",
+)
+2024-07-16 12:57:42,890 - Switching to identity player15
+2024-07-16 12:57:42,896 - Command: dfx identity use player15
+2024-07-16 12:57:45,351 - Command: dfx canister call cosmicrafts registerPlayer '("axhmymhqxvta", 4)'
+2024-07-16 12:57:45,351 - Output: (
+  true,
+  principal "uj5fm-dqha5-odcky-h6ye7-rdqhu-eckgn-wjzdz-q6vev-a2b6c-goyvd-qae",
+)
+2024-07-16 12:57:45,352 - Switching to identity player16
+2024-07-16 12:57:45,378 - Command: dfx identity use player16
+2024-07-16 12:57:46,716 - Command: dfx canister call cosmicrafts registerPlayer '("fjjjsmmjcria", 31)'
+2024-07-16 12:57:46,717 - Output: (
+  true,
+  principal "mgqbe-shk2y-y7tsy-ysdmj-fj7aa-3inyq-um52k-zd52m-yr5ob-uye4f-3ae",
+)
+2024-07-16 12:57:46,717 - Switching to identity player17
+2024-07-16 12:57:46,744 - Command: dfx identity use player17
+2024-07-16 12:57:49,047 - Command: dfx canister call cosmicrafts registerPlayer '("gdmmgkiywaao", 26)'
+2024-07-16 12:57:49,048 - Output: (
+  true,
+  principal "o6oqo-qj2hc-utbuv-ff324-uzsup-vfyha-pfxlj-tl424-r3itv-rve3d-oae",
+)
+2024-07-16 12:57:49,048 - Switching to identity player18
+2024-07-16 12:57:49,073 - Command: dfx identity use player18
+2024-07-16 12:57:50,461 - Command: dfx canister call cosmicrafts registerPlayer '("emiayhptebqm", 4)'
+2024-07-16 12:57:50,461 - Output: (
+  true,
+  principal "vubuv-57ljt-w75cm-k3li5-wfiwp-bjj2i-qaqlb-mpqen-al3j6-wh7ky-4qe",
+)
+2024-07-16 12:57:50,461 - Switching to identity player19
+2024-07-16 12:57:50,469 - Command: dfx identity use player19
+2024-07-16 12:57:52,222 - Command: dfx canister call cosmicrafts registerPlayer '("dyfqpowaqmwf", 16)'
+2024-07-16 12:57:52,222 - Output: (
+  true,
+  principal "ka7w4-lj65x-bgaan-azasz-nlyzi-mkpk5-f7cie-g6a72-zjsgw-i5nsl-iqe",
+)
+2024-07-16 12:57:52,222 - Switching to identity player20
+2024-07-16 12:57:52,240 - Command: dfx identity use player20
+2024-07-16 12:57:53,596 - Command: dfx canister call cosmicrafts registerPlayer '("lihvsleuzrde", 31)'
+2024-07-16 12:57:53,596 - Output: (
+  true,
+  principal "evouz-6wuxv-ql7km-ef6h7-lxew4-s7yzc-f2zby-toqmm-i4jl5-ibm3o-vqe",
+)
+2024-07-16 12:57:53,597 - Switching back to default identity
+2024-07-16 12:57:53,624 - Command: dfx identity use default
+2024-07-16 13:20:43,117 - Switching to identity player1
+2024-07-16 13:20:43,148 - Command: dfx identity use player1
+2024-07-16 13:20:44,572 - Command: dfx canister call cosmicrafts registerPlayer '("vpanfgqpmewf", 26)'
+2024-07-16 13:20:44,572 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+)
+2024-07-16 13:20:44,573 - Switching to identity player2
+2024-07-16 13:20:44,601 - Command: dfx identity use player2
+2024-07-16 13:20:46,248 - Command: dfx canister call cosmicrafts registerPlayer '("mbkjuwbojnwr", 32)'
+2024-07-16 13:20:46,248 - Output: (
+  true,
+  principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae",
+)
+2024-07-16 13:20:46,248 - Switching to identity player3
+2024-07-16 13:20:46,277 - Command: dfx identity use player3
+2024-07-16 13:20:48,262 - Command: dfx canister call cosmicrafts registerPlayer '("muhirbprupoi", 21)'
+2024-07-16 13:20:48,262 - Output: (
+  true,
+  principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe",
+)
+2024-07-16 13:20:48,263 - Switching to identity player4
+2024-07-16 13:20:48,290 - Command: dfx identity use player4
+2024-07-16 13:20:49,778 - Command: dfx canister call cosmicrafts registerPlayer '("gihghcbobumm", 16)'
+2024-07-16 13:20:49,778 - Output: (
+  true,
+  principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae",
+)
+2024-07-16 13:20:49,779 - Switching to identity player5
+2024-07-16 13:20:49,806 - Command: dfx identity use player5
+2024-07-16 13:20:51,322 - Command: dfx canister call cosmicrafts registerPlayer '("dgjxebjgvpnr", 23)'
+2024-07-16 13:20:51,323 - Output: (
+  true,
+  principal "xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae",
+)
+2024-07-16 13:20:51,323 - Switching to identity player6
+2024-07-16 13:20:51,351 - Command: dfx identity use player6
+2024-07-16 13:20:53,248 - Command: dfx canister call cosmicrafts registerPlayer '("xofxyzytcspm", 5)'
+2024-07-16 13:20:53,248 - Output: (
+  true,
+  principal "yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe",
+)
+2024-07-16 13:20:53,249 - Switching to identity player7
+2024-07-16 13:20:53,271 - Command: dfx identity use player7
+2024-07-16 13:20:55,877 - Command: dfx canister call cosmicrafts registerPlayer '("zxceaelsdpat", 19)'
+2024-07-16 13:20:55,877 - Output: (
+  true,
+  principal "u27n5-2c5ef-ackpa-jyrs5-yyzkp-dukw4-p2ma5-4rmb7-a7tv6-rw42b-sqe",
+)
+2024-07-16 13:20:55,878 - Switching to identity player8
+2024-07-16 13:20:55,900 - Command: dfx identity use player8
+2024-07-16 13:20:57,469 - Command: dfx canister call cosmicrafts registerPlayer '("pzvuffsihybz", 2)'
+2024-07-16 13:20:57,470 - Output: (
+  true,
+  principal "u5clb-edy3l-xi7wd-6l2jq-xk5bp-2t4eh-3hut6-r5svq-6qqoc-d4npk-mae",
+)
+2024-07-16 13:20:57,470 - Switching to identity player9
+2024-07-16 13:20:57,496 - Command: dfx identity use player9
+2024-07-16 13:20:59,818 - Command: dfx canister call cosmicrafts registerPlayer '("uvjipcufnkcj", 32)'
+2024-07-16 13:20:59,818 - Output: (
+  true,
+  principal "vprmx-skch2-lpter-zjlzm-yymzl-6t7yu-yqokk-3khkx-73gzz-pi57f-cqe",
+)
+2024-07-16 13:20:59,819 - Switching to identity player10
+2024-07-16 13:20:59,845 - Command: dfx identity use player10
+2024-07-16 13:21:01,907 - Command: dfx canister call cosmicrafts registerPlayer '("hwjmdfbmhoee", 22)'
+2024-07-16 13:21:01,908 - Output: (
+  true,
+  principal "jk4at-pt2hi-weyq6-xgshn-7ofm2-fag6z-7npgt-pfbwf-iomah-voxgc-oqe",
+)
+2024-07-16 13:21:01,908 - Switching back to default identity
+2024-07-16 13:21:01,935 - Command: dfx identity use default
