@@ -16,10 +16,8 @@ def execute_dfx_command(command, log_output=True):
         result = subprocess.run(command, capture_output=True, text=True, shell=True)
         if result.returncode == 0:
             output = result.stdout.strip()
-            print(f"Command: {command}")
-            logging.info(f"Command: {command}")
             if log_output:
-                print(f"Output: {output}\n")
+                logging.info(f"Command: {command}")
                 logging.info(f"Output: {output}")
             return output
         else:
@@ -32,7 +30,6 @@ def execute_dfx_command(command, log_output=True):
                 raise Exception(error_message)  # Raise an exception to halt on error
     return None
 
-
 def switch_identity(identity_name):
     """Switches the DFX identity."""
     execute_dfx_command(f"dfx identity use {identity_name}", log_output=False)
@@ -41,6 +38,7 @@ def get_principal(identity_name):
     """Gets the principal of the current identity."""
     switch_identity(identity_name)
     principal = execute_dfx_command("dfx identity get-principal")
+    logging.info(f"{identity_name} principal: {principal}")
     return principal
 
 def get_match_searching(identity_name, player_game_data):
@@ -90,10 +88,7 @@ def save_finished_game(identity_name, game_id, stats):
         '}'
     )
 
-    command = (
-        f'dfx canister call cosmicrafts saveFinishedGame \'({game_id}, {stats_str})\''
-    )
-    print(f"Constructed command: {command}")
+    command = f'dfx canister call cosmicrafts saveFinishedGame \'({game_id}, {stats_str})\''
     logging.info(f"Constructed command: {command}")
     return execute_dfx_command(command)
 
@@ -103,9 +98,8 @@ def get_my_match_data(identity_name):
     command = 'dfx canister call cosmicrafts getMyMatchData'
     return execute_dfx_command(command)
 
-def get_basic_stats(identity_name, match_id):
+def get_basic_stats(match_id):
     """Gets basic stats for the specified match ID."""
-    switch_identity(identity_name)
     command = f'dfx canister call cosmicrafts getMatchStats {match_id}'
     return execute_dfx_command(command)
 
@@ -142,7 +136,7 @@ def generate_random_stats(player_id, shared_energy_generated, shared_sec_remaini
     }
     return stats
 
-def run_matches(num_matches):
+def run_matches(num_matches, loop):
     """Run the specified number of matches."""
     num_players = num_matches * 2  # Each match requires 2 players
 
@@ -170,28 +164,24 @@ def run_matches(num_matches):
             print(f"{player1} starts searching for a match")
             logging.info(f"{player1} starts searching for a match")
             search_result1 = get_match_searching(player1, player_game_data)
-            print(f"{player1} search result: {search_result1}")
             logging.info(f"{player1} search result: {search_result1}")
             match_id1 = parse_match_id(search_result1)
             match_ids.append((player1, match_id1))
 
             # Simulate player1 activation and match confirmation
             active_result1 = set_player_active(player1)
-            print(f"{player1} active result: {active_result1}")
             logging.info(f"{player1} active result: {active_result1}")
 
             # Start searching for a match for player2
             print(f"{player2} starts searching for a match")
             logging.info(f"{player2} starts searching for a match")
             search_result2 = get_match_searching(player2, player_game_data)
-            print(f"{player2} search result: {search_result2}")
             logging.info(f"{player2} search result: {search_result2}")
             match_id2 = parse_match_id(search_result2)
             match_ids.append((player2, match_id2))
 
             # Simulate player2 activation and match confirmation
             active_result2 = set_player_active(player2)
-            print(f"{player2} active result: {active_result2}")
             logging.info(f"{player2} active result: {active_result2}")
 
             # Wait until both players confirm the match
@@ -201,9 +191,7 @@ def run_matches(num_matches):
             while not (player1_matched and player2_matched):
                 is_matched_result1 = is_game_matched(player1)
                 is_matched_result2 = is_game_matched(player2)
-                print(f"Is game matched result for {player1}: {is_matched_result1}")
                 logging.info(f"Is game matched result for {player1}: {is_matched_result1}")
-                print(f"Is game matched result for {player2}: {is_matched_result2}")
                 logging.info(f"Is game matched result for {player2}: {is_matched_result2}")
 
                 player1_matched = "true" in is_matched_result1
@@ -212,6 +200,7 @@ def run_matches(num_matches):
                 if not (player1_matched and player2_matched):
                     print("Waiting for both players to be matched...")
                     logging.info("Waiting for both players to be matched...")
+                    time.sleep(1)
 
             print("Match found! Ending search.")
             logging.info("Match found! Ending search.")
@@ -219,8 +208,6 @@ def run_matches(num_matches):
             # Confirm both players are in the same match
             match_data_player1 = get_my_match_data(player1)
             match_data_player2 = get_my_match_data(player2)
-            print(f"Match data for {player1}: {match_data_player1}")
-            print(f"Match data for {player2}: {match_data_player2}")
             logging.info(f"Match data for {player1}: {match_data_player1}")
             logging.info(f"Match data for {player2}: {match_data_player2}")
 
@@ -233,32 +220,34 @@ def run_matches(num_matches):
             won_player2 = not won_player1
 
             for player, match_id, won in [(player1, match_id1, won_player1), (player2, match_id2, won_player2)]:
-                print(f"Sending statistics for match ID: {match_id} for {player}")
                 logging.info(f"Sending statistics for match ID: {match_id} for {player}")
 
                 stats = generate_random_stats(principals[player], shared_energy_generated, shared_sec_remaining, won)
 
                 try:
                     save_finished_game(player, match_id, stats)
+                    print(f"Statistics sent for {player} in match {match_id}")
+                    logging.info(f"Statistics saved for {player} in match {match_id}")
                 except Exception as e:
-                    print(f"Error saving statistics for {player} in match {match_id}: {e}")
-                    logging.error(f"Error saving statistics for {player} in match {match_id}: {e}")
+                    error_message = f"Error saving statistics for {player} in match {match_id}: {e}"
+                    logging.error(error_message)
+                    print(error_message)
                     return  # Halt on error
 
-                # Verify the basic stats after the last player sends the stats
-                basic_stats = get_basic_stats(player, match_id)
-                print(f"Basic stats for match ID {match_id} after sending stats: {basic_stats}")
-                logging.info(f"Basic stats for match ID {match_id} after sending stats: {basic_stats}")
+            # Display basic stats after all stats are sent
+            basic_stats = get_basic_stats(match_id1)
+            print(f"Basic stats for match ID {match_id1}: {basic_stats}")
+            logging.info(f"Basic stats for match ID {match_id1}: {basic_stats}")
 
             match_ids.clear()  # Clear match IDs after saving stats
 
-        print(f"Finished {num_matches} matches. Looping..." if loop else f"Finished {num_matches} matches.")
-        logging.info(f"Finished {num_matches} matches. Looping..." if loop else f"Finished {num_matches} matches.")
+        print(f"Finished {num_matches} matches. {'Looping...' if loop else ''}")
+        logging.info(f"Finished {num_matches} matches. {'Looping...' if loop else ''}")
 
         if not loop:
             break
 
-        time.sleep(0)  # Add a delay before starting the next loop, if desired
+        time.sleep(1)  # Add a delay before starting the next loop, if desired
 
 if __name__ == "__main__":
     def exit_gracefully(signum, frame):
@@ -270,9 +259,12 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit_gracefully)
     signal.signal(signal.SIGTERM, exit_gracefully)
 
+    # Clear the terminal at the start
+    subprocess.run('reset')
+
     try:
         num_matches = int(input("Enter the number of matches to run: "))
         loop = input("Do you want to loop indefinitely? (yes/no): ").strip().lower() == "yes"
-        run_matches(num_matches)
+        run_matches(num_matches, loop)
     finally:
         switch_identity("default")
