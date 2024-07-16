@@ -1119,6 +1119,51 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
   };
 
   // Queries
+
+  // Full User Profile with statistics and friends
+  public query func getFullUserProfile(player: PlayerId) : async ?(Player, PlayerGamesStats, AverageStats) {
+    switch (players.get(player)) {
+      case (null) { return null; };
+      case (?playerData) {
+        let playerStatsOpt = playerGamesStats.get(player);
+        let playerStats = switch (playerStatsOpt) {
+          case (null) { 
+            let initialStats: PlayerGamesStats = {
+              gamesPlayed = 0;
+              gamesWon = 0;
+              gamesLost = 0;
+              energyGenerated = 0;
+              energyUsed = 0;
+              energyWasted = 0;
+              totalDamageDealt = 0;
+              totalDamageTaken = 0;
+              totalDamageCrit = 0;
+              totalDamageEvaded = 0;
+              totalXpEarned = 0;
+              totalGamesWithFaction = [];
+              totalGamesGameMode = [];
+              totalGamesWithCharacter = [];
+            };
+            initialStats;
+          };
+          case (?stats) { stats; };
+        };
+
+        let gamesPlayed = Float.fromInt64(Int64.fromNat64(Nat64.fromNat(playerStats.gamesPlayed)));
+        let averageStats: AverageStats = {
+          averageEnergyGenerated = if (gamesPlayed == 0) 0 else playerStats.energyGenerated / gamesPlayed;
+          averageEnergyUsed = if (gamesPlayed == 0) 0 else playerStats.energyUsed / gamesPlayed;
+          averageEnergyWasted = if (gamesPlayed == 0) 0 else playerStats.energyWasted / gamesPlayed;
+          averageDamageDealt = if (gamesPlayed == 0) 0 else playerStats.totalDamageDealt / gamesPlayed;
+          averageKills = if (gamesPlayed == 0) 0 else playerStats.totalDamageDealt / gamesPlayed;
+          averageXpEarned = if (gamesPlayed == 0) 0 else playerStats.totalXpEarned / gamesPlayed;
+        };
+
+        return ?(playerData, playerStats, averageStats);
+      };
+    };
+  };
+
   public query func searchUserByUsername(username : Username) : async [Player] {
     let result : Buffer.Buffer<Player> = Buffer.Buffer<Player>(0);
     for ((_, userRecord) in players.entries()) {
@@ -1129,7 +1174,7 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
     return Buffer.toArray(result);
   };
 
-  // Gets a list of principals
+  // self query Gets a list of friend's principals
   public query ({ caller: PlayerId }) func getFriendsList() : async ?[PlayerId] {
       switch (players.get(caller)) {
           case (null) {
@@ -1312,9 +1357,7 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
       };
   };
 
-
   // QMatch History
-  //First get all the matches of a principal
   public query func getMatchIDsByPrincipal(player: PlayerId): async [MatchID] {
       let buffer = Buffer.Buffer<MatchID>(0);
       for ((matchID, matchData) in finishedGames.entries()) {
@@ -1333,76 +1376,13 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
       };
       return Buffer.toArray(buffer);
   };
-  // then get the info of the matches
+
+  // Basic Stats sent for a MatchID
   public shared query func getMatchStats(MatchID : MatchID) : async ?BasicStats {
     return basicStats.get(MatchID);
   };
 
-  // QComposite 
-  public query func getMatchHistoryByPrincipal(player: PlayerId): async [(MatchID, ?BasicStats)] {
-      let buffer = Buffer.Buffer<(MatchID, ?BasicStats)>(0);
-      for ((matchID, matchData) in finishedGames.entries()) {
-          if (matchData.player1.id == player) {
-              let matchStats = basicStats.get(matchID);
-              buffer.add((matchID, matchStats));
-          } else {
-              switch (matchData.player2) {
-                  case (null) {};
-                  case (?p2) {
-                      if (p2.id == player) {
-                          let matchStats = basicStats.get(matchID);
-                          buffer.add((matchID, matchStats));
-                      }
-                  };
-              }
-          }
-      };
-      return Buffer.toArray(buffer);
-  };
-
-  public query func getPlayerInfo(player: PlayerId) : async ?(Player, PlayerGamesStats, AverageStats) {
-    switch (players.get(player)) {
-      case (null) { return null; };
-      case (?playerData) {
-        let playerStatsOpt = playerGamesStats.get(player);
-        let playerStats = switch (playerStatsOpt) {
-          case (null) { 
-            let initialStats: PlayerGamesStats = {
-              gamesPlayed = 0;
-              gamesWon = 0;
-              gamesLost = 0;
-              energyGenerated = 0;
-              energyUsed = 0;
-              energyWasted = 0;
-              totalDamageDealt = 0;
-              totalDamageTaken = 0;
-              totalDamageCrit = 0;
-              totalDamageEvaded = 0;
-              totalXpEarned = 0;
-              totalGamesWithFaction = [];
-              totalGamesGameMode = [];
-              totalGamesWithCharacter = [];
-            };
-            initialStats;
-          };
-          case (?stats) { stats; };
-        };
-
-        let gamesPlayed = Float.fromInt64(Int64.fromNat64(Nat64.fromNat(playerStats.gamesPlayed)));
-        let averageStats: AverageStats = {
-          averageEnergyGenerated = if (gamesPlayed == 0) 0 else playerStats.energyGenerated / gamesPlayed;
-          averageEnergyUsed = if (gamesPlayed == 0) 0 else playerStats.energyUsed / gamesPlayed;
-          averageEnergyWasted = if (gamesPlayed == 0) 0 else playerStats.energyWasted / gamesPlayed;
-          averageDamageDealt = if (gamesPlayed == 0) 0 else playerStats.totalDamageDealt / gamesPlayed;
-          averageKills = if (gamesPlayed == 0) 0 else playerStats.totalDamageDealt / gamesPlayed;
-          averageXpEarned = if (gamesPlayed == 0) 0 else playerStats.totalXpEarned / gamesPlayed;
-        };
-
-        return ?(playerData, playerStats, averageStats);
-      };
-    };
-  };
-
+  // Basic Stats + User Profiles for a MatchID
   public query func getMatchDetails(matchID: MatchID) : async ?(MatchData, [(Player, PlayerGamesStats)]) {
     let matchDataOpt = switch (finishedGames.get(matchID)) {
       case (null) {
@@ -1458,6 +1438,28 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
     };
   };
 
+
+  public query func getMatchHistoryByPrincipal(player: PlayerId): async [(MatchID, ?BasicStats)] {
+      let buffer = Buffer.Buffer<(MatchID, ?BasicStats)>(0);
+      for ((matchID, matchData) in finishedGames.entries()) {
+          if (matchData.player1.id == player) {
+              let matchStats = basicStats.get(matchID);
+              buffer.add((matchID, matchStats));
+          } else {
+              switch (matchData.player2) {
+                  case (null) {};
+                  case (?p2) {
+                      if (p2.id == player) {
+                          let matchStats = basicStats.get(matchID);
+                          buffer.add((matchID, matchStats));
+                      }
+                  };
+              }
+          }
+      };
+      return Buffer.toArray(buffer);
+  };
+  
   // QRewards
   public query func getAllUsersRewards() : async ([(Principal, [RewardsUser])]) {
     return Iter.toArray(rewardsUsers.entries());
