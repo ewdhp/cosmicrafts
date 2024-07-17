@@ -20,7 +20,7 @@ expect <<EOF
     set timeout -1
     spawn python scripts/registerPlayer.py
     expect "Enter the number of users to register: "
-    send "2\r"
+    send "50\r"
     expect eof
 EOF
 
@@ -29,9 +29,9 @@ expect <<EOF
     set timeout -1
     spawn python scripts/matchmaking.py
     expect "Enter the number of matches to run: "
-    send "1\r"
+    send "25\r"
     expect "Do you want to loop indefinitely? (y/n): "
-    send "n\r"
+    send "y\r"
     expect eof
 EOF
 
