@@ -13,12 +13,8 @@ def fetch_data_from_canister():
             print(f"Error: {result.stderr}")
             return None
 
-        # Print the raw output for debugging
-        raw_output = result.stdout
-        print(f"Raw output: {raw_output}")
-
         # Parse the raw output
-        data = parse_raw_output(raw_output)
+        data = parse_raw_output(result.stdout)
         return data
     
     except Exception as e:
@@ -40,9 +36,6 @@ def parse_raw_output(raw_output):
     )
     matches = pattern.findall(raw_output)
 
-    # Debug output to check if matches are found
-    print(f"Matches found: {len(matches)}")
-
     # Convert matches to a list of dictionaries
     data = []
     for match in matches:
@@ -57,18 +50,11 @@ def parse_raw_output(raw_output):
             'avatar': int(match[6])
         })
 
-    # Debug output to check the parsed data
-    print(f"Parsed data: {data}")
-
     return data
 
 def format_data(data, csv_file):
     # Convert the data to a DataFrame
     df = pd.DataFrame(data)
-    
-    # Set display options to show more rows and columns
-    pd.set_option('display.max_rows', None)  # Show all rows
-    pd.set_option('display.max_columns', None)  # Show all columns
     
     # Convert the registration date to a readable format
     df['registrationDate'] = pd.to_datetime(df['registrationDate'], unit='ns')
@@ -76,15 +62,12 @@ def format_data(data, csv_file):
     # Sort the DataFrame by ELO in descending order
     df = df.sort_values(by='elo', ascending=False)
     
-    # Print the DataFrame in a readable format
-    print(df)
-    
     # Ensure the logs directory exists
     os.makedirs(os.path.dirname(csv_file), exist_ok=True)
     
     # Save the DataFrame to a CSV file
     df.to_csv(csv_file, index=False)
-    print(f"Data exported to {csv_file}")
+    print(f"Data successfully exported to {csv_file}")
 
 def main():
     # Fetch data

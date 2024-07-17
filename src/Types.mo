@@ -52,6 +52,21 @@ module {
     gamesWon: Nat;
   };
 
+  public type OverallGamesWithFaction = {
+      factionID: Nat;
+      gamesPlayed: Nat;
+  };
+
+public type OverallGamesWithGameMode = {
+      gameModeID: Nat;
+      gamesPlayed: Nat;
+  };
+
+public type OverallGamesWithCharacter = {
+      characterID: Text;
+      gamesPlayed: Nat;
+  };
+
   public type PlayerStats = {
     playerId: PlayerId;
     energyUsed: Float;
@@ -115,9 +130,9 @@ module {
     totalEnergyUsed: Float;
     totalEnergyWasted: Float;
     totalXpEarned: Float;
-    totalGamesWithFaction: [GamesWithFaction];
-    totalGamesGameMode: [GamesWithGameMode];
-    totalGamesWithCharacter: [GamesWithCharacter];
+    totalGamesWithFaction: [OverallGamesWithFaction];
+    totalGamesGameMode: [OverallGamesWithGameMode];
+    totalGamesWithCharacter: [OverallGamesWithCharacter];
   };
 
   // Rewards
