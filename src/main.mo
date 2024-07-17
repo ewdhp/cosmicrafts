@@ -409,7 +409,7 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
     gameMode: Nat;
     energyWasted: Float;
     xpEarned: Float;
-    characterID: Text;
+    characterID: Nat;
     botDifficulty: Nat;
     kills: Float;
 }) : async (Bool, Text) {

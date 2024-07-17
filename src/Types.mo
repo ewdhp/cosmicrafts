@@ -47,7 +47,7 @@ module {
   };
 
   public type GamesWithCharacter = {
-    characterID: Text;
+    characterID: Nat;
     gamesPlayed: Nat;
     gamesWon: Nat;
   };
@@ -63,7 +63,7 @@ public type OverallGamesWithGameMode = {
   };
 
 public type OverallGamesWithCharacter = {
-      characterID: Text;
+      characterID: Nat;
       gamesPlayed: Nat;
   };
 
@@ -83,7 +83,7 @@ public type OverallGamesWithCharacter = {
     secRemaining: Float;
     wonGame: Bool;
     faction: Nat;
-    characterID: Text;
+    characterID: Nat;
     gameMode: Nat;
     botMode: Nat;
     botDifficulty: Nat;

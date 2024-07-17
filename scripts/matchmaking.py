@@ -68,7 +68,7 @@ def save_finished_game(identity_name, game_id, stats):
         'record {'
         f'botDifficulty = {stats["botDifficulty"]}; '
         f'botMode = {stats["botMode"]}; '
-        f'characterID = "{stats["characterID"]}"; '
+        f'characterID = {stats["characterID"]}; '  # Remove quotes to treat as integer
         f'damageCritic = {stats["damageCritic"]}; '
         f'damageDealt = {stats["damageDealt"]}; '
         f'damageEvaded = {stats["damageEvaded"]}; '
@@ -115,7 +115,7 @@ def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
     stats = {
         "botDifficulty": random.randint(0, 5),
         "botMode": random.randint(0, 5),
-        "characterID": f"character{random.randint(1, 2)}",
+        "characterID": random.randint(1, 2),
         "damageCritic": random.uniform(1000, 25000),
         "damageDealt": random.uniform(1000, 25000),
         "damageEvaded": random.uniform(1000, 25000),
