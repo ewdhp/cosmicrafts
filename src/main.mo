@@ -236,6 +236,10 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
   private stable var _onValidation: [(MatchID, BasicStats)] = [];
   var onValidation: HashMap.HashMap<MatchID, BasicStats> = HashMap.fromIter(_onValidation.vals(), 0, _natEqual, _natHash);
 
+  private stable var _countedMatches: [(MatchID, Bool)] = [];
+  var countedMatches: HashMap.HashMap<MatchID, Bool> = HashMap.fromIter(_countedMatches.vals(), 0, _natEqual, _natHash);
+
+
   private stable var overallStats: OverallStats = {
       totalGamesPlayed: Nat = 0;
       totalGamesSP: Nat = 0;
@@ -319,41 +323,49 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
   };
 
   private func updatePlayerELO(PlayerId : PlayerId, won : Nat, otherPlayerId : ?PlayerId) : async Bool {
-      switch (otherPlayerId) {
-          case (null) {
-              return false;
-          };
-          case (?otherPlayer) {
-              // Get both players' ELO
-              var _p1Elo : Float = await getPlayerElo(PlayerId);
-              let _p2Elo : Float = await getPlayerElo(otherPlayer);
+    switch (otherPlayerId) {
+        case (null) {
+            return false;
+        };
+        case (?otherPlayer) {
+            // Get both players' ELO
+            var _p1Elo : Float = await getPlayerElo(PlayerId);
+            let _p2Elo : Float = await getPlayerElo(otherPlayer);
 
-              // Determine the K-Factor based on the opponent's ELO
-              let kFactor : Float = 25.0;
+            // Determine the K-Factor for winning points
+            let winKFactor : Float = if (_p1Elo < 1400.0) 40.0
+                                     else if (_p1Elo < 1800.0) 35.0
+                                     else if (_p1Elo < 2200.0) 30.0
+                                     else if (_p1Elo < 2600.0) 25.0
+                                     else 20.0;  // Higher levels earn fewer points
 
-              // Determine the difficulty factor based on the player's ELO
-              let difficultyFactor : Float = if (_p1Elo < 1400.0) 2.0
-                                            else if (_p1Elo < 1800.0) 1.75
-                                            else if (_p1Elo < 2200.0) 1.5
-                                            else if (_p1Elo < 2600.0) 1.25
-                                            else 1.0;
+            // Determine the K-Factor for losing points
+            let loseKFactor : Float = if (_p1Elo < 1400.0) 0.1
+                                      else if (_p1Elo < 1800.0) 0.5
+                                      else if (_p1Elo < 2200.0) 1.0
+                                      else if (_p1Elo < 2600.0) 1.25
+                                      else 2.0;  // Higher levels lose more points
 
-              // Calculate expected results
-              let _p1Expected : Float = 1 / (1 + Float.pow(10, (_p2Elo - _p1Elo) / 400));
-              let _p2Expected : Float = 1 / (1 + Float.pow(10, (_p1Elo - _p2Elo) / 400));
+            // Calculate expected results
+            let _p1Expected : Float = 1 / (1 + Float.pow(10, (_p2Elo - _p1Elo) / 400));
+            let _p2Expected : Float = 1 / (1 + Float.pow(10, (_p1Elo - _p2Elo) / 400));
 
-              // Calculate points won or lost with difficulty factor applied
-              let pointChange : Float = kFactor * (Float.fromInt(won) - _p1Expected);
+            // Calculate points won or lost with win and lose factors applied
+            let pointChange : Float = if (won == 1) 
+                                      winKFactor * (1 - _p1Expected)
+                                      else 
+                                      -loseKFactor * _p1Expected;
 
-              // Calculate ELO change
-              let _elo : Float = if (won == 1) _p1Elo + pointChange else _p1Elo + pointChange / difficultyFactor;
+            // Calculate ELO change
+            let _elo : Float = _p1Elo + pointChange;
 
-              let _updated = await updateELOonPlayer(PlayerId, _elo);
+            let _updated = await updateELOonPlayer(PlayerId, _elo);
 
-              return _updated;
-          };
-      };
-  };
+            return _updated;
+        };
+    };
+};
+
 
   private func updateELOonPlayer(playerId : Principal, newELO : Float) : async Bool {
       switch (players.get(playerId)) {
@@ -421,7 +433,7 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
           updatePlayerGameStats(msg.caller, _playerStats, _winner, _looser);
 
           // Update overall stats
-          updateOverallStats(_playerStats, _winner);
+          updateOverallStats(matchID, _playerStats, _winner);
 
           // Update player level
           let playerOpt = players.get(msg.caller);
@@ -483,7 +495,7 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
                   updatePlayerGameStats(msg.caller, _playerStats, _winner, _looser);
 
                   // Update overall stats
-                  updateOverallStats(_playerStats, _winner);
+                  updateOverallStats(matchID, _playerStats, _winner);
 
                   // Update player level
                   let playerOpt = players.get(msg.caller);
@@ -598,54 +610,83 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
   };
 
   // Helper function to update overall stats
-  private func updateOverallStats(_playerStats: PlayerStats, _winner: Nat) {
-    let _totalGamesWithFactionBuffer = Buffer.Buffer<GamesWithFaction>(overallStats.totalGamesWithFaction.size());
-    for (gf in overallStats.totalGamesWithFaction.vals()) {
-      if (gf.factionID == _playerStats.faction) {
-        _totalGamesWithFactionBuffer.add({gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner;});
-      } else {
-        _totalGamesWithFactionBuffer.add(gf);
+  private func updateOverallStats(matchID: MatchID, _playerStats: PlayerStats, _winner: Nat) {
+      switch (countedMatches.get(matchID)) {
+          case (?_) {
+              return; // Match already counted
+          };
+          case (null) {
+              countedMatches.put(matchID, true);
+          };
       };
-    };
-    let _totalGamesWithFaction = Buffer.toArray(_totalGamesWithFactionBuffer);
 
-    let _totalGamesWithGameModeBuffer = Buffer.Buffer<GamesWithGameMode>(overallStats.totalGamesGameMode.size());
-    for (gm in overallStats.totalGamesGameMode.vals()) {
-      if (gm.gameModeID == _playerStats.gameMode) {
-        _totalGamesWithGameModeBuffer.add({gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner;});
-      } else {
-        _totalGamesWithGameModeBuffer.add(gm);
+      let _totalGamesWithFactionBuffer = Buffer.Buffer<GamesWithFaction>(overallStats.totalGamesWithFaction.size());
+      var factionFound = false;
+      for (gf in overallStats.totalGamesWithFaction.vals()) {
+          if (gf.factionID == _playerStats.faction) {
+              _totalGamesWithFactionBuffer.add({gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner;});
+              factionFound := true;
+          } else {
+              _totalGamesWithFactionBuffer.add(gf);
+          };
       };
-    };
-    let _totalGamesWithGameMode = Buffer.toArray(_totalGamesWithGameModeBuffer);
-
-    let _totalGamesWithCharacterBuffer = Buffer.Buffer<GamesWithCharacter>(overallStats.totalGamesWithCharacter.size());
-    for (gc in overallStats.totalGamesWithCharacter.vals()) {
-      if (gc.characterID == _playerStats.characterID) {
-        _totalGamesWithCharacterBuffer.add({gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner;});
-      } else {
-        _totalGamesWithCharacterBuffer.add(gc);
+      if (not factionFound) {
+          _totalGamesWithFactionBuffer.add({gamesPlayed = 1; factionID = _playerStats.faction; gamesWon = _winner;});
       };
-    };
-    let _totalGamesWithCharacter = Buffer.toArray(_totalGamesWithCharacterBuffer);
+      let _totalGamesWithFaction = Buffer.toArray(_totalGamesWithFactionBuffer);
 
-    let _os: OverallStats = {
-      totalGamesPlayed = overallStats.totalGamesPlayed + 1;
-      totalGamesSP = if (_playerStats.gameMode == 2) overallStats.totalGamesSP + 1 else overallStats.totalGamesSP;
-      totalGamesMP = if (_playerStats.gameMode == 1) overallStats.totalGamesMP + 1 else overallStats.totalGamesMP;
-      totalDamageDealt = overallStats.totalDamageDealt + _playerStats.damageDealt;
-      totalTimePlayed = overallStats.totalTimePlayed;
-      totalKills = overallStats.totalKills + _playerStats.kills;
-      totalEnergyUsed = overallStats.totalEnergyUsed + _playerStats.energyUsed;
-      totalEnergyGenerated = overallStats.totalEnergyGenerated + _playerStats.energyGenerated;
-      totalEnergyWasted = overallStats.totalEnergyWasted + _playerStats.energyWasted;
-      totalGamesWithFaction = _totalGamesWithFaction;
-      totalGamesGameMode = _totalGamesWithGameMode;
-      totalGamesWithCharacter = _totalGamesWithCharacter;
-      totalXpEarned = overallStats.totalXpEarned + _playerStats.xpEarned;
-    };
-    overallStats := _os;
+      let _totalGamesWithGameModeBuffer = Buffer.Buffer<GamesWithGameMode>(overallStats.totalGamesGameMode.size());
+      var gameModeFound = false;
+      for (gm in overallStats.totalGamesGameMode.vals()) {
+          if (gm.gameModeID == _playerStats.gameMode) {
+              _totalGamesWithGameModeBuffer.add({gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner;});
+              gameModeFound := true;
+          } else {
+              _totalGamesWithGameModeBuffer.add(gm);
+          };
+      };
+      if (not gameModeFound) {
+          _totalGamesWithGameModeBuffer.add({gamesPlayed = 1; gameModeID = _playerStats.gameMode; gamesWon = _winner;});
+      };
+      let _totalGamesWithGameMode = Buffer.toArray(_totalGamesWithGameModeBuffer);
+
+      let _totalGamesWithCharacterBuffer = Buffer.Buffer<GamesWithCharacter>(overallStats.totalGamesWithCharacter.size());
+      var characterFound = false;
+      for (gc in overallStats.totalGamesWithCharacter.vals()) {
+          if (gc.characterID == _playerStats.characterID) {
+              _totalGamesWithCharacterBuffer.add({gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner;});
+              characterFound := true;
+          } else {
+              _totalGamesWithCharacterBuffer.add(gc);
+          };
+      };
+      if (not characterFound) {
+          _totalGamesWithCharacterBuffer.add({gamesPlayed = 1; characterID = _playerStats.characterID; gamesWon = _winner;});
+      };
+      let _totalGamesWithCharacter = Buffer.toArray(_totalGamesWithCharacterBuffer);
+
+      let maxGameTime: Float = 300.0; // 5 minutes in seconds
+      let timePlayed: Float = maxGameTime - _playerStats.secRemaining;
+
+      let _os: OverallStats = {
+          totalGamesPlayed = overallStats.totalGamesPlayed + 1;
+          totalGamesSP = if (_playerStats.gameMode == 2) overallStats.totalGamesSP + 1 else overallStats.totalGamesSP;
+          totalGamesMP = if (_playerStats.gameMode == 1) overallStats.totalGamesMP + 1 else overallStats.totalGamesMP;
+          totalDamageDealt = overallStats.totalDamageDealt + _playerStats.damageDealt;
+          totalTimePlayed = overallStats.totalTimePlayed + timePlayed;
+          totalKills = overallStats.totalKills + _playerStats.kills;
+          totalEnergyUsed = overallStats.totalEnergyUsed + _playerStats.energyUsed;
+          totalEnergyGenerated = overallStats.totalEnergyGenerated + _playerStats.energyGenerated;
+          totalEnergyWasted = overallStats.totalEnergyWasted + _playerStats.energyWasted;
+          totalGamesWithFaction = _totalGamesWithFaction;
+          totalGamesGameMode = _totalGamesWithGameMode;
+          totalGamesWithCharacter = _totalGamesWithCharacter;
+          totalXpEarned = overallStats.totalXpEarned + _playerStats.xpEarned;
+      };
+      overallStats := _os;
   };
+
+
 
   // Validator
   private func validateGame(timeInSeconds: Float, score: Float) : (Bool, Text) {
@@ -1566,4 +1607,42 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
       };
     };
   };
+
+  public query func test(playerId: PlayerId) : async ?{
+    username: Username;
+    level: Level;
+    elo: Float;
+    xp: Float;
+    gamesWon: Nat;
+    gamesLost: Nat;
+    } {
+        // Retrieve player details
+        let playerOpt = players.get(playerId);
+        let playerStatsOpt = playerGamesStats.get(playerId);
+
+        switch (playerOpt, playerStatsOpt) {
+            case (null, _) {
+                // Player does not exist
+                return null;
+            };
+            case (_, null) {
+                // Player stats do not exist
+                return null;
+            };
+            case (?player, ?stats) {
+                // Gather the required data
+                let result = {
+                    username = player.username;
+                    level = player.level;
+                    elo = player.elo;
+                    xp = stats.totalXpEarned;
+                    gamesWon = stats.gamesWon;
+                    gamesLost = stats.gamesLost;
+                };
+
+                return ?result;
+            };
+        };
+    };
+
 };

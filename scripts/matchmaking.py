@@ -8,7 +8,7 @@ import sys
 import signal
 
 # Set up logging
-logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+#logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def execute_dfx_command(command, log_output=True):
     """Executes a shell command and logs the output."""

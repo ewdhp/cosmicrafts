@@ -6,7 +6,7 @@ import asyncio
 import time
 
 # Set up logging
-logging.basicConfig(filename='logs/register_users.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+#logging.basicConfig(filename='logs/register_users.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 async def execute_dfx_command(command, log_output=True):
     """Executes a shell command asynchronously and logs the output."""

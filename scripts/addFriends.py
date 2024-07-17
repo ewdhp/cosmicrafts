@@ -2,7 +2,7 @@ import subprocess
 import logging
 
 # Set up logging
-logging.basicConfig(filename='logs/add_friends.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+#logging.basicConfig(filename='logs/add_friends.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def execute_dfx_command(command, log_output=True):
     """Executes a shell command and logs the output."""
