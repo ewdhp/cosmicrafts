@@ -226,31 +226,7 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
     return Nat64.toNat(levelNat64);
   };
 
-private func updatePlayerElo(playerId : Principal, newELO : Float) : async Bool {
-    // assert (msg.caller == _statisticPrincipal); /// Only Statistics Canister can update ELO, change for statistics principal later
-    switch (players.get(playerId)) {
-        case (null) {
-            return false;
-        };
-        case (?existingPlayer) {
-            let updatedPlayer : Player = {
-                id = existingPlayer.id;
-                username = existingPlayer.username;
-                avatar = existingPlayer.avatar;
-                description = existingPlayer.description;
-                registrationDate = existingPlayer.registrationDate;
-                level = existingPlayer.level;
-                elo = newELO;
-                friends = existingPlayer.friends;
-            };
-            players.put(playerId, updatedPlayer);
-            return true;
-        };
-    };
-};
-
   // Statistics
-  private stable var k : Int = 30;
   private stable var _basicStats: [(MatchID, BasicStats)] = [];
   var basicStats: HashMap.HashMap<MatchID, BasicStats> = HashMap.fromIter(_basicStats.vals(), 0, _natEqual, _natHash);
 
@@ -297,27 +273,6 @@ private func updatePlayerElo(playerId : Principal, newELO : Float) : async Bool 
       return (true, "Player stats initialized");
   };
 
-
-  private func updatePlayerELO(PlayerId : PlayerId, won : Nat, otherPlayerId : ?PlayerId) : async Bool {
-    switch (otherPlayerId) {
-      case (null) {
-        return false;
-      };
-      case (?otherPlayer) {
-        // Get both player's ELO
-        var _p1Elo : Float = await getPlayerElo(PlayerId);
-        let _p2Elo : Float = await getPlayerElo(otherPlayer);
-        // Calculate expected results
-        let _p1Expected : Float = 1 / (1 + Float.pow(10, (_p2Elo - _p1Elo) / 400));
-        let _p2Expected : Float = 1 / (1 + Float.pow(10, (_p1Elo - _p2Elo) / 400));
-        // Update ELO
-        let _elo : Float = _p1Elo + Float.fromInt(k) * (Float.fromInt64(Int64.fromInt(won)) - _p1Expected);
-        let _updated = await updatePlayerElo(PlayerId, _elo);
-        return true;
-      };
-    };
-  };
-
   public shared (msg) func setGameOver(caller: Principal) : async (Bool, Bool, ?Principal) {
       if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
           return (false, false, null);
@@ -359,6 +314,65 @@ private func updatePlayerElo(playerId : Principal, newELO : Float) : async Bool 
                       return (true, caller == match.player1.id, getOtherPlayer(match, caller));
                   };
               };
+          };
+      };
+  };
+
+  private func updatePlayerELO(PlayerId : PlayerId, won : Nat, otherPlayerId : ?PlayerId) : async Bool {
+      switch (otherPlayerId) {
+          case (null) {
+              return false;
+          };
+          case (?otherPlayer) {
+              // Get both players' ELO
+              var _p1Elo : Float = await getPlayerElo(PlayerId);
+              let _p2Elo : Float = await getPlayerElo(otherPlayer);
+
+              // Determine the K-Factor based on the opponent's ELO
+              let kFactor : Float = 25.0;
+
+              // Determine the difficulty factor based on the player's ELO
+              let difficultyFactor : Float = if (_p1Elo < 1400.0) 2.0
+                                            else if (_p1Elo < 1800.0) 1.75
+                                            else if (_p1Elo < 2200.0) 1.5
+                                            else if (_p1Elo < 2600.0) 1.25
+                                            else 1.0;
+
+              // Calculate expected results
+              let _p1Expected : Float = 1 / (1 + Float.pow(10, (_p2Elo - _p1Elo) / 400));
+              let _p2Expected : Float = 1 / (1 + Float.pow(10, (_p1Elo - _p2Elo) / 400));
+
+              // Calculate points won or lost with difficulty factor applied
+              let pointChange : Float = kFactor * (Float.fromInt(won) - _p1Expected);
+
+              // Calculate ELO change
+              let _elo : Float = if (won == 1) _p1Elo + pointChange else _p1Elo + pointChange / difficultyFactor;
+
+              let _updated = await updateELOonPlayer(PlayerId, _elo);
+
+              return _updated;
+          };
+      };
+  };
+
+  private func updateELOonPlayer(playerId : Principal, newELO : Float) : async Bool {
+      switch (players.get(playerId)) {
+          case (null) {
+              return false;
+          };
+          case (?existingPlayer) {
+              let updatedPlayer : Player = {
+                  id = existingPlayer.id;
+                  username = existingPlayer.username;
+                  avatar = existingPlayer.avatar;
+                  description = existingPlayer.description;
+                  registrationDate = existingPlayer.registrationDate;
+                  level = existingPlayer.level;
+                  elo = newELO;
+                  friends = existingPlayer.friends;
+              };
+              players.put(playerId, updatedPlayer);
+              return true;
           };
       };
   };
