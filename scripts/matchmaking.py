@@ -8,7 +8,7 @@ import sys
 import signal
 
 # Set up logging
-#logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+# logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def execute_dfx_command(command, log_output=True):
     """Executes a shell command and logs the output."""
@@ -81,7 +81,6 @@ def save_finished_game(identity_name, game_id, stats):
         f'faction = {stats["faction"]}; '
         f'gameMode = {stats["gameMode"]}; '
         f'kills = {stats["kills"]}; '
-        f'playerId = principal "{stats["playerId"]}"; '
         f'secRemaining = {stats["secRemaining"]}; '
         f'wonGame = {str(stats["wonGame"]).lower()}; '
         f'xpEarned = {stats["xpEarned"]}; '
@@ -111,7 +110,7 @@ def parse_match_id(search_result):
     else:
         raise ValueError("Match ID not found in the search result")
 
-def generate_random_stats(player_id, shared_energy_generated, shared_sec_remaining, won):
+def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
     """Generates randomized game statistics."""
     stats = {
         "botDifficulty": random.randint(0, 5),
@@ -129,7 +128,6 @@ def generate_random_stats(player_id, shared_energy_generated, shared_sec_remaini
         "faction": random.randint(0, 2),
         "gameMode": random.randint(1, 2),
         "kills": random.uniform(10, 250),
-        "playerId": player_id,
         "secRemaining": float(shared_sec_remaining),
         "wonGame": won,
         "xpEarned": random.uniform(1000, 25000)
@@ -222,7 +220,7 @@ def run_matches(num_matches, loop):
             for player, match_id, won in [(player1, match_id1, won_player1), (player2, match_id2, won_player2)]:
                 logging.info(f"Sending statistics for match ID: {match_id} for {player}")
 
-                stats = generate_random_stats(principals[player], shared_energy_generated, shared_sec_remaining, won)
+                stats = generate_random_stats(shared_energy_generated, shared_sec_remaining, won)
 
                 try:
                     save_finished_game(player, match_id, stats)

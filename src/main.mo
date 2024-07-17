@@ -392,228 +392,315 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
       };
   };
 
-  // Function to update player stats after a match
-  public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: PlayerStats) : async (Bool, Text) {
-      var _txt: Text = "";
+// Function to update player stats after a match
+public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
+    secRemaining: Float;
+    energyGenerated: Float;
+    damageDealt: Float;
+    wonGame: Bool;
+    botMode: Nat;
+    deploys: Float;
+    damageTaken: Float;
+    damageCritic: Float;
+    damageEvaded: Float;
+    energyChargeRate: Float;
+    faction: Nat;
+    energyUsed: Float;
+    gameMode: Nat;
+    energyWasted: Float;
+    xpEarned: Float;
+    characterID: Text;
+    botDifficulty: Nat;
+    kills: Float;
+}) : async (Bool, Text) {
+    var _txt: Text = "";
 
-      // Check if the match exists in basicStats
-      let isExistingMatch = switch (basicStats.get(matchID)) {
-          case (null) { false };
-          case (?_) { true };
-      };
-
-      // Set the game as over
-      let endingGame: (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
-
-      if (not isExistingMatch) {
-          // Save the basic stats for a new match
-          let newBasicStats: BasicStats = {
-              playerStats = [_playerStats];
-          };
-          basicStats.put(matchID, newBasicStats);
-
-          // Validate the game
-          let (_gameValid, validationMsg) = validateGame(300.0 - _playerStats.secRemaining, _playerStats.xpEarned);
-          if (not _gameValid) {
-              onValidation.put(matchID, newBasicStats);
-              return (false, validationMsg);
-          };
-
-          // Update player stats
-          let _winner = if (_playerStats.wonGame) 1 else 0;
-          let _looser = if (not _playerStats.wonGame) 1 else 0;
-          let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-          let _progressRewardsBuffer = Buffer.Buffer<RewardProgress>(1);
-          _progressRewardsBuffer.add({ rewardType = #GamesCompleted; progress = 1; });
-          if (_playerStats.wonGame) {
-              _progressRewardsBuffer.add({ rewardType = #GamesWon; progress = 1; });
-          };
-          let _progressRewards = Buffer.toArray(_progressRewardsBuffer);
-          let _progressAdded = await addProgressToRewards(msg.caller, _progressRewards);
-          _txt := _progressAdded.1;
-
-          // Update or create player game stats
-          updatePlayerGameStats(msg.caller, _playerStats, _winner, _looser);
-
-          // Update overall stats
-          updateOverallStats(matchID, _playerStats, _winner);
-
-          // Update player level
-          let playerOpt = players.get(msg.caller);
-          switch (playerOpt) {
-              case (?player) {
-                  let updatedPlayer: Player = {
-                      id = player.id;
-                      username = player.username;
-                      avatar = player.avatar;
-                      description = player.description;
-                      registrationDate = player.registrationDate;
-                      level = calculateLevel(_playerStats.xpEarned);
-                      elo = player.elo;
-                      friends = player.friends;
-                  };
-                  players.put(msg.caller, updatedPlayer);
-              };
-              case (null) {};
-          };
-
-          return (true, "Game saved");
-      } else {
-          // If the match was already saved, add the new player's stats
-          switch (basicStats.get(matchID)) {
-              case (null) {
-                  return (false, "Unexpected error: Match not found");
-              };
-              case (?_bs) {
-                  let updatedPlayerStatsBuffer = Buffer.Buffer<PlayerStats>(_bs.playerStats.size() + 1);
-                  for (ps in _bs.playerStats.vals()) {
-                      updatedPlayerStatsBuffer.add(ps);
-                  };
-                  updatedPlayerStatsBuffer.add(_playerStats);
-                  let updatedPlayerStats = Buffer.toArray(updatedPlayerStatsBuffer);
-                  let updatedBasicStats: BasicStats = { playerStats = updatedPlayerStats };
-                  basicStats.put(matchID, updatedBasicStats);
-
-                  // Validate the game
-                  let (_gameValid, validationMsg) = validateGame(300.0 - _playerStats.secRemaining, _playerStats.xpEarned);
-                  if (not _gameValid) {
-                      onValidation.put(matchID, updatedBasicStats);
-                      return (false, validationMsg);
-                  };
-
-                  // Update player stats
-                  let _winner = if (_playerStats.wonGame) 1 else 0;
-                  let _looser = if (not _playerStats.wonGame) 1 else 0;
-                  let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-                  let _progressRewardsBuffer = Buffer.Buffer<RewardProgress>(1);
-                  _progressRewardsBuffer.add({ rewardType = #GamesCompleted; progress = 1; });
-                  if (_playerStats.wonGame) {
-                      _progressRewardsBuffer.add({ rewardType = #GamesWon; progress = 1; });
-                  };
-                  let _progressRewards = Buffer.toArray(_progressRewardsBuffer);
-                  let _progressAdded = await addProgressToRewards(msg.caller, _progressRewards);
-                  _txt := _progressAdded.1;
-
-                  // Update or create player game stats
-                  updatePlayerGameStats(msg.caller, _playerStats, _winner, _looser);
-
-                  // Update overall stats
-                  updateOverallStats(matchID, _playerStats, _winner);
-
-                  // Update player level
-                  let playerOpt = players.get(msg.caller);
-                  switch (playerOpt) {
-                      case (?player) {
-                          let updatedPlayer: Player = {
-                              id = player.id;
-                              username = player.username;
-                              avatar = player.avatar;
-                              description = player.description;
-                              registrationDate = player.registrationDate;
-                              level = calculateLevel(_playerStats.xpEarned);
-                              elo = player.elo;
-                              friends = player.friends;
-                          };
-                          players.put(msg.caller, updatedPlayer);
-                      };
-                      case (null) {};
-                  };
-
-                  return (true, _txt # " - Game saved");
-              };
-          };
-      };
-  };
-
-
-  // Function to update player stats
-  private func updatePlayerGameStats(playerId: PlayerId, _playerStats: PlayerStats, _winner: Nat, _looser: Nat) {
-    switch (playerGamesStats.get(playerId)) {
-      case (null) {
-        let _gs: PlayerGamesStats = {
-          gamesPlayed = 1;
-          gamesWon = _winner;
-          gamesLost = _looser;
-          energyGenerated = _playerStats.energyGenerated;
-          energyUsed = _playerStats.energyUsed;
-          energyWasted = _playerStats.energyWasted;
-          totalDamageDealt = _playerStats.damageDealt;
-          totalDamageTaken = _playerStats.damageTaken;
-          totalDamageCrit = _playerStats.damageCritic;
-          totalDamageEvaded = _playerStats.damageEvaded;
-          totalXpEarned = _playerStats.xpEarned;
-          totalGamesWithFaction = [{ factionID = _playerStats.faction; gamesPlayed = 1; gamesWon = _winner; }];
-          totalGamesGameMode = [{ gameModeID = _playerStats.gameMode; gamesPlayed = 1; gamesWon = _winner; }];
-          totalGamesWithCharacter = [{ characterID = _playerStats.characterID; gamesPlayed = 1; gamesWon = _winner; }];
-        };
-        playerGamesStats.put(playerId, _gs);
-      };
-      case (?_bs) {
-        let _gamesWithFactionBuffer = Buffer.Buffer<GamesWithFaction>(_bs.totalGamesWithFaction.size());
-        for (gf in _bs.totalGamesWithFaction.vals()) {
-          if (gf.factionID == _playerStats.faction) {
-            _gamesWithFactionBuffer.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner; });
-          } else {
-            _gamesWithFactionBuffer.add(gf);
-          };
-        };
-        let _gamesWithFaction = Buffer.toArray(_gamesWithFactionBuffer);
-
-        let _gamesWithGameModeBuffer = Buffer.Buffer<GamesWithGameMode>(_bs.totalGamesGameMode.size());
-        for (gm in _bs.totalGamesGameMode.vals()) {
-          if (gm.gameModeID == _playerStats.gameMode) {
-            _gamesWithGameModeBuffer.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner; });
-          } else {
-            _gamesWithGameModeBuffer.add(gm);
-          };
-        };
-        let _gamesWithGameMode = Buffer.toArray(_gamesWithGameModeBuffer);
-
-        let _totalGamesWithCharacterBuffer = Buffer.Buffer<GamesWithCharacter>(_bs.totalGamesWithCharacter.size());
-        for (gc in _bs.totalGamesWithCharacter.vals()) {
-          if (gc.characterID == _playerStats.characterID) {
-            _totalGamesWithCharacterBuffer.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner; });
-          } else {
-            _totalGamesWithCharacterBuffer.add(gc);
-          };
-        };
-        let _totalGamesWithCharacter = Buffer.toArray(_totalGamesWithCharacterBuffer);
-
-        var _thisGameXP = _playerStats.xpEarned;
-        if (_playerStats.wonGame) {
-          _thisGameXP := _thisGameXP * 2;
-        } else {
-          _thisGameXP := _thisGameXP * 0.5;
-        };
-        if (_playerStats.gameMode == 1) {
-          _thisGameXP := _thisGameXP * 2;
-        } else {
-          _thisGameXP := _thisGameXP * 0.25;
-        };
-
-        let _gs: PlayerGamesStats = {
-          gamesPlayed = _bs.gamesPlayed + 1;
-          gamesWon = _bs.gamesWon + _winner;
-          gamesLost = _bs.gamesLost + _looser;
-          energyGenerated = _bs.energyGenerated + _playerStats.energyGenerated;
-          energyUsed = _bs.energyUsed + _playerStats.energyUsed;
-          energyWasted = _bs.energyWasted + _playerStats.energyWasted;
-          totalDamageDealt = _bs.totalDamageDealt + _playerStats.damageDealt;
-          totalDamageTaken = _bs.totalDamageTaken + _playerStats.damageTaken;
-          totalDamageCrit = _bs.totalDamageCrit + _playerStats.damageCritic;
-          totalDamageEvaded = _bs.totalDamageEvaded + _playerStats.damageEvaded;
-          totalXpEarned = _bs.totalXpEarned + _thisGameXP;
-          totalGamesWithFaction = _gamesWithFaction;
-          totalGamesGameMode = _gamesWithGameMode;
-          totalGamesWithCharacter = _totalGamesWithCharacter;
-        };
-        playerGamesStats.put(playerId, _gs);
-      };
+    // Create a new PlayerStats record with playerId set to msg.caller
+    let playerStats = {
+        secRemaining = _playerStats.secRemaining;
+        energyGenerated = _playerStats.energyGenerated;
+        damageDealt = _playerStats.damageDealt;
+        wonGame = _playerStats.wonGame;
+        playerId = msg.caller;  // Set the playerId to the caller's principal
+        botMode = _playerStats.botMode;
+        deploys = _playerStats.deploys;
+        damageTaken = _playerStats.damageTaken;
+        damageCritic = _playerStats.damageCritic;
+        damageEvaded = _playerStats.damageEvaded;
+        energyChargeRate = _playerStats.energyChargeRate;
+        faction = _playerStats.faction;
+        energyUsed = _playerStats.energyUsed;
+        gameMode = _playerStats.gameMode;
+        energyWasted = _playerStats.energyWasted;
+        xpEarned = _playerStats.xpEarned;
+        characterID = _playerStats.characterID;
+        botDifficulty = _playerStats.botDifficulty;
+        kills = _playerStats.kills;
     };
-  };
 
-  // Helper function to update overall stats
-  private func updateOverallStats(matchID: MatchID, _playerStats: PlayerStats, _winner: Nat) {
+    // Check if the match exists in basicStats
+    let isExistingMatch = switch (basicStats.get(matchID)) {
+        case (null) { false };
+        case (?_) { true };
+    };
+
+    // Set the game as over
+    let endingGame: (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
+
+    // Validate if the caller is part of the match
+    let isPartOfMatch = await isCallerPartOfMatch(matchID, msg.caller);
+    if (not isPartOfMatch) {
+        return (false, "You are not part of this match.");
+    };
+
+    if (isExistingMatch) {
+        // Check if the principal has already submitted stats
+        switch (basicStats.get(matchID)) {
+            case (null) {
+                return (false, "Unexpected error: Match not found");
+            };
+            case (?_bs) {
+                for (ps in _bs.playerStats.vals()) {
+                    if (ps.playerId == msg.caller) {
+                        return (false, "You have already submitted stats for this match.");
+                    };
+                };
+            };
+        };
+    };
+
+    if (not isExistingMatch) {
+        // Save the basic stats for a new match
+        let newBasicStats: BasicStats = {
+            playerStats = [playerStats];
+        };
+        basicStats.put(matchID, newBasicStats);
+
+        // Validate the game
+        let (_gameValid, validationMsg) = validateGame(300.0 - playerStats.secRemaining, playerStats.xpEarned);
+        if (not _gameValid) {
+            onValidation.put(matchID, newBasicStats);
+            return (false, validationMsg);
+        };
+
+        // Update player stats
+        let _winner = if (playerStats.wonGame) 1 else 0;
+        let _looser = if (not playerStats.wonGame) 1 else 0;
+        let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
+        let _progressRewardsBuffer = Buffer.Buffer<RewardProgress>(1);
+        _progressRewardsBuffer.add({ rewardType = #GamesCompleted; progress = 1; });
+        if (playerStats.wonGame) {
+            _progressRewardsBuffer.add({ rewardType = #GamesWon; progress = 1; });
+        };
+        let _progressRewards = Buffer.toArray(_progressRewardsBuffer);
+        let _progressAdded = await addProgressToRewards(msg.caller, _progressRewards);
+        _txt := _progressAdded.1;
+
+        // Update or create player game stats
+        updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
+
+        // Update overall stats
+        updateOverallStats(matchID, playerStats);
+
+        // Update player level
+        let playerOpt = players.get(msg.caller);
+        switch (playerOpt) {
+            case (?player) {
+                let updatedPlayer: Player = {
+                    id = player.id;
+                    username = player.username;
+                    avatar = player.avatar;
+                    description = player.description;
+                    registrationDate = player.registrationDate;
+                    level = calculateLevel(playerStats.xpEarned);
+                    elo = player.elo;
+                    friends = player.friends;
+                };
+                players.put(msg.caller, updatedPlayer);
+            };
+            case (null) {};
+        };
+
+        return (true, "Game saved");
+    } else {
+        // If the match was already saved, add the new player's stats
+        switch (basicStats.get(matchID)) {
+            case (null) {
+                return (false, "Unexpected error: Match not found");
+            };
+            case (?_bs) {
+                let updatedPlayerStatsBuffer = Buffer.Buffer<PlayerStats>(_bs.playerStats.size() + 1);
+                for (ps in _bs.playerStats.vals()) {
+                    updatedPlayerStatsBuffer.add(ps);
+                };
+                updatedPlayerStatsBuffer.add(playerStats);
+                let updatedPlayerStats = Buffer.toArray(updatedPlayerStatsBuffer);
+                let updatedBasicStats: BasicStats = { playerStats = updatedPlayerStats };
+                basicStats.put(matchID, updatedBasicStats);
+
+                // Validate the game
+                let (_gameValid, validationMsg) = validateGame(300.0 - playerStats.secRemaining, playerStats.xpEarned);
+                if (not _gameValid) {
+                    onValidation.put(matchID, updatedBasicStats);
+                    return (false, validationMsg);
+                };
+
+                // Update player stats
+                let _winner = if (playerStats.wonGame) 1 else 0;
+                let _looser = if (not playerStats.wonGame) 1 else 0;
+                let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
+                let _progressRewardsBuffer = Buffer.Buffer<RewardProgress>(1);
+                _progressRewardsBuffer.add({ rewardType = #GamesCompleted; progress = 1; });
+                if (playerStats.wonGame) {
+                    _progressRewardsBuffer.add({ rewardType = #GamesWon; progress = 1; });
+                };
+                let _progressRewards = Buffer.toArray(_progressRewardsBuffer);
+                let _progressAdded = await addProgressToRewards(msg.caller, _progressRewards);
+                _txt := _progressAdded.1;
+
+                // Update or create player game stats
+                updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
+
+                // Update overall stats
+                updateOverallStats(matchID, playerStats);
+
+                // Update player level
+                let playerOpt = players.get(msg.caller);
+                switch (playerOpt) {
+                    case (?player) {
+                        let updatedPlayer: Player = {
+                            id = player.id;
+                            username = player.username;
+                            avatar = player.avatar;
+                            description = player.description;
+                            registrationDate = player.registrationDate;
+                            level = calculateLevel(playerStats.xpEarned);
+                            elo = player.elo;
+                            friends = player.friends;
+                        };
+                        players.put(msg.caller, updatedPlayer);
+                    };
+                    case (null) {};
+                };
+
+                return (true, _txt # " - Game saved");
+            };
+        };
+    };
+};
+
+// Helper function to check if the caller is part of the match
+private func isCallerPartOfMatch(matchID: MatchID, caller: Principal) : async Bool {
+    let matchParticipants = await getMatchParticipants(matchID);
+    switch (matchParticipants) {
+        case (null) { return false };
+        case (?matchData) {
+            if (matchData.0 == caller) {
+                return true;
+            };
+            switch (matchData.1) {
+                case (?player2) {
+                    if (player2 == caller) {
+                        return true;
+                    };
+                };
+                case (null) {};
+            };
+            return false;
+        };
+    }
+};
+
+
+// Function to update player stats
+private func updatePlayerGameStats(playerId: PlayerId, _playerStats: PlayerStats, _winner: Nat, _looser: Nat) {
+    switch (playerGamesStats.get(playerId)) {
+        case (null) {
+            let _gs: PlayerGamesStats = {
+                gamesPlayed = 1;
+                gamesWon = _winner;
+                gamesLost = _looser;
+                energyGenerated = _playerStats.energyGenerated;
+                energyUsed = _playerStats.energyUsed;
+                energyWasted = _playerStats.energyWasted;
+                totalDamageDealt = _playerStats.damageDealt;
+                totalDamageTaken = _playerStats.damageTaken;
+                totalDamageCrit = _playerStats.damageCritic;
+                totalDamageEvaded = _playerStats.damageEvaded;
+                totalXpEarned = _playerStats.xpEarned;
+                totalGamesWithFaction = [{ factionID = _playerStats.faction; gamesPlayed = 1; gamesWon = _winner; }];
+                totalGamesGameMode = [{ gameModeID = _playerStats.gameMode; gamesPlayed = 1; gamesWon = _winner; }];
+                totalGamesWithCharacter = [{ characterID = _playerStats.characterID; gamesPlayed = 1; gamesWon = _winner; }];
+            };
+            playerGamesStats.put(playerId, _gs);
+        };
+        case (?_bs) {
+            let _gamesWithFactionBuffer = Buffer.Buffer<GamesWithFaction>(_bs.totalGamesWithFaction.size());
+            for (gf in _bs.totalGamesWithFaction.vals()) {
+                if (gf.factionID == _playerStats.faction) {
+                    _gamesWithFactionBuffer.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner; });
+                } else {
+                    _gamesWithFactionBuffer.add(gf);
+                };
+            };
+            let _gamesWithFaction = Buffer.toArray(_gamesWithFactionBuffer);
+
+            let _gamesWithGameModeBuffer = Buffer.Buffer<GamesWithGameMode>(_bs.totalGamesGameMode.size());
+            for (gm in _bs.totalGamesGameMode.vals()) {
+                if (gm.gameModeID == _playerStats.gameMode) {
+                    _gamesWithGameModeBuffer.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner; });
+                } else {
+                    _gamesWithGameModeBuffer.add(gm);
+                };
+            };
+            let _gamesWithGameMode = Buffer.toArray(_gamesWithGameModeBuffer);
+
+            let _totalGamesWithCharacterBuffer = Buffer.Buffer<GamesWithCharacter>(_bs.totalGamesWithCharacter.size());
+            for (gc in _bs.totalGamesWithCharacter.vals()) {
+                if (gc.characterID == _playerStats.characterID) {
+                    _totalGamesWithCharacterBuffer.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner; });
+                } else {
+                    _totalGamesWithCharacterBuffer.add(gc);
+                };
+            };
+            let _totalGamesWithCharacter = Buffer.toArray(_totalGamesWithCharacterBuffer);
+
+            var _thisGameXP = _playerStats.xpEarned;
+            if (_playerStats.wonGame) {
+                _thisGameXP := _thisGameXP * 2;
+            } else {
+                _thisGameXP := _thisGameXP * 0.5;
+            };
+            if (_playerStats.gameMode == 1) {
+                _thisGameXP := _thisGameXP * 2;
+            } else {
+                _thisGameXP := _thisGameXP * 0.25;
+            };
+
+            let _gs: PlayerGamesStats = {
+                gamesPlayed = _bs.gamesPlayed + 1;
+                gamesWon = _bs.gamesWon + _winner;
+                gamesLost = _bs.gamesLost + _looser;
+                energyGenerated = _bs.energyGenerated + _playerStats.energyGenerated;
+                energyUsed = _bs.energyUsed + _playerStats.energyUsed;
+                energyWasted = _bs.energyWasted + _playerStats.energyWasted;
+                totalDamageDealt = _bs.totalDamageDealt + _playerStats.damageDealt;
+                totalDamageTaken = _bs.totalDamageTaken + _playerStats.damageTaken;
+                totalDamageCrit = _bs.totalDamageCrit + _playerStats.damageCritic;
+                totalDamageEvaded = _bs.totalDamageEvaded + _playerStats.damageEvaded;
+                totalXpEarned = _bs.totalXpEarned + _thisGameXP;
+                totalGamesWithFaction = _gamesWithFaction;
+                totalGamesGameMode = _gamesWithGameMode;
+                totalGamesWithCharacter = _totalGamesWithCharacter;
+            };
+            playerGamesStats.put(playerId, _gs);
+        };
+    };
+};
+
+// Helper function to update overall stats
+private func updateOverallStats(matchID: MatchID, _playerStats: PlayerStats) {
+    // Ensure the match is counted only once
     switch (countedMatches.get(matchID)) {
         case (?_) {
             return; // Match already counted
@@ -622,6 +709,7 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
             countedMatches.put(matchID, true);
         };
     };
+
     let _totalGamesWithFactionBuffer = Buffer.Buffer<OverallGamesWithFaction>(overallStats.totalGamesWithFaction.size());
     var factionFound = false;
     for (gf in overallStats.totalGamesWithFaction.vals()) {
@@ -1662,5 +1750,41 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
             };
         };
     };
+
+    public query func getMatchParticipants(matchID: MatchID) : async ?(Principal, ?Principal) {
+    switch (finishedGames.get(matchID)) {
+        case (null) {
+            switch (inProgress.get(matchID)) {
+                case (null) {
+                    switch (searching.get(matchID)) {
+                        case (null) { return null };
+                        case (?matchData) {
+                            let player2Id = switch (matchData.player2) {
+                                case (null) { null };
+                                case (?p) { ?p.id };
+                            };
+                            return ?(matchData.player1.id, player2Id);
+                        };
+                    };
+                };
+                case (?matchData) {
+                    let player2Id = switch (matchData.player2) {
+                        case (null) { null };
+                        case (?p) { ?p.id };
+                    };
+                    return ?(matchData.player1.id, player2Id);
+                };
+            };
+        };
+        case (?matchData) {
+            let player2Id = switch (matchData.player2) {
+                case (null) { null };
+                case (?p) { ?p.id };
+            };
+            return ?(matchData.player1.id, player2Id);
+        };
+    }
+};
+
 
 };
