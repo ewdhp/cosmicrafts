@@ -15,7 +15,7 @@ import Utils "Utils";
 
 shared actor class Cosmicrafts() {
 
-  private stable var _cosmicraftsPrincipal : Principal = Principal.fromText("ajuq4-ruaaa-aaaaa-qaaga-cai");
+  private stable var _cosmicraftsPrincipal : Principal = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai");
 
   // Types
   public type PlayerId = Types.PlayerId;
@@ -76,7 +76,7 @@ shared actor class Cosmicrafts() {
           avatar = avatar;
           description = "";
           registrationDate = registrationDate;
-          level = 0;
+          level = 1;
           elo = 1200;
           friends = [];
         };
@@ -218,7 +218,15 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
     };
 };
 
-public shared func updatePlayerElo(playerId : Principal, newELO : Float) : async Bool {
+  // convert float xp into level nat
+  private func calculateLevel(xp: Float) : Nat {
+    let levelFloat = if (xp < 100.0) 1.0 else Float.trunc(Float.log(xp / 100.0) / Float.log(2.0)) + 1.0;
+    let levelInt = Float.toInt(levelFloat);
+    let levelNat64 = Nat64.fromIntWrap(levelInt);
+    return Nat64.toNat(levelNat64);
+  };
+
+private func updatePlayerElo(playerId : Principal, newELO : Float) : async Bool {
     // assert (msg.caller == _statisticPrincipal); /// Only Statistics Canister can update ELO, change for statistics principal later
     switch (players.get(playerId)) {
         case (null) {
@@ -310,47 +318,49 @@ public shared func updatePlayerElo(playerId : Principal, newELO : Float) : async
     };
   };
 
-  public shared (msg) func setGameOver(caller : Principal) : async (Bool, Bool, ?Principal) {
-    assert (msg.caller == Principal.fromText("ajuq4-ruaaa-aaaaa-qaaga-cai")); // main canisterID
-    switch (playerStatus.get(caller)) {
-      case (null) {
-        return (false, false, null);
+  public shared (msg) func setGameOver(caller: Principal) : async (Bool, Bool, ?Principal) {
+      if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
+          return (false, false, null);
       };
-      case (?status) {
-        switch (inProgress.get(status.matchID)) {
+      switch (playerStatus.get(caller)) {
           case (null) {
-            switch (searching.get(status.matchID)) {
-              case (null) {
-                switch (finishedGames.get(status.matchID)) {
+              return (false, false, null);
+          };
+          case (?status) {
+              switch (inProgress.get(status.matchID)) {
                   case (null) {
-                    return (false, false, null);
+                      switch (searching.get(status.matchID)) {
+                          case (null) {
+                              switch (finishedGames.get(status.matchID)) {
+                                  case (null) {
+                                      return (false, false, null);
+                                  };
+                                  case (?match) {
+                                      // Game is not on the searching or in-progress list, so we just remove the status from the player
+                                      playerStatus.delete(caller);
+                                      return (true, caller == match.player1.id, getOtherPlayer(match, caller));
+                                  };
+                              };
+                          };
+                          case (?match) {
+                              // Game is on Searching list, so we remove it, add it to the finished list and remove the status from the player
+                              finishedGames.put(status.matchID, match);
+                              searching.delete(status.matchID);
+                              playerStatus.delete(caller);
+                              return (true, caller == match.player1.id, getOtherPlayer(match, caller));
+                          };
+                      };
                   };
                   case (?match) {
-                    // Game is not on the searching or in-progress list, so we just remove the status from the player
-                    playerStatus.delete(caller);
-                    return (true, caller == match.player1.id, getOtherPlayer(match, caller));
+                      // Game is on in-progress list, so we remove it, add it to the finished list and remove the status from the player
+                      finishedGames.put(status.matchID, match);
+                      inProgress.delete(status.matchID);
+                      playerStatus.delete(caller);
+                      return (true, caller == match.player1.id, getOtherPlayer(match, caller));
                   };
-                };
               };
-              case (?match) {
-                // Game is on Searching list, so we remove it, add it to the finished list and remove the status from the player
-                finishedGames.put(status.matchID, match);
-                searching.delete(status.matchID);
-                playerStatus.delete(caller);
-                return (true, caller == match.player1.id, getOtherPlayer(match, caller));
-              };
-            };
           };
-          case (?match) {
-            // Game is on in-progress list, so we remove it, add it to the finished list and remove the status from the player
-            finishedGames.put(status.matchID, match);
-            inProgress.delete(status.matchID);
-            playerStatus.delete(caller);
-            return (true, caller == match.player1.id, getOtherPlayer(match, caller));
-          };
-        };
       };
-    };
   };
 
   // Function to update player stats after a match
@@ -399,6 +409,25 @@ public shared func updatePlayerElo(playerId : Principal, newELO : Float) : async
           // Update overall stats
           updateOverallStats(_playerStats, _winner);
 
+          // Update player level
+          let playerOpt = players.get(msg.caller);
+          switch (playerOpt) {
+              case (?player) {
+                  let updatedPlayer: Player = {
+                      id = player.id;
+                      username = player.username;
+                      avatar = player.avatar;
+                      description = player.description;
+                      registrationDate = player.registrationDate;
+                      level = calculateLevel(_playerStats.xpEarned);
+                      elo = player.elo;
+                      friends = player.friends;
+                  };
+                  players.put(msg.caller, updatedPlayer);
+              };
+              case (null) {};
+          };
+
           return (true, "Game saved");
       } else {
           // If the match was already saved, add the new player's stats
@@ -442,11 +471,31 @@ public shared func updatePlayerElo(playerId : Principal, newELO : Float) : async
                   // Update overall stats
                   updateOverallStats(_playerStats, _winner);
 
+                  // Update player level
+                  let playerOpt = players.get(msg.caller);
+                  switch (playerOpt) {
+                      case (?player) {
+                          let updatedPlayer: Player = {
+                              id = player.id;
+                              username = player.username;
+                              avatar = player.avatar;
+                              description = player.description;
+                              registrationDate = player.registrationDate;
+                              level = calculateLevel(_playerStats.xpEarned);
+                              elo = player.elo;
+                              friends = player.friends;
+                          };
+                          players.put(msg.caller, updatedPlayer);
+                      };
+                      case (null) {};
+                  };
+
                   return (true, _txt # " - Game saved");
               };
           };
       };
   };
+
 
   // Function to update player stats
   private func updatePlayerGameStats(playerId: PlayerId, _playerStats: PlayerStats, _winner: Nat, _looser: Nat) {

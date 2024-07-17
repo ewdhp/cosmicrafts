@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
     try:
         num_matches = int(input("Enter the number of matches to run: "))
-        loop = input("Do you want to loop indefinitely? (yes/no): ").strip().lower() == "yes"
+        loop = input("Do you want to loop indefinitely? (y/n): ").strip().lower() == "y"
         run_matches(num_matches, loop)
     finally:
         switch_identity("default")

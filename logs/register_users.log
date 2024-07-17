@@ -4536,3 +4536,185 @@ WARN: Please add the following to dfx.json to store local candid file into metad
 )
 2024-07-16 13:21:01,908 - Switching back to default identity
 2024-07-16 13:21:01,935 - Command: dfx identity use default
+2024-07-16 20:33:26,697 - Switching to identity player1
+2024-07-16 20:33:26,723 - Command output: 
+2024-07-16 20:33:26,724 - Identity switched to player1, now making canister call
+2024-07-16 20:33:28,527 - Command output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+)
+2024-07-16 20:33:28,527 - Finished registration for player1
+2024-07-16 20:33:28,527 - Switching to identity player2
+2024-07-16 20:33:28,533 - Command output: 
+2024-07-16 20:33:28,533 - Identity switched to player2, now making canister call
+2024-07-16 20:33:29,820 - Command output: (
+  true,
+  principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae",
+)
+2024-07-16 20:33:29,821 - Finished registration for player2
+2024-07-16 20:33:29,821 - Switching to identity player3
+2024-07-16 20:33:29,853 - Command output: 
+2024-07-16 20:33:29,853 - Identity switched to player3, now making canister call
+2024-07-16 20:33:31,938 - Command output: (
+  true,
+  principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe",
+)
+2024-07-16 20:33:31,943 - Finished registration for player3
+2024-07-16 20:33:31,943 - Switching to identity player4
+2024-07-16 20:33:31,951 - Command output: 
+2024-07-16 20:33:31,951 - Identity switched to player4, now making canister call
+2024-07-16 20:33:33,863 - Command output: (
+  true,
+  principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae",
+)
+2024-07-16 20:33:33,863 - Finished registration for player4
+2024-07-16 20:33:33,863 - Switching to identity player5
+2024-07-16 20:33:33,892 - Command output: 
+2024-07-16 20:33:33,892 - Identity switched to player5, now making canister call
+2024-07-16 20:33:36,252 - Command output: (
+  true,
+  principal "xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae",
+)
+2024-07-16 20:33:36,252 - Finished registration for player5
+2024-07-16 20:33:36,252 - Switching to identity player6
+2024-07-16 20:33:36,265 - Command output: 
+2024-07-16 20:33:36,265 - Identity switched to player6, now making canister call
+2024-07-16 20:33:37,735 - Command output: (
+  true,
+  principal "yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe",
+)
+2024-07-16 20:33:37,736 - Finished registration for player6
+2024-07-16 20:33:37,736 - Switching to identity player7
+2024-07-16 20:33:37,742 - Command output: 
+2024-07-16 20:33:37,742 - Identity switched to player7, now making canister call
+2024-07-16 20:33:39,038 - Command output: (
+  true,
+  principal "u27n5-2c5ef-ackpa-jyrs5-yyzkp-dukw4-p2ma5-4rmb7-a7tv6-rw42b-sqe",
+)
+2024-07-16 20:33:39,038 - Finished registration for player7
+2024-07-16 20:33:39,038 - Switching to identity player8
+2024-07-16 20:33:39,046 - Command output: 
+2024-07-16 20:33:39,046 - Identity switched to player8, now making canister call
+2024-07-16 20:33:40,057 - Command output: (
+  true,
+  principal "u5clb-edy3l-xi7wd-6l2jq-xk5bp-2t4eh-3hut6-r5svq-6qqoc-d4npk-mae",
+)
+2024-07-16 20:33:40,057 - Finished registration for player8
+2024-07-16 20:33:40,057 - Switching to identity player9
+2024-07-16 20:33:40,064 - Command output: 
+2024-07-16 20:33:40,064 - Identity switched to player9, now making canister call
+2024-07-16 20:33:41,731 - Command output: (
+  true,
+  principal "vprmx-skch2-lpter-zjlzm-yymzl-6t7yu-yqokk-3khkx-73gzz-pi57f-cqe",
+)
+2024-07-16 20:33:41,731 - Finished registration for player9
+2024-07-16 20:33:41,731 - Switching to identity player10
+2024-07-16 20:33:41,738 - Command output: 
+2024-07-16 20:33:41,738 - Identity switched to player10, now making canister call
+2024-07-16 20:33:43,105 - Command output: (
+  true,
+  principal "jk4at-pt2hi-weyq6-xgshn-7ofm2-fag6z-7npgt-pfbwf-iomah-voxgc-oqe",
+)
+2024-07-16 20:33:43,106 - Finished registration for player10
+2024-07-16 20:33:43,106 - Switching back to default identity
+2024-07-16 20:33:43,111 - Command output: 
+2024-07-16 20:46:31,580 - Switching to identity player1
+2024-07-16 20:46:31,608 - Command output: 
+2024-07-16 20:46:31,608 - Identity switched to player1, now making canister call
+2024-07-16 20:46:33,066 - Command output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+)
+2024-07-16 20:46:33,067 - Finished registration for player1
+2024-07-16 20:46:33,067 - Switching to identity player2
+2024-07-16 20:46:33,085 - Command output: 
+2024-07-16 20:46:33,085 - Identity switched to player2, now making canister call
+2024-07-16 20:46:35,125 - Command output: (
+  true,
+  principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae",
+)
+2024-07-16 20:46:35,125 - Finished registration for player2
+2024-07-16 20:46:35,125 - Switching to identity player3
+2024-07-16 20:46:35,134 - Command output: 
+2024-07-16 20:46:35,134 - Identity switched to player3, now making canister call
+2024-07-16 20:46:36,505 - Command output: (
+  true,
+  principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe",
+)
+2024-07-16 20:46:36,505 - Finished registration for player3
+2024-07-16 20:46:36,506 - Switching to identity player4
+2024-07-16 20:46:36,522 - Command output: 
+2024-07-16 20:46:36,522 - Identity switched to player4, now making canister call
+2024-07-16 20:46:38,064 - Command output: (
+  true,
+  principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae",
+)
+2024-07-16 20:46:38,065 - Finished registration for player4
+2024-07-16 20:46:38,065 - Switching to identity player5
+2024-07-16 20:46:38,078 - Command output: 
+2024-07-16 20:46:38,078 - Identity switched to player5, now making canister call
+2024-07-16 20:46:39,940 - Command output: (
+  true,
+  principal "xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae",
+)
+2024-07-16 20:46:39,941 - Finished registration for player5
+2024-07-16 20:46:39,941 - Switching to identity player6
+2024-07-16 20:46:39,966 - Command output: 
+2024-07-16 20:46:39,966 - Identity switched to player6, now making canister call
+2024-07-16 20:46:41,235 - Command output: (
+  true,
+  principal "yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe",
+)
+2024-07-16 20:46:41,235 - Finished registration for player6
+2024-07-16 20:46:41,235 - Switching to identity player7
+2024-07-16 20:46:41,263 - Command output: 
+2024-07-16 20:46:41,264 - Identity switched to player7, now making canister call
+2024-07-16 20:46:43,363 - Command output: (
+  true,
+  principal "u27n5-2c5ef-ackpa-jyrs5-yyzkp-dukw4-p2ma5-4rmb7-a7tv6-rw42b-sqe",
+)
+2024-07-16 20:46:43,364 - Finished registration for player7
+2024-07-16 20:46:43,364 - Switching to identity player8
+2024-07-16 20:46:43,378 - Command output: 
+2024-07-16 20:46:43,378 - Identity switched to player8, now making canister call
+2024-07-16 20:46:45,198 - Command output: (
+  true,
+  principal "u5clb-edy3l-xi7wd-6l2jq-xk5bp-2t4eh-3hut6-r5svq-6qqoc-d4npk-mae",
+)
+2024-07-16 20:46:45,198 - Finished registration for player8
+2024-07-16 20:46:45,199 - Switching to identity player9
+2024-07-16 20:46:45,221 - Command output: 
+2024-07-16 20:46:45,221 - Identity switched to player9, now making canister call
+2024-07-16 20:46:46,330 - Command output: (
+  true,
+  principal "vprmx-skch2-lpter-zjlzm-yymzl-6t7yu-yqokk-3khkx-73gzz-pi57f-cqe",
+)
+2024-07-16 20:46:46,331 - Finished registration for player9
+2024-07-16 20:46:46,331 - Switching to identity player10
+2024-07-16 20:46:46,354 - Command output: 
+2024-07-16 20:46:46,355 - Identity switched to player10, now making canister call
+2024-07-16 20:46:47,802 - Command output: (
+  true,
+  principal "jk4at-pt2hi-weyq6-xgshn-7ofm2-fag6z-7npgt-pfbwf-iomah-voxgc-oqe",
+)
+2024-07-16 20:46:47,803 - Finished registration for player10
+2024-07-16 20:46:47,803 - Switching back to default identity
+2024-07-16 20:46:47,812 - Command output: 
+2024-07-16 20:51:45,295 - Switching to identity player1
+2024-07-16 20:51:45,302 - Command output: 
+2024-07-16 20:51:45,302 - Identity switched to player1, now making canister call
+2024-07-16 20:51:46,669 - Command output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+)
+2024-07-16 20:51:46,669 - Finished registration for player1
+2024-07-16 20:51:46,669 - Switching to identity player2
+2024-07-16 20:51:46,695 - Command output: 
+2024-07-16 20:51:46,695 - Identity switched to player2, now making canister call
+2024-07-16 20:51:48,580 - Command output: (
+  true,
+  principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae",
+)
+2024-07-16 20:51:48,580 - Finished registration for player2
+2024-07-16 20:51:48,580 - Switching back to default identity
+2024-07-16 20:51:48,586 - Command output: 
