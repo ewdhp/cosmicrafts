@@ -104,11 +104,13 @@ def get_basic_stats(match_id):
 
 def parse_match_id(search_result):
     """Extracts the match ID from the search result."""
-    match = re.search(r'\(variant \{ Assigned \}, (\d+) : nat,', search_result)
+    match = re.search(r'\(variant \{ Assigned \}, (\d+(_\d+)*) : nat,', search_result)
     if match:
-        return int(match.group(1))
+        match_id_str = match.group(1).replace('_', '')  # Remove underscores
+        return int(match_id_str)
     else:
         raise ValueError("Match ID not found in the search result")
+
 
 def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
     """Generates randomized game statistics."""

@@ -703,7 +703,7 @@ private func updateOverallStats(matchID: MatchID, _playerStats: PlayerStats) {
     // Ensure the match is counted only once
     switch (countedMatches.get(matchID)) {
         case (?_) {
-            return; // Match already counted
+            return; // already counted match
         };
         case (null) {
             countedMatches.put(matchID, true);
