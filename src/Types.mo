@@ -9,6 +9,7 @@ module {
   public type RegistrationDate = Time.Time;
   public type Level = Nat;
   public type MatchID = Nat;
+  public type TokenId = Nat;
 
   public type MatchResult = Text;
   public type MatchMap = Text;

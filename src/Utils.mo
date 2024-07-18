@@ -41,6 +41,19 @@ public func natToBytes(n: Nat): [Nat8] {
   };
 
   // NFT Metadata
+  public func initDeck(): [(Text, Nat, Nat, Nat)] {
+        return [
+            ("Blackbird", 30, 120, 3),
+            ("Predator", 20, 140, 2),
+            ("Warhawk", 30, 180, 4),
+            ("Tigershark", 10, 100, 1),
+            ("Devastator", 20, 120, 2),
+            ("Pulverizer", 10, 180, 3),
+            ("Barracuda", 20, 140, 2),
+            ("Farragut", 10, 220, 4)
+        ];
+    };
+
   public func getBaseMetadata(rarity : Nat, unit_id : Nat) : [(Text, TypesICRC7.Metadata)] {
         let _basicStats : TypesICRC7.MetadataArray = [
             ("level", #Nat(1)),
@@ -129,5 +142,12 @@ public func natToBytes(n: Nat): [Nat8] {
             };
         };
         return Buffer.toArray(updatedMetadataBuffer);
+    };
+
+    public func getChestMetadata(rarity : Nat) : [(Text, TypesICRC7.Metadata)] {
+        let _baseMetadata : [(Text, TypesICRC7.Metadata)] = [
+            ("rarity", #Nat(rarity))
+        ];
+        return _baseMetadata;
     };
 };

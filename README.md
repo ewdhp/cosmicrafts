@@ -19,6 +19,10 @@ gccov-gnjwn-heylh-mzo3a-kdpre-vs75x-aa353-ixynu-qkmgn-l36pm-cae
 dfx deploy icrc7 --argument '( record {owner = principal "vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae"; subaccount = null;}, record { "name" = "Cosmicrafts Avatars"; symbol = "CSA"; royalties = null; royaltyRecipient = null; description = null; image = null; supplyCap = null; })'
 
 
+Missing
+getUserRewards 
+
+
 
 // cleanup matchmaking debug
     // Function to clean up inactive players from the matchmaking queue
