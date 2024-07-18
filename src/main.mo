@@ -10,8 +10,10 @@ import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
+import Result "mo:base/Result";
 import Types "Types";
 import Utils "Utils";
+import TypesICRC7 "/icrc7/types"
 
 shared actor class Cosmicrafts() {
 
@@ -53,6 +55,9 @@ shared actor class Cosmicrafts() {
   public type Reward = Types.Reward;
   public type RewardsUser = Types.RewardsUser;
   public type RewardProgress = Types.RewardProgress;
+
+  //ICRC7 Types
+  public type ICRC7MintReceipt = TypesICRC7.MintReceipt;
 
   // Utils
   func _natEqual(a : Nat, b : Nat) : Bool {
@@ -280,10 +285,7 @@ public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async 
       return (true, "Player stats initialized");
   };
 
-  public shared (msg) func setGameOver(caller: Principal) : async (Bool, Bool, ?Principal) {
-      if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
-          return (false, false, null);
-      };
+  private func setGameOver(caller: Principal) : async (Bool, Bool, ?Principal) {
       switch (playerStatus.get(caller)) {
           case (null) {
               return (false, false, null);
@@ -1786,5 +1788,83 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
     }
 };
 
+// GameNFTs
 
+type Result <S, E> = Result.Result<S, E>;
+
+let gameNFTs = actor("etqmj-zyaaa-aaaap-aakaq-cai") : actor {
+    icrc7_collection_metadata: shared () -> async TypesICRC7.CollectionMetadata;
+    icrc7_name: shared () -> async Text;
+    icrc7_symbol: shared () -> async Text;
+    icrc7_royalties: shared () -> async ?Nat16;
+    icrc7_royalty_recipient: shared () -> async ?TypesICRC7.Account;
+    icrc7_description: shared () -> async ?Text;
+    icrc7_image: shared () -> async ?Blob;
+    icrc7_total_supply: shared () -> async Nat;
+    icrc7_supply_cap: shared () -> async ?Nat;
+    icrc7_metadata: shared (tokenId: TypesICRC7.TokenId) -> async TypesICRC7.MetadataResult;
+    icrc7_owner_of: shared (tokenId: TypesICRC7.TokenId) -> async TypesICRC7.OwnerResult;
+    icrc7_balance_of: shared (account: TypesICRC7.Account) -> async TypesICRC7.BalanceResult;
+    icrc7_tokens_of: shared (account: TypesICRC7.Account) -> async TypesICRC7.TokensOfResult;
+    icrc7_transfer: shared (transferArgs: TypesICRC7.TransferArgs) -> async TypesICRC7.TransferReceipt;
+    icrc7_approve: shared (approvalArgs: TypesICRC7.ApprovalArgs) -> async TypesICRC7.ApprovalReceipt;
+    icrc7_supported_standards: shared () -> async [TypesICRC7.SupportedStandard];
+    mint: shared (mintArgs: TypesICRC7.MintArgs) -> async TypesICRC7.MintReceipt;
+    upgradeNFT: shared (upgradeArgs: TypesICRC7.UpgradeArgs) -> async TypesICRC7.UpgradeReceipt;
+    mintDeck: shared (deck: [TypesICRC7.MintArgs]) -> async TypesICRC7.MintReceipt;
+    get_transactions: shared (getTransactionsArgs: TypesICRC7.GetTransactionsArgs) -> async TypesICRC7.GetTransactionsResult;
+};
+
+// Mint deck with 8 units and random rarity within a range provided
+public shared({ caller }) func mintDeck() : async (Bool, Text) {
+    let units = [
+        ("Blackbird", 30, 120, 3),
+        ("Predator", 20, 140, 2),
+        ("Warhawk", 30, 180, 4),
+        ("Tigershark", 10, 100, 1),
+        ("Devastator", 20, 120, 2),
+        ("Pulverizer", 10, 180, 3),
+        ("Barracuda", 20, 140, 2),
+        ("Farragut", 10, 220, 4)
+    ];
+
+    var _deck = Buffer.Buffer<TypesICRC7.MintArgs>(8);
+
+    for (i in Iter.range(0, 7)) {
+        let (name, damage, hp, rarity) = units[i];
+        let uuid = await Utils.generateUUID64();
+        let _mintArgs: TypesICRC7.MintArgs = {
+            to = { owner = caller; subaccount = null };
+            token_id = uuid;
+            metadata = Utils.getBaseMetadataWithAttributes(rarity, i + 1, name, damage, hp);
+        };
+        _deck.add(_mintArgs);
+    };
+
+    let mintResult = await gameNFTs.mintDeck(Buffer.toArray(_deck));
+    switch (mintResult) {
+        case (#Ok(_transactionID)) {
+            return (true, "Deck minted. # NFTs: " # Nat.toText(_transactionID));
+        };
+        case (#Err(_e)) {
+            switch (_e) {
+                case (#AlreadyExistTokenId) {
+                    return (false, "Deck mint failed: Token ID already exists");
+                };
+                case (#GenericError(_g)) {
+                    return (false, "Deck mint failed: GenericError: " # _g.message);
+                };
+                case (#InvalidRecipient) {
+                    return (false, "Deck mint failed: InvalidRecipient");
+                };
+                case (#Unauthorized) {
+                    return (false, "Deck mint failed: Unauthorized");
+                };
+                case (#SupplyCapOverflow) {
+                    return (false, "Deck mint failed: SupplyCapOverflow");
+                };
+            };
+        };
+    };
+};
 };
