@@ -850,7 +850,7 @@ private func _updateToken(tokenId: Types.TokenId, newOwner: ?Types.Account, newM
 
   public shared({ caller }) func openChest(args : Types.OpenArgs): async Types.OpenReceipt {
     /// Check if the caller is authorized
-    if (Principal.notEqual(caller, Principal.fromText("woimf-oyaaa-aaaan-qegia-cai")) ) {
+    if (Principal.notEqual(caller, Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai")) ) {
       return #Err(#Unauthorized({
         token_ids = [args.token_id];
       }));
