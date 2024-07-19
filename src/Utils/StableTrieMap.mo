@@ -167,7 +167,7 @@ module {
         key : K,
     ) : Bool {
         switch (get(self, keyEq, keyHash, key)) {
-            case (?v) true;
+            case (?V) true;
             case (_) false;
         };
     };

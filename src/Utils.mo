@@ -6,6 +6,9 @@ import Nat32 "mo:base/Nat32";
 import Random "mo:base/Random";
 import Blob "mo:base/Blob";
 import Nat "mo:base/Nat";
+import Int64 "mo:base/Int64";
+import Float "mo:base/Float";
+import Debug "mo:base/Debug";
 import TypesICRC7 "/icrc7/types";
 import TypesICRC1 "/icrc1/Types";
 
@@ -183,6 +186,140 @@ public func getTokensAmount(rarity: Nat): (Nat, Nat) {
     let fluxAmount = Nat.mul(4, factor);
     return (shardsAmount, fluxAmount);
 };
+
+
+// Function to get NFT level from metadata
+public func getNFTLevel(metadata: [(Text, TypesICRC7.Metadata)]): Nat {
+    for ((key, value) in metadata.vals()) {
+        if (key == "basic_stats") {
+            let basicStatsArray = switch (value) {
+                case (#MetadataArray(arr)) arr;
+                case (_) [];
+            };
+            for ((bKey, bValue) in basicStatsArray.vals()) {
+                if (bKey == "level") {
+                    let level = switch (bValue) {
+                        case (#Nat(level)) level;
+                        case (_) 0;
+                    };
+                    Debug.print("Level found: " # Nat.toText(level));
+                    return level;
+                };
+            };
+        };
+    };
+    Debug.print("No level found, defaulting to 0");
+    return 0;
+};
+
+// Function to calculate the upgrade cost based on level
+public func calculateCost(level: Nat): Nat {
+    var cost: Nat = 9;
+    for (i in Iter.range(2, level)) {
+        cost := cost + (Nat.div(cost, 3)); // Increase cost by ~33%
+    };
+    return cost;
+};
+
+// Function to update basic stats
+public func updateBasicStats(basicStats: TypesICRC7.Metadata): TypesICRC7.Metadata {
+    let _data: TypesICRC7.Metadata = switch (basicStats) {
+        case (#Nat(_)) basicStats;
+        case (#Text(_)) basicStats;
+        case (#Blob(_)) basicStats;
+        case (#Int(_)) basicStats;
+        case (#MetadataArray(_a)) {
+            var _newArray = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_a.size());
+            for (_md in _a.vals()) {
+                let _mdKey: Text = _md.0;
+                let _mdValue: TypesICRC7.Metadata = _md.1;
+                switch (_mdKey) {
+                    case "level" {
+                        let _level: Nat = switch (_mdValue) {
+                            case (#Nat(level)) level + 1;
+                            case (_) 0;
+                        };
+                        let _newLevelMetadata: TypesICRC7.Metadata = #Nat(_level);
+                        _newArray.add(("level", _newLevelMetadata));
+                    };
+                    case "health" {
+                        let _health: Float = switch (_mdValue) {
+                            case (#Int(health)) Float.fromInt64(Int64.fromInt(health)) / 100;
+                            case (_) 0;
+                        };
+                        let _newHealth: Float = _health * 1.1 * 100;
+                        let _newHealthMetadata: TypesICRC7.Metadata = #Int(Int64.toInt(Float.toInt64(_newHealth)));
+                        _newArray.add(("health", _newHealthMetadata));
+                    };
+                    case "damage" {
+                        let _damage: Float = switch (_mdValue) {
+                            case (#Int(damage)) Float.fromInt64(Int64.fromInt(damage)) / 100;
+                            case (_) 0;
+                        };
+                        let _newDamage: Float = _damage * 1.1 * 100;
+                        let _newDamageMetadata: TypesICRC7.Metadata = #Int(Int64.toInt(Float.toInt64(_newDamage)));
+                        _newArray.add(("damage", _newDamageMetadata));
+                    };
+                    case (_) {
+                        _newArray.add((_mdKey, _mdValue));
+                    };
+                };
+            };
+            return #MetadataArray(Buffer.toArray(_newArray));
+        };
+    };
+    return _data;
+};
+
+// Function to upgrade advanced attributes
+public func upgradeAdvancedAttributes(_nft_level: Nat, currentValue: TypesICRC7.Metadata): TypesICRC7.Metadata {
+    let _data: TypesICRC7.Metadata = switch(currentValue) {
+        case (#Nat(_)) {
+            currentValue;
+        };
+        case (#Text(_)) {
+            currentValue;
+        };
+        case (#Blob(_)) {
+            currentValue;
+        };
+        case (#Int(_)) {
+            currentValue;
+        };
+        case (#MetadataArray(_a)) {
+            var _newArray = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_a.size());
+            for (_md in _a.vals()) {
+                let _mdKey: Text = _md.0;
+                let _mdValue: TypesICRC7.Metadata = _md.1;
+                switch(_mdKey) {
+                    case ("shield_capacity") {
+                        switch(_mdValue) {
+                            case (#Nat(shield_capacity)) {
+                                let _newShieldCapacity: Nat = shield_capacity + 1;
+                                let _newShieldCapacityMetadata: TypesICRC7.Metadata = #Nat(_newShieldCapacity);
+                                _newArray.add(("shield_capacity", _newShieldCapacityMetadata));
+                            };
+                            case (#Text(_)) {};
+                            case (#Blob(_)) {};
+                            case (#Int(shield_capacity)) {
+                                let _newShieldCapacity: Int = shield_capacity + 1;
+                                let _newShieldCapacityMetadata: TypesICRC7.Metadata = #Int(_newShieldCapacity);
+                                _newArray.add(("shield_capacity", _newShieldCapacityMetadata));
+                            };
+                            case (#MetadataArray(_)) {};
+                        };
+                    };
+                    case (_) {
+                        _newArray.add((_mdKey, _mdValue));
+                    };
+                };
+            };
+            return #MetadataArray(Buffer.toArray(_newArray));
+        };
+    };
+    return _data;
+};
+
 
     // Results
 

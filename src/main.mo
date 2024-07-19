@@ -17,6 +17,7 @@ import Types "Types";
 import Utils "Utils";
 import TypesICRC7 "/icrc7/types";
 import TypesICRC1 "/icrc1/Types";
+import Validator "Validator";
 
 shared actor class Cosmicrafts() {
 
@@ -482,7 +483,7 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
         basicStats.put(matchID, newBasicStats);
 
         // Validate the game
-        let (_gameValid, validationMsg) = validateGame(300.0 - playerStats.secRemaining, playerStats.xpEarned);
+        let (_gameValid, validationMsg) = Validator.validateGame(300.0 - playerStats.secRemaining, playerStats.xpEarned);
         if (not _gameValid) {
             onValidation.put(matchID, newBasicStats);
             return (false, validationMsg);
@@ -544,7 +545,7 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
                 basicStats.put(matchID, updatedBasicStats);
 
                 // Validate the game
-                let (_gameValid, validationMsg) = validateGame(300.0 - playerStats.secRemaining, playerStats.xpEarned);
+                let (_gameValid, validationMsg) = Validator.validateGame(300.0 - playerStats.secRemaining, playerStats.xpEarned);
                 if (not _gameValid) {
                     onValidation.put(matchID, updatedBasicStats);
                     return (false, validationMsg);
@@ -798,19 +799,6 @@ private func updateOverallStats(matchID: MatchID, _playerStats: PlayerStats) {
     };
     overallStats := _os;
 };
-
-  // Validator
-  private func validateGame(timeInSeconds: Float, score: Float) : (Bool, Text) {
-      let maxScoreRate: Float = 550000.0 / (5.0 * 60.0);
-      let maxPlausibleScore: Float = maxScoreRate * timeInSeconds;
-      let isScoreValid: Bool = score <= maxPlausibleScore;
-
-      if (isScoreValid) {
-          return (true, "Game is valid");
-      } else {
-          return (false, "Score is not valid");
-      }
-  };
 
   // MatchMaking
   private var ONE_SECOND : Nat64 = 1_000_000_000;
@@ -1932,8 +1920,8 @@ public shared(msg) func upgradeNFT(nftID: TokenID) : async (Bool, Text) {
 // Function to handle the upgrade process in the background
 private func _processUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(Text, TypesICRC7.Metadata)]): async () {
     // Calculate upgrade cost
-    let nftLevel: Nat = getNFTLevel(_nftMetadata);
-    let upgradeCost = calculateCost(nftLevel);
+    let nftLevel: Nat = Utils.getNFTLevel(_nftMetadata);
+    let upgradeCost = Utils.calculateCost(nftLevel);
     let fee = await shards.icrc1_fee();
 
     // Create transaction arguments for the upgrade cost
@@ -1943,7 +1931,7 @@ private func _processUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
         fee = ?fee;
         from_subaccount: ?TypesICRC1.Subaccount = null;
         memo: ?Blob = null;
-        to: TypesICRC1.Account = { owner = Principal.fromText("3a6n7-myvuc-huq2n-dgpjx-fxa7y-4pteq-epbjf-sdeis-mqq5z-ak6ff-jqe"); subaccount = null; };
+        to: TypesICRC1.Account = { owner = Principal.fromText("aaaaa-aa"); subaccount = null; };
     };
 
     // Transfer the upgrade cost
@@ -1953,6 +1941,7 @@ private func _processUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
         case (#Ok(_tok)) {
             // Execute the metadata update
             await _executeUpgrade(nftID, caller, _nftMetadata);
+            Debug.print("Upgrade successful for NFT ID: " # Nat.toText(nftID) # " by caller: " # Principal.toText(caller));
         };
         case (#Err(_e)) {
             Debug.print("Upgrade cost transfer failed: ");
@@ -1964,7 +1953,7 @@ private func _processUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
 private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(Text, TypesICRC7.Metadata)]): async () {
     // Prepare for upgrade
     let _newArgsBuffer = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_nftMetadata.size());
-    let nftLevel: Nat = getNFTLevel(_nftMetadata);
+    let nftLevel: Nat = Utils.getNFTLevel(_nftMetadata);
 
     // Update metadata
     for (_md in _nftMetadata.vals()) {
@@ -1973,12 +1962,12 @@ private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
         switch (_mdKey) {
             case ("skin") _newArgsBuffer.add(("skin", _mdValue));
             case ("skills") {
-                let _upgradedAdvanced = upgradeAdvancedAttributes(nftLevel, _mdValue);
+                let _upgradedAdvanced = Utils.upgradeAdvancedAttributes(nftLevel, _mdValue);
                 _newArgsBuffer.add(("skills", _upgradedAdvanced));
             };
             case ("souls") _newArgsBuffer.add(("souls", _mdValue));
             case ("basic_stats") {
-                let _basic_stats = updateBasicStats(_mdValue);
+                let _basic_stats = Utils.updateBasicStats(_mdValue);
                 _newArgsBuffer.add(("basic_stats", _basic_stats));
             };
             case ("general") _newArgsBuffer.add(("general", _mdValue));
@@ -1998,140 +1987,6 @@ private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
         case (#Err(_e)) Debug.print("NFT upgrade failed:");
     };
 };
-
-
-// Function to get NFT level from metadata
-private func getNFTLevel(metadata: [(Text, TypesICRC7.Metadata)]): Nat {
-    for ((key, value) in metadata.vals()) {
-        if (key == "basic_stats") {
-            let basicStatsArray = switch (value) {
-                case (#MetadataArray(arr)) arr;
-                case (_) [];
-            };
-            for ((bKey, bValue) in basicStatsArray.vals()) {
-                if (bKey == "level") {
-                    let level = switch (bValue) {
-                        case (#Nat(level)) level;
-                        case (_) 0;
-                    };
-                    Debug.print("Level found: " # Nat.toText(level));
-                    return level;
-                };
-            };
-        };
-    };
-    Debug.print("No level found, defaulting to 0");
-    return 0;
-};
-
-// Function to calculate the upgrade cost based on level
-private func calculateCost(level: Nat): Nat {
-    var cost: Nat = 9;
-    for (i in Iter.range(2, level)) {
-        cost := cost + (Nat.div(cost, 3)); // Increase cost by ~33%
-    };
-    return cost;
-};
-
-// Function to update basic stats
-private func updateBasicStats(basicStats: TypesICRC7.Metadata): TypesICRC7.Metadata {
-    let _data: TypesICRC7.Metadata = switch (basicStats) {
-        case (#Nat(_)) basicStats;
-        case (#Text(_)) basicStats;
-        case (#Blob(_)) basicStats;
-        case (#Int(_)) basicStats;
-        case (#MetadataArray(_a)) {
-            var _newArray = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_a.size());
-            for (_md in _a.vals()) {
-                let _mdKey: Text = _md.0;
-                let _mdValue: TypesICRC7.Metadata = _md.1;
-                switch (_mdKey) {
-                    case "level" {
-                        let _level: Nat = switch (_mdValue) {
-                            case (#Nat(level)) level + 1;
-                            case (_) 0;
-                        };
-                        let _newLevelMetadata: TypesICRC7.Metadata = #Nat(_level);
-                        _newArray.add(("level", _newLevelMetadata));
-                    };
-                    case "health" {
-                        let _health: Float = switch (_mdValue) {
-                            case (#Int(health)) Float.fromInt64(Int64.fromInt(health)) / 100;
-                            case (_) 0;
-                        };
-                        let _newHealth: Float = _health * 1.1 * 100;
-                        let _newHealthMetadata: TypesICRC7.Metadata = #Int(Int64.toInt(Float.toInt64(_newHealth)));
-                        _newArray.add(("health", _newHealthMetadata));
-                    };
-                    case "damage" {
-                        let _damage: Float = switch (_mdValue) {
-                            case (#Int(damage)) Float.fromInt64(Int64.fromInt(damage)) / 100;
-                            case (_) 0;
-                        };
-                        let _newDamage: Float = _damage * 1.1 * 100;
-                        let _newDamageMetadata: TypesICRC7.Metadata = #Int(Int64.toInt(Float.toInt64(_newDamage)));
-                        _newArray.add(("damage", _newDamageMetadata));
-                    };
-                    case (_) {
-                        _newArray.add((_mdKey, _mdValue));
-                    };
-                };
-            };
-            return #MetadataArray(Buffer.toArray(_newArray));
-        };
-    };
-    return _data;
-};
-
-// Function to upgrade advanced attributes
-func upgradeAdvancedAttributes(_nft_level: Nat, currentValue: TypesICRC7.Metadata): TypesICRC7.Metadata {
-    let _data: TypesICRC7.Metadata = switch(currentValue) {
-        case (#Nat(_)) {
-            currentValue;
-        };
-        case (#Text(_)) {
-            currentValue;
-        };
-        case (#Blob(_)) {
-            currentValue;
-        };
-        case (#Int(_)) {
-            currentValue;
-        };
-        case (#MetadataArray(_a)) {
-            var _newArray = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_a.size());
-            for (_md in _a.vals()) {
-                let _mdKey: Text = _md.0;
-                let _mdValue: TypesICRC7.Metadata = _md.1;
-                switch(_mdKey) {
-                    case ("shield_capacity") {
-                        switch(_mdValue) {
-                            case (#Nat(shield_capacity)) {
-                                let _newShieldCapacity: Nat = shield_capacity + 1;
-                                let _newShieldCapacityMetadata: TypesICRC7.Metadata = #Nat(_newShieldCapacity);
-                                _newArray.add(("shield_capacity", _newShieldCapacityMetadata));
-                            };
-                            case (#Text(_)) {};
-                            case (#Blob(_)) {};
-                            case (#Int(shield_capacity)) {
-                                let _newShieldCapacity: Int = shield_capacity + 1;
-                                let _newShieldCapacityMetadata: TypesICRC7.Metadata = #Int(_newShieldCapacity);
-                                _newArray.add(("shield_capacity", _newShieldCapacityMetadata));
-                            };
-                            case (#MetadataArray(_)) {};
-                        };
-                    };
-                    case (_) {
-                        _newArray.add((_mdKey, _mdValue));
-                    };
-                };
-            };
-            return #MetadataArray(Buffer.toArray(_newArray));
-        };
-    };
-    return _data;
-};
-
 
 // Chests
 public shared({ caller }) func mintChest(rarity: Nat) : async (Bool, Text) {
@@ -2244,5 +2099,8 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
 
     return (true, _tokensResults);
 };
+
+
+
 
 };
