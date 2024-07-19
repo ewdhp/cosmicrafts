@@ -7,6 +7,25 @@ dfx deploy energy --ic --argument '( record { name = "Cosmicrafts Energy"; symbo
 record { record { owner = principal "vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae"; subaccount = null; }; 100_000_000_000 } }; min_burn_amount = 1; minting_account = opt record { owner = principal "vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae"; subaccount = null; }; advanced_settings = null; })'
 
 
+dfx deploy flux --argument "(variant {Init =
+record {
+     token_symbol = \"FLX\";
+     token_name = \"FLUX\";
+     minting_account = record { owner = principal \"bkyz2-fmaaa-aaaaa-qaaaq-cai\" };
+     transfer_fee = 1;
+     metadata = vec {};
+     feature_flags = opt record{icrc2 = true};
+     initial_balances = vec { record { record { owner = principal \"bkyz2-fmaaa-aaaaa-qaaaq-cai\"; }; 0; }; };
+     archive_options = record {
+         num_blocks_to_archive = 1000;
+         trigger_threshold = 2000;
+         controller_id = principal \"bkyz2-fmaaa-aaaaa-qaaaq-cai\";
+         cycles_for_archive_creation = opt 10000000000000;
+     };
+ }
+})"
+
+
 dfx canister uninstall-code etqmj-zyaaa-aaaap-aakaq-cai --ic
 dfx canister uninstall-code b7g3n-niaaa-aaaaj-aadlq-cai --ic
 
