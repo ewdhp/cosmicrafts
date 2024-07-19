@@ -1425,7 +1425,6 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
     };
   };
 
-
   public query func getMatchHistoryByPrincipal(player: PlayerId): async [(MatchID, ?BasicStats)] {
       let buffer = Buffer.Buffer<(MatchID, ?BasicStats)>(0);
       for ((matchID, matchData) in finishedGames.entries()) {
@@ -1447,7 +1446,6 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
       return Buffer.toArray(buffer);
   };
   
-
   public query func test(playerId: PlayerId) : async ?{
     username: Username;
     level: Level;
@@ -1489,10 +1487,7 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
         return overallStats;
     };
 
-    
-
 // ICRCs
-
 type Result <S, E> = Result.Result<S, E>;
 
 let shards: ICRC1Interface = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : ICRC1Interface;
@@ -2058,6 +2053,7 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
     rewardID := rewardID + 1;
     return (true, "Reward created successfully");
   };
+  
 
 // QRewards
   public query func getAllUsersRewards() : async ([(Principal, [RewardsUser])]) {
@@ -2102,5 +2098,6 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
       };
     };
   };
+
 
 };
