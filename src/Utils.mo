@@ -6,8 +6,8 @@ import Nat32 "mo:base/Nat32";
 import Random "mo:base/Random";
 import Blob "mo:base/Blob";
 import Nat "mo:base/Nat";
-import TypesICRC7 "/icrc7/types"
-
+import TypesICRC7 "/icrc7/types";
+import TypesICRC1 "/icrc1/Types";
 
 module {
 public func natToBytes(n: Nat): [Nat8] {
@@ -149,5 +149,88 @@ public func natToBytes(n: Nat): [Nat8] {
             ("rarity", #Nat(rarity))
         ];
         return _baseMetadata;
+    };
+
+
+    // Function to get rarity from metadata
+public func getRarityFromMetadata(metadata: [(Text, TypesICRC7.Metadata)]): Nat {
+    for ((key, value) in metadata.vals()) {
+        if (key == "rarity") {
+            return switch (value) {
+                case (#Nat(rarity)) rarity;
+                case (_) 1;
+            };
+        };
+    };
+    return 1;
+};
+
+// Function to get token amounts based on rarity
+public func getTokensAmount(rarity: Nat): (Nat, Nat) {
+    var factor: Nat = 1;
+    if (rarity <= 5) {
+        factor := Nat.pow(2, rarity - 1);
+    } else if (rarity <= 10) {
+        factor := Nat.mul(Nat.pow(2, 5), Nat.div(Nat.pow(3, rarity - 6), Nat.pow(2, rarity - 6)));
+    } else if (rarity <= 15) {
+        factor := Nat.mul(Nat.mul(Nat.pow(2, 5), Nat.div(Nat.pow(3, 5), Nat.pow(2, 5))), Nat.div(Nat.pow(5, rarity - 11), Nat.pow(4, rarity - 11)));
+    } else if (rarity <= 20) {
+        factor := Nat.mul(Nat.mul(Nat.mul(Nat.pow(2, 5), Nat.div(Nat.pow(3, 5), Nat.pow(2, 5))), Nat.div(Nat.pow(5, 5), Nat.pow(4, 5))), Nat.div(Nat.pow(11, rarity - 16), Nat.pow(10, rarity - 16)));
+    } else {
+        factor := Nat.mul(Nat.mul(Nat.mul(Nat.mul(Nat.pow(2, 5), Nat.div(Nat.pow(3, 5), Nat.pow(2, 5))), Nat.div(Nat.pow(5, 5), Nat.pow(4, 5))), Nat.div(Nat.pow(11, 5), Nat.pow(10, 5))), Nat.div(Nat.pow(21, rarity - 21), Nat.pow(20, rarity - 21)));
+    };
+    let shardsAmount = Nat.mul(12, factor);
+    let fluxAmount = Nat.mul(4, factor);
+    return (shardsAmount, fluxAmount);
+};
+
+    // Results
+
+    // Function to handle minting errors
+    public func handleMintError(token: Text, error: TypesICRC1.TransferError): Text {
+        switch (error) {
+            case (#Duplicate(_d)) {
+                return "{\"token\":\"" # token # "\", \"error\":true, \"message\":\"Chest open failed: " # token # " mint failed: Duplicate\"}";
+            };
+            case (#GenericError(_g)) {
+                return "{\"token\":\"" # token # "\", \"error\":true, \"message\":\"Chest open failed: " # token # " mint failed: GenericError: " # _g.message # "\"}";
+            };
+            case (#CreatedInFuture(_cif)) {
+                return "{\"token\":\"" # token # "\", \"error\":true, \"message\":\"Chest open failed: " # token # " mint failed: CreatedInFuture\"}";
+            };
+            case (#BadFee(_bf)) {
+                return "{\"token\":\"" # token # "\", \"error\":true, \"message\":\"Chest open failed: " # token # " mint failed: BadFee\"}";
+            };
+            case (#BadBurn(_bb)) {
+                return "{\"token\":\"" # token # "\", \"error\":true, \"message\":\"Chest open failed: " # token # " mint failed: BadBurn\"}";
+            };
+            case (_) {
+                return "{\"token\":\"" # token # "\", \"error\":true, \"message\":\"Chest open failed: " # token # " mint failed: Other error\"}";
+            };
+        }
+    };
+
+    // Function to handle chest errors
+    public func handleChestError(error: TypesICRC7.TransferError): Text {
+        switch (error) {
+            case (#GenericError(_g)) {
+                return "{\"error\":true, \"message\":\"Chest open failed: GenericError: " # _g.message # "\"}";
+            };
+            case (#CreatedInFuture(_cif)) {
+                return "{\"error\":true, \"message\":\"Chest open failed: CreatedInFuture\"}";
+            };
+            case (#Duplicate(_d)) {
+                return "{\"error\":true, \"message\":\"Chest open failed: Duplicate\"}";
+            };
+            case (#TemporarilyUnavailable(_tu)) {
+                return "{\"error\":true, \"message\":\"Chest open failed: TemporarilyUnavailable\"}";
+            };
+            case (#TooOld) {
+                return "{\"error\":true, \"message\":\"Chest open failed: TooOld\"}";
+            };
+            case (#Unauthorized(_u)) {
+                return "{\"error\":true, \"message\":\"Chest open failed: Unauthorized\"}";
+            };
+        }
     };
 };
