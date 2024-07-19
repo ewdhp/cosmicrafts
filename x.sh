@@ -4,7 +4,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 
 commands=(
     "reset"
-    "dfx identity use default"
+    "dfx identity use bizkit"
     "dfx canister uninstall-code cosmicrafts"
     "dfx deploy"
 )

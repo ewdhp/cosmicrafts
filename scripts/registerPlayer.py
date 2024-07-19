@@ -76,9 +76,9 @@ async def main():
 
     await asyncio.gather(*tasks)
 
-    # Switch back to the default identity at the end
-    logging.info("Switching back to default identity")
-    await switch_identity("default")
+    # Switch back to the bizkit identity at the end
+    logging.info("Switching back to bizkit identity")
+    await switch_identity("bizkit")
 
 if __name__ == "__main__":
     asyncio.run(main())

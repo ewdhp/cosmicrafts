@@ -1074,254 +1074,7 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
     };
   };
 
-  //Rewards
-  private stable var rewardID : Nat = 1;
-  private var ONE_HOUR : Nat64 = 60 * 60 * 1_000_000_000; // 24 hours in nanoseconds
-  private var NULL_PRINCIPAL : Principal = Principal.fromText("aaaaa-aa");
-  private var ANON_PRINCIPAL : Principal = Principal.fromText("2vxsx-fae");
-  private stable var _activeRewards : [(Nat, Reward)] = [];
-  var activeRewards : HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_activeRewards.vals(), 0, _natEqual, _natHash);
-  private stable var _rewardsUsers : [(PlayerId, [RewardsUser])] = [];
-  var rewardsUsers : HashMap.HashMap<PlayerId, [RewardsUser]> = HashMap.fromIter(_rewardsUsers.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _finishedRewardsUsers : [(PlayerId, [RewardsUser])] = [];
-  var finishedRewardsUsers : HashMap.HashMap<PlayerId, [RewardsUser]> = HashMap.fromIter(_finishedRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _expiredRewardsUsers : [(PlayerId, [RewardsUser])] = [];
-  var expiredRewardsUsers : HashMap.HashMap<PlayerId, [RewardsUser]> = HashMap.fromIter(_expiredRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _userLastReward : [(PlayerId, Nat)] = [];
-  var userLastReward : HashMap.HashMap<PlayerId, Nat> = HashMap.fromIter(_userLastReward.vals(), 0, Principal.equal, Principal.hash);
-  private stable var _expiredRewards : [(Nat, Reward)] = [];
-  var expiredRewards : HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_expiredRewards.vals(), 0, _natEqual, _natHash);
-
-  public shared (msg) func addReward(reward : Reward) : async (Bool, Text, Nat) {
-    if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
-      return (false, "Unauthorized", 0);
-    };
-    let _newID = rewardID;
-    activeRewards.put(_newID, reward);
-    rewardID := rewardID + 1;
-    return (true, "Reward added successfully", _newID);
-  };
-
-  public shared (msg) func claimedReward(_player: Principal, rewardID: Nat): async (Bool, Text) {
-      if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
-          return (false, "Unauthorized");
-      };
-      switch (rewardsUsers.get(_player)) {
-          case (null) {
-              return (false, "User not found");
-          };
-          case (?rewardsu) {
-              var _removed: Bool = false;
-              var _message: Text = "Reward not found";
-              let _userRewardsActive = Buffer.Buffer<RewardsUser>(rewardsu.size());
-              for (r in rewardsu.vals()) {
-                  if (r.id_reward == rewardID) {
-                      if (r.finished == true) {
-                          let newUserRewardsFinished = Buffer.Buffer<RewardsUser>(
-                              switch (finishedRewardsUsers.get(_player)) {
-                                  case (null) { 0 };
-                                  case (?rewardsf) { rewardsf.size() };
-                              }
-                          );
-                          _removed := true;
-                          _message := "Reward claimed successfully";
-                          newUserRewardsFinished.add(r);
-                          finishedRewardsUsers.put(_player, Buffer.toArray(newUserRewardsFinished));
-                      } else {
-                          _message := "Reward not finished yet";
-                      };
-                  } else {
-                      _userRewardsActive.add(r);
-                  };
-              };
-              rewardsUsers.put(_player, Buffer.toArray(_userRewardsActive));
-              return (_removed, _message);
-          };
-      };
-  };
-
-  public shared func addProgressToRewards(_player: Principal, rewardsProgress: [RewardProgress]): async (Bool, Text) {
-      if (Principal.equal(_player, NULL_PRINCIPAL)) {
-          return (false, "USER IS NULL. CANNOT ADD PROGRESS TO NULL USER");
-      };
-      if (Principal.equal(_player, ANON_PRINCIPAL)) {
-          return (false, "USER IS ANONYMOUS. CANNOT ADD PROGRESS TO ANONYMOUS USER");
-      };
-      let _rewards_user: [RewardsUser] = switch (rewardsUsers.get(_player)) {
-          case (null) {
-              addNewRewardsToUser(_player);
-          };
-          case (?rewardsu) {
-              rewardsu;
-          };
-      };
-      if (_rewards_user.size() == 0) {
-          return (false, "NO REWARDS FOUND FOR THIS USER");
-      };
-      if (rewardsProgress.size() == 0) {
-          return (false, "NO PROGRESS FOUND FOR THIS USER");
-      };
-      let _newUserRewards = Buffer.Buffer<RewardsUser>(_rewards_user.size());
-      let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-      for (r in _rewards_user.vals()) {
-          var _finished = r.finished;
-          if (_finished == false and r.start_date <= _now) {
-              if (r.expiration < _now) {
-                  let newUserRewardsExpired = Buffer.Buffer<RewardsUser>(
-                      switch (expiredRewardsUsers.get(_player)) {
-                          case (null) { 0 };
-                          case (?rewardse) { rewardse.size() };
-                      }
-                  );
-                  newUserRewardsExpired.add(r);
-                  expiredRewardsUsers.put(_player, Buffer.toArray(newUserRewardsExpired));
-              } else {
-                  for (rp in rewardsProgress.vals()) {
-                      if (r.rewardType == rp.rewardType) {
-                          let _progress = r.progress + rp.progress;
-                          var _finishedDate = r.finish_date;
-                          if (_progress >= r.total) {
-                              _finished := true;
-                              _finishedDate := _now;
-                          };
-                          let _r_u: RewardsUser = {
-                              expiration = r.expiration;
-                              start_date = r.start_date;
-                              finish_date = _finishedDate;
-                              finished = _finished;
-                              id_reward = r.id_reward;
-                              prize_amount = r.prize_amount;
-                              prize_type = r.prize_type;
-                              progress = _progress;
-                              rewardType = r.rewardType;
-                              total = r.total;
-                          };
-                          _newUserRewards.add(_r_u);
-                      };
-                  };
-              };
-          } else {
-              _newUserRewards.add(r);
-          };
-      };
-      rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
-      return (true, "Progress added successfully for " # Nat.toText(_newUserRewards.size()) # " rewards");
-  };
-
-
-  func getAllUnexpiredActiveRewards(_from: ?Nat): [Reward] {
-      let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-      let _activeRewards = Buffer.Buffer<Reward>(activeRewards.size());
-      let _fromNat: Nat = switch (_from) {
-          case (null) { 0 };
-          case (?f) { f };
-      };
-      for (r in activeRewards.vals()) {
-          if (r.id > _fromNat) {
-              if (r.start_date <= _now) {
-                  if (r.end_date < _now) {
-                      let _expR = activeRewards.remove(r.id);
-                      switch (_expR) {
-                          case (null) {
-                          };
-                          case (?er) {
-                              expiredRewards.put(er.id, er);
-                          };
-                      };
-                  } else {
-                      _activeRewards.add(r);
-                  };
-              };
-          };
-      };
-      return Buffer.toArray(_activeRewards);
-  };
-
-
-  func addNewRewardsToUser(_player: Principal): [RewardsUser] {
-      let _newUserRewards = Buffer.Buffer<RewardsUser>(0);
-      switch (userLastReward.get(_player)) {
-          case (null) {
-              let _unexpiredRewards = getAllUnexpiredActiveRewards(null);
-              for (r in _unexpiredRewards.vals()) {
-                  let _r_u: RewardsUser = {
-                      expiration = r.end_date;
-                      start_date = r.start_date;
-                      finish_date = r.end_date;
-                      finished = false;
-                      id_reward = r.id;
-                      prize_amount = r.prize_amount;
-                      prize_type = r.prize_type;
-                      progress = 0;
-                      rewardType = r.rewardType;
-                      total = r.total;
-                  };
-                  _newUserRewards.add(_r_u);
-              };
-          };
-          case (lastReward) {
-              let _unexpiredRewards = getAllUnexpiredActiveRewards(lastReward);
-              for (r in _unexpiredRewards.vals()) {
-                  let _r_u: RewardsUser = {
-                      expiration = r.end_date;
-                      start_date = r.start_date;
-                      finish_date = r.end_date;
-                      finished = false;
-                      id_reward = r.id;
-                      prize_amount = r.prize_amount;
-                      prize_type = r.prize_type;
-                      progress = 0;
-                      rewardType = r.rewardType;
-                      total = r.total;
-                  };
-                  _newUserRewards.add(_r_u);
-              };
-          };
-      };
-      switch (rewardsUsers.get(_player)) {
-          case (null) {
-              userLastReward.put(_player, rewardID);
-              rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
-              return Buffer.toArray(_newUserRewards);
-          };
-          case (?rewardsu) {
-              let _newRewards = Buffer.Buffer<RewardsUser>(rewardsu.size() + _newUserRewards.size());
-              for (r in rewardsu.vals()) {
-                  _newRewards.add(r);
-              };
-              for (r in _newUserRewards.vals()) {
-                  _newRewards.add(r);
-              };
-              userLastReward.put(_player, rewardID);
-              rewardsUsers.put(_player, Buffer.toArray(_newRewards));
-              return Buffer.toArray(_newRewards);
-          };
-      };
-  };
-
-  public shared func createReward(name : Text, rewardType : RewardType, prizeType : PrizeType, prizeAmount : Nat, total : Float, hours_active : Nat64) : async (Bool, Text) {
-    let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-    let _hoursActive = ONE_HOUR * hours_active;
-    let endDate = _now + _hoursActive;
-    // if(Principal.notEqual(msg.caller, _cosmicraftsPrincipal)){
-    //     return (false, "Unauthorized");
-    // };
-    let _newReward : Reward = {
-      end_date = endDate;
-      id = rewardID;
-      name = name;
-      prize_amount = prizeAmount;
-      prize_type = prizeType;
-      rewardType = rewardType;
-      start_date = _now;
-      total = total;
-    };
-    activeRewards.put(rewardID, _newReward);
-    rewardID := rewardID + 1;
-    return (true, "Reward created successfully");
-  };
-
-  // Queries
+  // QPlayers
 
   // Full User Profile with statistics and friends
   public query func getFullUserProfile(player: PlayerId) : async ?(Player, PlayerGamesStats, AverageStats) {
@@ -1419,10 +1172,6 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
   };
 
   // QStatistics
-  public query func getCosmicraftsStats() : async OverallStats {
-    return overallStats;
-  };
-
   public query func getPlayerStats(player: PlayerId) : async ?PlayerGamesStats {
     return playerGamesStats.get(player);
   };
@@ -1463,7 +1212,7 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
     return Buffer.toArray(_searchingList);
   };
 
-   public shared query (msg) func isGameMatched() : async (Bool, Text) {
+   public query (msg) func isGameMatched() : async (Bool, Text) {
     switch (playerStatus.get(msg.caller)) {
       case (null) {
         return (false, "Game not found for this player");
@@ -1494,6 +1243,41 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
       };
     };
   };
+
+  public query func getMatchParticipants(matchID: MatchID) : async ?(Principal, ?Principal) {
+    switch (finishedGames.get(matchID)) {
+        case (null) {
+            switch (inProgress.get(matchID)) {
+                case (null) {
+                    switch (searching.get(matchID)) {
+                        case (null) { return null };
+                        case (?matchData) {
+                            let player2Id = switch (matchData.player2) {
+                                case (null) { null };
+                                case (?p) { ?p.id };
+                            };
+                            return ?(matchData.player1.id, player2Id);
+                        };
+                    };
+                };
+                case (?matchData) {
+                    let player2Id = switch (matchData.player2) {
+                        case (null) { null };
+                        case (?p) { ?p.id };
+                    };
+                    return ?(matchData.player1.id, player2Id);
+                };
+            };
+        };
+        case (?matchData) {
+            let player2Id = switch (matchData.player2) {
+                case (null) { null };
+                case (?p) { ?p.id };
+            };
+            return ?(matchData.player1.id, player2Id);
+        };
+    }
+};
 
   // For loading match screen
   public shared composite query (msg) func getMyMatchData() : async (?FullMatchData, Nat) {
@@ -1663,49 +1447,6 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
       return Buffer.toArray(buffer);
   };
   
-  // QRewards
-  public query func getAllUsersRewards() : async ([(Principal, [RewardsUser])]) {
-    return Iter.toArray(rewardsUsers.entries());
-  };
-
-  public query func getAllActiveRewards(): async (Nat, [(Reward)]) {
-      let _activeRewards = Buffer.Buffer<Reward>(activeRewards.size());
-      var _expired: Nat = 0;
-      let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-      for (r in activeRewards.vals()) {
-          if (r.start_date <= _now) {
-              if (r.end_date < _now) {
-                  _expired := _expired + 1;
-              } else {
-                  _activeRewards.add(r);
-              };
-          };
-      };
-      return (_expired, Buffer.toArray(_activeRewards));
-  };
-
-    public query func getReward(rewardID : Nat) : async ?Reward {
-    return (activeRewards.get(rewardID));
-  };
-
-  public shared query (msg) func getUserReward(_user : PlayerId, _idReward : Nat) : async ?RewardsUser {
-    if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
-      return null;
-    };
-    switch (rewardsUsers.get(_user)) {
-      case (null) {
-        return null;
-      };
-      case (?rewardsu) {
-        for (r in rewardsu.vals()) {
-          if (r.id_reward == _idReward) {
-            return ?r;
-          };
-        };
-        return null;
-      };
-    };
-  };
 
   public query func test(playerId: PlayerId) : async ?{
     username: Username;
@@ -1744,40 +1485,11 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
         };
     };
 
-    public query func getMatchParticipants(matchID: MatchID) : async ?(Principal, ?Principal) {
-    switch (finishedGames.get(matchID)) {
-        case (null) {
-            switch (inProgress.get(matchID)) {
-                case (null) {
-                    switch (searching.get(matchID)) {
-                        case (null) { return null };
-                        case (?matchData) {
-                            let player2Id = switch (matchData.player2) {
-                                case (null) { null };
-                                case (?p) { ?p.id };
-                            };
-                            return ?(matchData.player1.id, player2Id);
-                        };
-                    };
-                };
-                case (?matchData) {
-                    let player2Id = switch (matchData.player2) {
-                        case (null) { null };
-                        case (?p) { ?p.id };
-                    };
-                    return ?(matchData.player1.id, player2Id);
-                };
-            };
-        };
-        case (?matchData) {
-            let player2Id = switch (matchData.player2) {
-                case (null) { null };
-                case (?p) { ?p.id };
-            };
-            return ?(matchData.player1.id, player2Id);
-        };
-    }
-};
+    public query func getCosmicraftsStats() : async OverallStats {
+        return overallStats;
+    };
+
+    
 
 // ICRCs
 
@@ -2100,7 +1812,295 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
     return (true, _tokensResults);
 };
 
+// Rewards
+  private stable var rewardID : Nat = 1;
+  private var ONE_HOUR : Nat64 = 60 * 60 * 1_000_000_000; // 24 hours in nanoseconds
+  private var NULL_PRINCIPAL : Principal = Principal.fromText("aaaaa-aa");
+  private var ANON_PRINCIPAL : Principal = Principal.fromText("2vxsx-fae");
+  private stable var _activeRewards : [(Nat, Reward)] = [];
+  var activeRewards : HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_activeRewards.vals(), 0, _natEqual, _natHash);
+  private stable var _rewardsUsers : [(PlayerId, [RewardsUser])] = [];
+  var rewardsUsers : HashMap.HashMap<PlayerId, [RewardsUser]> = HashMap.fromIter(_rewardsUsers.vals(), 0, Principal.equal, Principal.hash);
+  private stable var _finishedRewardsUsers : [(PlayerId, [RewardsUser])] = [];
+  var finishedRewardsUsers : HashMap.HashMap<PlayerId, [RewardsUser]> = HashMap.fromIter(_finishedRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
+  private stable var _expiredRewardsUsers : [(PlayerId, [RewardsUser])] = [];
+  var expiredRewardsUsers : HashMap.HashMap<PlayerId, [RewardsUser]> = HashMap.fromIter(_expiredRewardsUsers.vals(), 0, Principal.equal, Principal.hash);
+  private stable var _userLastReward : [(PlayerId, Nat)] = [];
+  var userLastReward : HashMap.HashMap<PlayerId, Nat> = HashMap.fromIter(_userLastReward.vals(), 0, Principal.equal, Principal.hash);
+  private stable var _expiredRewards : [(Nat, Reward)] = [];
+  var expiredRewards : HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_expiredRewards.vals(), 0, _natEqual, _natHash);
+
+  public shared (msg) func addReward(reward : Reward) : async (Bool, Text, Nat) {
+    if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
+      return (false, "Unauthorized", 0);
+    };
+    let _newID = rewardID;
+    activeRewards.put(_newID, reward);
+    rewardID := rewardID + 1;
+    return (true, "Reward added successfully", _newID);
+  };
+
+  public shared (msg) func claimedReward(_player: Principal, rewardID: Nat): async (Bool, Text) {
+      if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
+          return (false, "Unauthorized");
+      };
+      switch (rewardsUsers.get(_player)) {
+          case (null) {
+              return (false, "User not found");
+          };
+          case (?rewardsu) {
+              var _removed: Bool = false;
+              var _message: Text = "Reward not found";
+              let _userRewardsActive = Buffer.Buffer<RewardsUser>(rewardsu.size());
+              for (r in rewardsu.vals()) {
+                  if (r.id_reward == rewardID) {
+                      if (r.finished == true) {
+                          let newUserRewardsFinished = Buffer.Buffer<RewardsUser>(
+                              switch (finishedRewardsUsers.get(_player)) {
+                                  case (null) { 0 };
+                                  case (?rewardsf) { rewardsf.size() };
+                              }
+                          );
+                          _removed := true;
+                          _message := "Reward claimed successfully";
+                          newUserRewardsFinished.add(r);
+                          finishedRewardsUsers.put(_player, Buffer.toArray(newUserRewardsFinished));
+                      } else {
+                          _message := "Reward not finished yet";
+                      };
+                  } else {
+                      _userRewardsActive.add(r);
+                  };
+              };
+              rewardsUsers.put(_player, Buffer.toArray(_userRewardsActive));
+              return (_removed, _message);
+          };
+      };
+  };
+
+  public shared func addProgressToRewards(_player: Principal, rewardsProgress: [RewardProgress]): async (Bool, Text) {
+      if (Principal.equal(_player, NULL_PRINCIPAL)) {
+          return (false, "USER IS NULL. CANNOT ADD PROGRESS TO NULL USER");
+      };
+      if (Principal.equal(_player, ANON_PRINCIPAL)) {
+          return (false, "USER IS ANONYMOUS. CANNOT ADD PROGRESS TO ANONYMOUS USER");
+      };
+      let _rewards_user: [RewardsUser] = switch (rewardsUsers.get(_player)) {
+          case (null) {
+              addNewRewardsToUser(_player);
+          };
+          case (?rewardsu) {
+              rewardsu;
+          };
+      };
+      if (_rewards_user.size() == 0) {
+          return (false, "NO REWARDS FOUND FOR THIS USER");
+      };
+      if (rewardsProgress.size() == 0) {
+          return (false, "NO PROGRESS FOUND FOR THIS USER");
+      };
+      let _newUserRewards = Buffer.Buffer<RewardsUser>(_rewards_user.size());
+      let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+      for (r in _rewards_user.vals()) {
+          var _finished = r.finished;
+          if (_finished == false and r.start_date <= _now) {
+              if (r.expiration < _now) {
+                  let newUserRewardsExpired = Buffer.Buffer<RewardsUser>(
+                      switch (expiredRewardsUsers.get(_player)) {
+                          case (null) { 0 };
+                          case (?rewardse) { rewardse.size() };
+                      }
+                  );
+                  newUserRewardsExpired.add(r);
+                  expiredRewardsUsers.put(_player, Buffer.toArray(newUserRewardsExpired));
+              } else {
+                  for (rp in rewardsProgress.vals()) {
+                      if (r.rewardType == rp.rewardType) {
+                          let _progress = r.progress + rp.progress;
+                          var _finishedDate = r.finish_date;
+                          if (_progress >= r.total) {
+                              _finished := true;
+                              _finishedDate := _now;
+                          };
+                          let _r_u: RewardsUser = {
+                              expiration = r.expiration;
+                              start_date = r.start_date;
+                              finish_date = _finishedDate;
+                              finished = _finished;
+                              id_reward = r.id_reward;
+                              prize_amount = r.prize_amount;
+                              prize_type = r.prize_type;
+                              progress = _progress;
+                              rewardType = r.rewardType;
+                              total = r.total;
+                          };
+                          _newUserRewards.add(_r_u);
+                      };
+                  };
+              };
+          } else {
+              _newUserRewards.add(r);
+          };
+      };
+      rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
+      return (true, "Progress added successfully for " # Nat.toText(_newUserRewards.size()) # " rewards");
+  };
 
 
+  func getAllUnexpiredActiveRewards(_from: ?Nat): [Reward] {
+      let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+      let _activeRewards = Buffer.Buffer<Reward>(activeRewards.size());
+      let _fromNat: Nat = switch (_from) {
+          case (null) { 0 };
+          case (?f) { f };
+      };
+      for (r in activeRewards.vals()) {
+          if (r.id > _fromNat) {
+              if (r.start_date <= _now) {
+                  if (r.end_date < _now) {
+                      let _expR = activeRewards.remove(r.id);
+                      switch (_expR) {
+                          case (null) {
+                          };
+                          case (?er) {
+                              expiredRewards.put(er.id, er);
+                          };
+                      };
+                  } else {
+                      _activeRewards.add(r);
+                  };
+              };
+          };
+      };
+      return Buffer.toArray(_activeRewards);
+  };
+
+
+  func addNewRewardsToUser(_player: Principal): [RewardsUser] {
+      let _newUserRewards = Buffer.Buffer<RewardsUser>(0);
+      switch (userLastReward.get(_player)) {
+          case (null) {
+              let _unexpiredRewards = getAllUnexpiredActiveRewards(null);
+              for (r in _unexpiredRewards.vals()) {
+                  let _r_u: RewardsUser = {
+                      expiration = r.end_date;
+                      start_date = r.start_date;
+                      finish_date = r.end_date;
+                      finished = false;
+                      id_reward = r.id;
+                      prize_amount = r.prize_amount;
+                      prize_type = r.prize_type;
+                      progress = 0;
+                      rewardType = r.rewardType;
+                      total = r.total;
+                  };
+                  _newUserRewards.add(_r_u);
+              };
+          };
+          case (lastReward) {
+              let _unexpiredRewards = getAllUnexpiredActiveRewards(lastReward);
+              for (r in _unexpiredRewards.vals()) {
+                  let _r_u: RewardsUser = {
+                      expiration = r.end_date;
+                      start_date = r.start_date;
+                      finish_date = r.end_date;
+                      finished = false;
+                      id_reward = r.id;
+                      prize_amount = r.prize_amount;
+                      prize_type = r.prize_type;
+                      progress = 0;
+                      rewardType = r.rewardType;
+                      total = r.total;
+                  };
+                  _newUserRewards.add(_r_u);
+              };
+          };
+      };
+      switch (rewardsUsers.get(_player)) {
+          case (null) {
+              userLastReward.put(_player, rewardID);
+              rewardsUsers.put(_player, Buffer.toArray(_newUserRewards));
+              return Buffer.toArray(_newUserRewards);
+          };
+          case (?rewardsu) {
+              let _newRewards = Buffer.Buffer<RewardsUser>(rewardsu.size() + _newUserRewards.size());
+              for (r in rewardsu.vals()) {
+                  _newRewards.add(r);
+              };
+              for (r in _newUserRewards.vals()) {
+                  _newRewards.add(r);
+              };
+              userLastReward.put(_player, rewardID);
+              rewardsUsers.put(_player, Buffer.toArray(_newRewards));
+              return Buffer.toArray(_newRewards);
+          };
+      };
+  };
+
+  public shared func createReward(name : Text, rewardType : RewardType, prizeType : PrizeType, prizeAmount : Nat, total : Float, hours_active : Nat64) : async (Bool, Text) {
+    let _now : Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+    let _hoursActive = ONE_HOUR * hours_active;
+    let endDate = _now + _hoursActive;
+    // if(Principal.notEqual(msg.caller, _cosmicraftsPrincipal)){
+    //     return (false, "Unauthorized");
+    // };
+    let _newReward : Reward = {
+      end_date = endDate;
+      id = rewardID;
+      name = name;
+      prize_amount = prizeAmount;
+      prize_type = prizeType;
+      rewardType = rewardType;
+      start_date = _now;
+      total = total;
+    };
+    activeRewards.put(rewardID, _newReward);
+    rewardID := rewardID + 1;
+    return (true, "Reward created successfully");
+  };
+
+// QRewards
+  public query func getAllUsersRewards() : async ([(Principal, [RewardsUser])]) {
+    return Iter.toArray(rewardsUsers.entries());
+  };
+
+  public query func getAllActiveRewards(): async (Nat, [(Reward)]) {
+      let _activeRewards = Buffer.Buffer<Reward>(activeRewards.size());
+      var _expired: Nat = 0;
+      let _now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+      for (r in activeRewards.vals()) {
+          if (r.start_date <= _now) {
+              if (r.end_date < _now) {
+                  _expired := _expired + 1;
+              } else {
+                  _activeRewards.add(r);
+              };
+          };
+      };
+      return (_expired, Buffer.toArray(_activeRewards));
+  };
+
+    public query func getReward(rewardID : Nat) : async ?Reward {
+    return (activeRewards.get(rewardID));
+  };
+
+  public shared query (msg) func getUserReward(_user : PlayerId, _idReward : Nat) : async ?RewardsUser {
+    if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
+      return null;
+    };
+    switch (rewardsUsers.get(_user)) {
+      case (null) {
+        return null;
+      };
+      case (?rewardsu) {
+        for (r in rewardsu.vals()) {
+          if (r.id_reward == _idReward) {
+            return ?r;
+          };
+        };
+        return null;
+      };
+    };
+  };
 
 };

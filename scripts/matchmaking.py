@@ -252,7 +252,7 @@ def run_matches(num_matches, loop):
 if __name__ == "__main__":
     def exit_gracefully(signum, frame):
         """Handle graceful exit on Ctrl+C or termination signal."""
-        switch_identity("default")
+        switch_identity("bizkit")
         print("Exiting gracefully...")
         sys.exit(0)
 
@@ -267,4 +267,4 @@ if __name__ == "__main__":
         loop = input("Do you want to loop indefinitely? (y/n): ").strip().lower() == "y"
         run_matches(num_matches, loop)
     finally:
-        switch_identity("default")
+        switch_identity("bizkit")
