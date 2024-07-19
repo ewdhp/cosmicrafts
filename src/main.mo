@@ -1989,7 +1989,7 @@ private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
     let _upgradeArgs: TypesICRC7.UpgradeArgs = {
         from = { owner = caller; subaccount = null };
         token_id = nftID;
-        metadata = _newArgsBuffer.toArray();
+        metadata = Buffer.toArray(_newArgsBuffer);
         date_time = ?{ timestamp_nanos = Nat64.fromNat(Int.abs(Time.now())) };
     };
     let upgrade: TypesICRC7.UpgradeReceipt = await gameNFTs.upgradeNFT(_upgradeArgs);
@@ -1998,6 +1998,7 @@ private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
         case (#Err(_e)) Debug.print("NFT upgrade failed:");
     };
 };
+
 
 // Function to get NFT level from metadata
 private func getNFTLevel(metadata: [(Text, TypesICRC7.Metadata)]): Nat {
@@ -2033,7 +2034,7 @@ private func calculateCost(level: Nat): Nat {
 };
 
 // Function to update basic stats
-private func updateBasicStats(basicStats: TypesICRC7.Metadata) : TypesICRC7.Metadata {
+private func updateBasicStats(basicStats: TypesICRC7.Metadata): TypesICRC7.Metadata {
     let _data: TypesICRC7.Metadata = switch (basicStats) {
         case (#Nat(_)) basicStats;
         case (#Text(_)) basicStats;
@@ -2076,239 +2077,56 @@ private func updateBasicStats(basicStats: TypesICRC7.Metadata) : TypesICRC7.Meta
                     };
                 };
             };
-            return #MetadataArray(_newArray.toArray());
+            return #MetadataArray(Buffer.toArray(_newArray));
         };
     };
     return _data;
 };
 
 // Function to upgrade advanced attributes
-func upgradeAdvancedAttributes(nft_level : Nat, currentValue : TypesICRC7.Metadata) : TypesICRC7.Metadata {
-    let _data : TypesICRC7.Metadata = switch(currentValue){
-        case(#Nat(_)){
+func upgradeAdvancedAttributes(_nft_level: Nat, currentValue: TypesICRC7.Metadata): TypesICRC7.Metadata {
+    let _data: TypesICRC7.Metadata = switch(currentValue) {
+        case (#Nat(_)) {
             currentValue;
         };
-        case(#Text(_)){
-            currentValue
+        case (#Text(_)) {
+            currentValue;
         };
-        case(#Blob(_)){
-            currentValue
+        case (#Blob(_)) {
+            currentValue;
         };
-        case(#Int(_)){
-            currentValue
+        case (#Int(_)) {
+            currentValue;
         };
-        case(#MetadataArray(_a)){
+        case (#MetadataArray(_a)) {
             var _newArray = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_a.size());
             for (_md in _a.vals()) {
-                let _mdKey : Text = _md.0;
-                let _mdValue : TypesICRC7.Metadata = _md.1;
-                switch(_mdKey){
-                    case("shield_capacity"){
-                        switch(_mdValue){
-                            case(#Nat(shield_capacity)){
-                                let _newShieldCapacity : Nat = shield_capacity + 1;
-                                let _newShieldCapacityMetadata : TypesICRC7.Metadata = #Nat(_newShieldCapacity);
+                let _mdKey: Text = _md.0;
+                let _mdValue: TypesICRC7.Metadata = _md.1;
+                switch(_mdKey) {
+                    case ("shield_capacity") {
+                        switch(_mdValue) {
+                            case (#Nat(shield_capacity)) {
+                                let _newShieldCapacity: Nat = shield_capacity + 1;
+                                let _newShieldCapacityMetadata: TypesICRC7.Metadata = #Nat(_newShieldCapacity);
                                 _newArray.add(("shield_capacity", _newShieldCapacityMetadata));
                             };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(shield_capacity)){
-                                let _newShieldCapacity : Int = shield_capacity + 1;
-                                let _newShieldCapacityMetadata : TypesICRC7.Metadata = #Int(_newShieldCapacity);
+                            case (#Text(_)) {};
+                            case (#Blob(_)) {};
+                            case (#Int(shield_capacity)) {
+                                let _newShieldCapacity: Int = shield_capacity + 1;
+                                let _newShieldCapacityMetadata: TypesICRC7.Metadata = #Int(_newShieldCapacity);
                                 _newArray.add(("shield_capacity", _newShieldCapacityMetadata));
                             };
-                            case(#MetadataArray(_)){
-                            };
+                            case (#MetadataArray(_)) {};
                         };
                     };
-                    case("impairment_resistance"){
-                        switch(_mdValue){
-                            case(#Nat(impairment_resistance)){
-                                let _impairmentResistance : Nat = impairment_resistance + 1;
-                                let _newImpairmentResistance : TypesICRC7.Metadata = #Nat(_impairmentResistance);
-                                _newArray.add(("impairment_resistance", _newImpairmentResistance));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(impairment_resistance)){
-                                let _impairmentResistance : Int = impairment_resistance + 1;
-                                let _newImpairmentResistance : TypesICRC7.Metadata = #Int(_impairmentResistance);
-                                _newArray.add(("impairment_resistance", _newImpairmentResistance));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case("slow"){
-                        switch(_mdValue){
-                            case(#Nat(slow)){
-                                let _newSlow : Nat = slow + 1;
-                                let _newSlowMetadata : TypesICRC7.Metadata = #Nat(_newSlow);
-                                _newArray.add(("slow", _newSlowMetadata));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(slow)){
-                                let _newSlow : Int = slow + 1;
-                                let _newSlowMetadata : TypesICRC7.Metadata = #Int(_newSlow);
-                                _newArray.add(("slow", _newSlowMetadata));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case("weaken"){
-                        switch(_mdValue){
-                            case(#Nat(weaken)){
-                                let _newWeaken : Nat = weaken + 1;
-                                let _newWeakenMetadata : TypesICRC7.Metadata = #Nat(_newWeaken);
-                                _newArray.add(("weaken", _newWeakenMetadata));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(weaken)){
-                                let _newWeaken : Int = weaken + 1;
-                                let _newWeakenMetadata : TypesICRC7.Metadata = #Int(_newWeaken);
-                                _newArray.add(("weaken", _newWeakenMetadata));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case("stun"){
-                        switch(_mdValue){
-                            case(#Nat(stun)){
-                                let _newStun : Nat = stun + 1;
-                                let _newStunMetadata : TypesICRC7.Metadata = #Nat(_newStun);
-                                _newArray.add(("stun", _newStunMetadata));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(stun)){
-                                let _newStun : Int = stun + 1;
-                                let _newStunMetadata : TypesICRC7.Metadata = #Int(_newStun);
-                                _newArray.add(("stun", _newStunMetadata));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case("disarm"){
-                        switch(_mdValue){
-                            case(#Nat(disarm)){
-                                let _newDisarm : Nat = disarm + 1;
-                                let _newDisarmMetadata : TypesICRC7.Metadata = #Nat(_newDisarm);
-                                _newArray.add(("disarm", _newDisarmMetadata));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(disarm)){
-                                let _newDisarm : Int = disarm + 1;
-                                let _newDisarmMetadata : TypesICRC7.Metadata = #Int(_newDisarm);
-                                _newArray.add(("disarm", _newDisarmMetadata));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case("silence"){
-                        switch(_mdValue){
-                            case(#Nat(silence)){
-                                let _newSilence : Nat = silence + 1;
-                                let _newSilenceMetadata : TypesICRC7.Metadata = #Nat(_newSilence);
-                                _newArray.add(("silence", _newSilenceMetadata));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(silence)){
-                                let _newSilence : Int = silence + 1;
-                                let _newSilenceMetadata : TypesICRC7.Metadata = #Int(_newSilence);
-                                _newArray.add(("silence", _newSilenceMetadata));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case("armor"){
-                        switch(_mdValue){
-                            case(#Nat(armor)){
-                                let _newArmor : Nat = armor + 1;
-                                let _newArmorMetadata : TypesICRC7.Metadata = #Nat(_newArmor);
-                                _newArray.add(("armor", _newArmorMetadata));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(armor)){
-                                let _newArmor : Int = armor + 1;
-                                let _newArmorMetadata : TypesICRC7.Metadata = #Int(_newArmor);
-                                _newArray.add(("armor", _newArmorMetadata));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case("armor_penetration"){
-                        switch(_mdValue){
-                            case(#Nat(armor_penetration)){
-                                let _newArmorPenetration : Nat = armor_penetration + 1;
-                                let _newArmorPenetrationMetadata : TypesICRC7.Metadata = #Nat(_newArmorPenetration);
-                                _newArray.add(("armor_penetration", _newArmorPenetrationMetadata));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(armor_penetration)){
-                                let _newArmorPenetration : Int = armor_penetration + 1;
-                                let _newArmorPenetrationMetadata : TypesICRC7.Metadata = #Int(_newArmorPenetration);
-                                _newArray.add(("armor_penetration", _newArmorPenetrationMetadata));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case("attack_speed"){
-                        switch(_mdValue){
-                            case(#Nat(attack_speed)){
-                                let _newAttackSpeed : Nat = attack_speed + 1;
-                                let _newAttackSpeedMetadata : TypesICRC7.Metadata = #Nat(_newAttackSpeed);
-                                _newArray.add(("attack_speed", _newAttackSpeedMetadata));
-                            };
-                            case(#Text(_)){
-                            };
-                            case(#Blob(_)){
-                            };
-                            case(#Int(attack_speed)){
-                                let _newAttackSpeed : Int = attack_speed + 1;
-                                let _newAttackSpeedMetadata : TypesICRC7.Metadata = #Int(_newAttackSpeed);
-                                _newArray.add(("attack_speed", _newAttackSpeedMetadata));
-                            };
-                            case(#MetadataArray(_)){
-                            };
-                        };
-                    };
-                    case(_){
+                    case (_) {
                         _newArray.add((_mdKey, _mdValue));
                     };
                 };
             };
-            return #MetadataArray(_newArray.toArray());
+            return #MetadataArray(Buffer.toArray(_newArray));
         };
     };
     return _data;
