@@ -11,6 +11,8 @@ import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 import Result "mo:base/Result";
+import Debug "mo:base/Debug";
+import Text "mo:base/Text";
 import Types "Types";
 import Utils "Utils";
 import TypesICRC7 "/icrc7/types";
@@ -1793,11 +1795,11 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
 
 type Result <S, E> = Result.Result<S, E>;
 
-let shards: ICRC1Interface = actor("by6od-j4aaa-aaaaa-qaadq-cai") : ICRC1Interface;
+let shards: ICRC1Interface = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : ICRC1Interface;
 
-let flux: ICRC1Interface = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : ICRC1Interface;
+let flux: ICRC1Interface = actor("b77ix-eeaaa-aaaaa-qaada-cai") : ICRC1Interface;
 
-let gameNFTs: ICRC7Interface = actor("b77ix-eeaaa-aaaaa-qaada-cai") : ICRC7Interface;
+let gameNFTs: ICRC7Interface = actor("be2us-64aaa-aaaaa-qaabq-cai") : ICRC7Interface;
 
 let chests: ICRC7Interface = actor("br5f7-7uaaa-aaaaa-qaaca-cai") : ICRC7Interface;
 
@@ -1898,6 +1900,420 @@ public shared({ caller }) func mintDeck() : async (Bool, Text) {
     };
 };
 
+public shared(msg) func upgradeNFT(nftID: TokenID) : async (Bool, Text) {
+    // Initiate metadata retrieval in the background
+    let metadataFuture = async { await gameNFTs.icrc7_metadata(nftID) };
+
+    // Perform ownership check
+    let ownerof: TypesICRC7.OwnerResult = await gameNFTs.icrc7_owner_of(nftID);
+    let _owner: TypesICRC7.Account = switch (ownerof) {
+        case (#Ok(owner)) owner;
+        case (#Err(_)) return (false, "{\"success\":false, \"message\":\"NFT not found\"}");
+    };
+    if (Principal.notEqual(_owner.owner, msg.caller)) {
+        return (false, "{\"success\":false, \"message\":\"You do not own this NFT.\"}");
+    };
+
+    // Wait for metadata retrieval
+    let metadataResult = await metadataFuture;
+    let _nftMetadata: [(Text, TypesICRC7.Metadata)] = switch (metadataResult) {
+        case (#Ok(metadata)) metadata;
+        case (#Err(_)) return (false, "NFT not found");
+    };
+
+    // Send the process to the background
+    ignore _processUpgrade(nftID, msg.caller, _nftMetadata);
+
+    // Immediate placeholder response to Unity
+    let placeholderResponse = "{\"success\":true, \"message\":\"Upgrade initiated\"}";
+    return (true, placeholderResponse);
+};
+
+// Function to handle the upgrade process in the background
+private func _processUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(Text, TypesICRC7.Metadata)]): async () {
+    // Calculate upgrade cost
+    let nftLevel: Nat = getNFTLevel(_nftMetadata);
+    let upgradeCost = calculateCost(nftLevel);
+    let fee = await shards.icrc1_fee();
+
+    // Create transaction arguments for the upgrade cost
+    let _transactionsArgs = {
+        amount: TypesICRC1.Balance = upgradeCost;
+        created_at_time: ?Nat64 = ?Nat64.fromNat(Int.abs(Time.now()));
+        fee = ?fee;
+        from_subaccount: ?TypesICRC1.Subaccount = null;
+        memo: ?Blob = null;
+        to: TypesICRC1.Account = { owner = Principal.fromText("3a6n7-myvuc-huq2n-dgpjx-fxa7y-4pteq-epbjf-sdeis-mqq5z-ak6ff-jqe"); subaccount = null; };
+    };
+
+    // Transfer the upgrade cost
+    let transfer: TypesICRC1.TransferResult = await shards.icrc1_pay_for_transaction(_transactionsArgs, caller);
+
+    switch (transfer) {
+        case (#Ok(_tok)) {
+            // Execute the metadata update
+            await _executeUpgrade(nftID, caller, _nftMetadata);
+        };
+        case (#Err(_e)) {
+            Debug.print("Upgrade cost transfer failed: ");
+        };
+    };
+};
+
+// Function to execute NFT upgrade
+private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(Text, TypesICRC7.Metadata)]): async () {
+    // Prepare for upgrade
+    let _newArgsBuffer = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_nftMetadata.size());
+    let nftLevel: Nat = getNFTLevel(_nftMetadata);
+
+    // Update metadata
+    for (_md in _nftMetadata.vals()) {
+        let _mdKey: Text = _md.0;
+        let _mdValue: TypesICRC7.Metadata = _md.1;
+        switch (_mdKey) {
+            case ("skin") _newArgsBuffer.add(("skin", _mdValue));
+            case ("skills") {
+                let _upgradedAdvanced = upgradeAdvancedAttributes(nftLevel, _mdValue);
+                _newArgsBuffer.add(("skills", _upgradedAdvanced));
+            };
+            case ("souls") _newArgsBuffer.add(("souls", _mdValue));
+            case ("basic_stats") {
+                let _basic_stats = updateBasicStats(_mdValue);
+                _newArgsBuffer.add(("basic_stats", _basic_stats));
+            };
+            case ("general") _newArgsBuffer.add(("general", _mdValue));
+            case (_) _newArgsBuffer.add((_mdKey, _mdValue));
+        };
+    };
+
+    let _upgradeArgs: TypesICRC7.UpgradeArgs = {
+        from = { owner = caller; subaccount = null };
+        token_id = nftID;
+        metadata = _newArgsBuffer.toArray();
+        date_time = ?{ timestamp_nanos = Nat64.fromNat(Int.abs(Time.now())) };
+    };
+    let upgrade: TypesICRC7.UpgradeReceipt = await gameNFTs.upgradeNFT(_upgradeArgs);
+    switch (upgrade) {
+        case (#Ok(_)) Debug.print("NFT upgraded successfully.");
+        case (#Err(_e)) Debug.print("NFT upgrade failed:");
+    };
+};
+
+// Function to get NFT level from metadata
+private func getNFTLevel(metadata: [(Text, TypesICRC7.Metadata)]): Nat {
+    for ((key, value) in metadata.vals()) {
+        if (key == "basic_stats") {
+            let basicStatsArray = switch (value) {
+                case (#MetadataArray(arr)) arr;
+                case (_) [];
+            };
+            for ((bKey, bValue) in basicStatsArray.vals()) {
+                if (bKey == "level") {
+                    let level = switch (bValue) {
+                        case (#Nat(level)) level;
+                        case (_) 0;
+                    };
+                    Debug.print("Level found: " # Nat.toText(level));
+                    return level;
+                };
+            };
+        };
+    };
+    Debug.print("No level found, defaulting to 0");
+    return 0;
+};
+
+// Function to calculate the upgrade cost based on level
+private func calculateCost(level: Nat): Nat {
+    var cost: Nat = 9;
+    for (i in Iter.range(2, level)) {
+        cost := cost + (Nat.div(cost, 3)); // Increase cost by ~33%
+    };
+    return cost;
+};
+
+// Function to update basic stats
+private func updateBasicStats(basicStats: TypesICRC7.Metadata) : TypesICRC7.Metadata {
+    let _data: TypesICRC7.Metadata = switch (basicStats) {
+        case (#Nat(_)) basicStats;
+        case (#Text(_)) basicStats;
+        case (#Blob(_)) basicStats;
+        case (#Int(_)) basicStats;
+        case (#MetadataArray(_a)) {
+            var _newArray = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_a.size());
+            for (_md in _a.vals()) {
+                let _mdKey: Text = _md.0;
+                let _mdValue: TypesICRC7.Metadata = _md.1;
+                switch (_mdKey) {
+                    case "level" {
+                        let _level: Nat = switch (_mdValue) {
+                            case (#Nat(level)) level + 1;
+                            case (_) 0;
+                        };
+                        let _newLevelMetadata: TypesICRC7.Metadata = #Nat(_level);
+                        _newArray.add(("level", _newLevelMetadata));
+                    };
+                    case "health" {
+                        let _health: Float = switch (_mdValue) {
+                            case (#Int(health)) Float.fromInt64(Int64.fromInt(health)) / 100;
+                            case (_) 0;
+                        };
+                        let _newHealth: Float = _health * 1.1 * 100;
+                        let _newHealthMetadata: TypesICRC7.Metadata = #Int(Int64.toInt(Float.toInt64(_newHealth)));
+                        _newArray.add(("health", _newHealthMetadata));
+                    };
+                    case "damage" {
+                        let _damage: Float = switch (_mdValue) {
+                            case (#Int(damage)) Float.fromInt64(Int64.fromInt(damage)) / 100;
+                            case (_) 0;
+                        };
+                        let _newDamage: Float = _damage * 1.1 * 100;
+                        let _newDamageMetadata: TypesICRC7.Metadata = #Int(Int64.toInt(Float.toInt64(_newDamage)));
+                        _newArray.add(("damage", _newDamageMetadata));
+                    };
+                    case (_) {
+                        _newArray.add((_mdKey, _mdValue));
+                    };
+                };
+            };
+            return #MetadataArray(_newArray.toArray());
+        };
+    };
+    return _data;
+};
+
+// Function to upgrade advanced attributes
+func upgradeAdvancedAttributes(nft_level : Nat, currentValue : TypesICRC7.Metadata) : TypesICRC7.Metadata {
+    let _data : TypesICRC7.Metadata = switch(currentValue){
+        case(#Nat(_)){
+            currentValue;
+        };
+        case(#Text(_)){
+            currentValue
+        };
+        case(#Blob(_)){
+            currentValue
+        };
+        case(#Int(_)){
+            currentValue
+        };
+        case(#MetadataArray(_a)){
+            var _newArray = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_a.size());
+            for (_md in _a.vals()) {
+                let _mdKey : Text = _md.0;
+                let _mdValue : TypesICRC7.Metadata = _md.1;
+                switch(_mdKey){
+                    case("shield_capacity"){
+                        switch(_mdValue){
+                            case(#Nat(shield_capacity)){
+                                let _newShieldCapacity : Nat = shield_capacity + 1;
+                                let _newShieldCapacityMetadata : TypesICRC7.Metadata = #Nat(_newShieldCapacity);
+                                _newArray.add(("shield_capacity", _newShieldCapacityMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(shield_capacity)){
+                                let _newShieldCapacity : Int = shield_capacity + 1;
+                                let _newShieldCapacityMetadata : TypesICRC7.Metadata = #Int(_newShieldCapacity);
+                                _newArray.add(("shield_capacity", _newShieldCapacityMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("impairment_resistance"){
+                        switch(_mdValue){
+                            case(#Nat(impairment_resistance)){
+                                let _impairmentResistance : Nat = impairment_resistance + 1;
+                                let _newImpairmentResistance : TypesICRC7.Metadata = #Nat(_impairmentResistance);
+                                _newArray.add(("impairment_resistance", _newImpairmentResistance));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(impairment_resistance)){
+                                let _impairmentResistance : Int = impairment_resistance + 1;
+                                let _newImpairmentResistance : TypesICRC7.Metadata = #Int(_impairmentResistance);
+                                _newArray.add(("impairment_resistance", _newImpairmentResistance));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("slow"){
+                        switch(_mdValue){
+                            case(#Nat(slow)){
+                                let _newSlow : Nat = slow + 1;
+                                let _newSlowMetadata : TypesICRC7.Metadata = #Nat(_newSlow);
+                                _newArray.add(("slow", _newSlowMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(slow)){
+                                let _newSlow : Int = slow + 1;
+                                let _newSlowMetadata : TypesICRC7.Metadata = #Int(_newSlow);
+                                _newArray.add(("slow", _newSlowMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("weaken"){
+                        switch(_mdValue){
+                            case(#Nat(weaken)){
+                                let _newWeaken : Nat = weaken + 1;
+                                let _newWeakenMetadata : TypesICRC7.Metadata = #Nat(_newWeaken);
+                                _newArray.add(("weaken", _newWeakenMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(weaken)){
+                                let _newWeaken : Int = weaken + 1;
+                                let _newWeakenMetadata : TypesICRC7.Metadata = #Int(_newWeaken);
+                                _newArray.add(("weaken", _newWeakenMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("stun"){
+                        switch(_mdValue){
+                            case(#Nat(stun)){
+                                let _newStun : Nat = stun + 1;
+                                let _newStunMetadata : TypesICRC7.Metadata = #Nat(_newStun);
+                                _newArray.add(("stun", _newStunMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(stun)){
+                                let _newStun : Int = stun + 1;
+                                let _newStunMetadata : TypesICRC7.Metadata = #Int(_newStun);
+                                _newArray.add(("stun", _newStunMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("disarm"){
+                        switch(_mdValue){
+                            case(#Nat(disarm)){
+                                let _newDisarm : Nat = disarm + 1;
+                                let _newDisarmMetadata : TypesICRC7.Metadata = #Nat(_newDisarm);
+                                _newArray.add(("disarm", _newDisarmMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(disarm)){
+                                let _newDisarm : Int = disarm + 1;
+                                let _newDisarmMetadata : TypesICRC7.Metadata = #Int(_newDisarm);
+                                _newArray.add(("disarm", _newDisarmMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("silence"){
+                        switch(_mdValue){
+                            case(#Nat(silence)){
+                                let _newSilence : Nat = silence + 1;
+                                let _newSilenceMetadata : TypesICRC7.Metadata = #Nat(_newSilence);
+                                _newArray.add(("silence", _newSilenceMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(silence)){
+                                let _newSilence : Int = silence + 1;
+                                let _newSilenceMetadata : TypesICRC7.Metadata = #Int(_newSilence);
+                                _newArray.add(("silence", _newSilenceMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("armor"){
+                        switch(_mdValue){
+                            case(#Nat(armor)){
+                                let _newArmor : Nat = armor + 1;
+                                let _newArmorMetadata : TypesICRC7.Metadata = #Nat(_newArmor);
+                                _newArray.add(("armor", _newArmorMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(armor)){
+                                let _newArmor : Int = armor + 1;
+                                let _newArmorMetadata : TypesICRC7.Metadata = #Int(_newArmor);
+                                _newArray.add(("armor", _newArmorMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("armor_penetration"){
+                        switch(_mdValue){
+                            case(#Nat(armor_penetration)){
+                                let _newArmorPenetration : Nat = armor_penetration + 1;
+                                let _newArmorPenetrationMetadata : TypesICRC7.Metadata = #Nat(_newArmorPenetration);
+                                _newArray.add(("armor_penetration", _newArmorPenetrationMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(armor_penetration)){
+                                let _newArmorPenetration : Int = armor_penetration + 1;
+                                let _newArmorPenetrationMetadata : TypesICRC7.Metadata = #Int(_newArmorPenetration);
+                                _newArray.add(("armor_penetration", _newArmorPenetrationMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case("attack_speed"){
+                        switch(_mdValue){
+                            case(#Nat(attack_speed)){
+                                let _newAttackSpeed : Nat = attack_speed + 1;
+                                let _newAttackSpeedMetadata : TypesICRC7.Metadata = #Nat(_newAttackSpeed);
+                                _newArray.add(("attack_speed", _newAttackSpeedMetadata));
+                            };
+                            case(#Text(_)){
+                            };
+                            case(#Blob(_)){
+                            };
+                            case(#Int(attack_speed)){
+                                let _newAttackSpeed : Int = attack_speed + 1;
+                                let _newAttackSpeedMetadata : TypesICRC7.Metadata = #Int(_newAttackSpeed);
+                                _newArray.add(("attack_speed", _newAttackSpeedMetadata));
+                            };
+                            case(#MetadataArray(_)){
+                            };
+                        };
+                    };
+                    case(_){
+                        _newArray.add((_mdKey, _mdValue));
+                    };
+                };
+            };
+            return #MetadataArray(_newArray.toArray());
+        };
+    };
+    return _data;
+};
+
 
 // Chests
 public shared({ caller }) func mintChest(rarity: Nat) : async (Bool, Text) {
@@ -1934,7 +2350,7 @@ public shared({ caller }) func mintChest(rarity: Nat) : async (Bool, Text) {
     };
 };
 
-public shared({ caller }) func openChests(chestID: Nat): async (Bool, Text) {
+public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
     // Perform ownership check
     let ownerof: TypesICRC7.OwnerResult = await chests.icrc7_owner_of(chestID);
     let _owner: TypesICRC7.Account = switch (ownerof) {

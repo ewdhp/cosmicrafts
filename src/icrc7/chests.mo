@@ -35,7 +35,7 @@ shared actor class Chests(collectionOwner: Types.Account, init: Types.Collection
   private var PERMITTED_DRIFT : Nat64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
   private var TX_WINDOW : Nat64 = 24 * 60 * 60 * 1_000_000_000; // 24 hours in nanoseconds
 
-  private stable var _cosmicraftsPrincipal : Principal = Principal.fromActor(actor("woimf-oyaaa-aaaan-qegia-cai"));
+  private stable var _cosmicraftsPrincipal : Principal = Principal.fromActor(actor("bkyz2-fmaaa-aaaaa-qaaaq-cai"));
 
   private stable var tokens: Trie<Types.TokenId, Types.TokenMetadata> = Trie.empty(); 
   //owner Trie: use of Text insted of Account to improve performanances in lookup
@@ -850,7 +850,7 @@ private func _updateToken(tokenId: Types.TokenId, newOwner: ?Types.Account, newM
 
   public shared({ caller }) func openChest(args : Types.OpenArgs): async Types.OpenReceipt {
     /// Check if the caller is authorized
-    if (Principal.notEqual(caller, Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai")) ) {
+    if (Principal.notEqual(caller, owner.owner) and Principal.notEqual(caller, _cosmicraftsPrincipal)) {
       return #Err(#Unauthorized({
         token_ids = [args.token_id];
       }));
