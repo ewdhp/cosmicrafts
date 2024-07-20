@@ -1,5 +1,25 @@
 # `cosmicrafts`
 
+,
+    "gamenfts": {
+      "main": "src/icrc7/gamenfts.mo",
+      "type": "motoko"
+    },
+    "chests": {
+      "main": "src/icrc7/chests.mo",
+      "type": "motoko"
+    },
+    "shards": {
+      "main": "src/icrc1/Canisters/shards.mo",
+      "type": "motoko"
+    },
+    "flux": {
+      "main": "src/icrc1/Canisters/flux.mo",
+      "type": "motoko"
+    }
+
+
+
 Key Areas in the Code
 Reward Management:
 

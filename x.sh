@@ -36,4 +36,11 @@ expect <<EOF
     expect eof
 EOF
 
+# Inline expect script for claimRewards.py
+expect <<EOF
+    set timeout -1
+    spawn python scripts/claimRewards.py
+    expect eof
+EOF
+
 echo "All commands executed successfully."

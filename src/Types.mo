@@ -1,6 +1,6 @@
 import Time "mo:base/Time";
 
-module {
+module Types {
   // General Types
   public type PlayerId = Principal;
   public type Username = Text;
@@ -267,6 +267,20 @@ public type FullMatchData = {
     mode: MatchOpt;
   };
 
+//New
+public type MissionTemplate = {
+    name: Text;
+    missionType: MissionType;
+    rewardType: RewardType;
+    minReward: Nat;
+    maxReward: Nat;
+    total: Float;
+    hoursActive: Nat64;
+  };
 
-
+  public type RewardPool = {
+    rewardType: RewardType;
+    minAmount: Nat;
+    maxAmount: Nat;
+  };
 }

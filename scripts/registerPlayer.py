@@ -49,6 +49,8 @@ async def register_user(semaphore, user, username, avatar_id):
                 
                 logging.info(f"Identity switched to {user}, now making canister call")
                 command = f'dfx canister call cosmicrafts registerPlayer \'("{username}", {avatar_id})\''
+                #command = f'dfx canister call cosmicrafts getUserActiveMissions'
+                
                 success, output = await execute_dfx_command(command)
                 if not success:
                     raise Exception(f"Canister call failed: {output}")
