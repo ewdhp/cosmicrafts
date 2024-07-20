@@ -259,9 +259,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit_gracefully)
     signal.signal(signal.SIGTERM, exit_gracefully)
 
-    # Clear the terminal at the start
-    subprocess.run('reset')
-
     try:
         num_matches = int(input("Enter the number of matches to run: "))
         loop = input("Do you want to loop indefinitely? (y/n): ").strip().lower() == "y"
