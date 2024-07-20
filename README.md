@@ -1,5 +1,38 @@
 # `cosmicrafts`
 
+Key Areas in the Code
+Reward Management:
+
+Creating missions.
+Cleaning up expired missions.
+Adding progress to rewards.
+Claiming rewards.
+Retrieving unclaimed and unexpired rewards.
+Player Management:
+
+Registering a player.
+Updating player information (username, avatar, description).
+Adding friends.
+Calculating player levels based on experience points.
+Statistics Management:
+
+Maintaining player game statistics.
+Updating overall game statistics.
+Retrieving player statistics.
+Calculating average statistics.
+Matchmaking:
+
+Managing matchmaking status.
+Activating player search status.
+Cancelling matchmaking.
+Retrieving match participants.
+ICRC Token Management:
+
+Minting and upgrading NFTs.
+Handling chests and opening them.
+
+
+
 dfx deploy cxp --ic --argument '( record { name = "Cosmicrafts XP"; symbol = "CXP"; decimals = 8; fee = 1; max_supply = 1_000_000_000_000_000_000_000_000; initial_balances = vec {
 record { record { owner = principal "vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae"; subaccount = null; }; 100_000_000_000 } }; min_burn_amount = 1; minting_account = opt record { owner = principal "vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae"; subaccount = null; }; advanced_settings = null; })'
 

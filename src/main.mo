@@ -77,49 +77,52 @@ shared actor class Cosmicrafts() {
   var players: HashMap.HashMap<PlayerId, Player> = HashMap.fromIter(_players.vals(), 0, Principal.equal, Principal.hash);
 
   // Function to register a new player
-  public shared ({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID) : async (Bool, PlayerId) {
+public shared ({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID) : async (Bool, PlayerId) {
     let PlayerId = caller;
     switch (players.get(PlayerId)) {
-      case (null) {
-        let registrationDate = Time.now();
-        let newPlayer: Player = {
-          id = PlayerId;
-          username = username;
-          avatar = avatar;
-          description = "";
-          registrationDate = registrationDate;
-          level = 1;
-          elo = 1200;
-          friends = [];
-        };
-        players.put(PlayerId, newPlayer);
+        case (null) {
+            let registrationDate = Time.now();
+            let newPlayer: Player = {
+                id = PlayerId;
+                username = username;
+                avatar = avatar;
+                description = "";
+                registrationDate = registrationDate;
+                level = 1;
+                elo = 1200;
+                friends = [];
+            };
+            players.put(PlayerId, newPlayer);
 
-        // Initialize player stats
-        let initialStats: PlayerGamesStats = {
-          gamesPlayed = 0;
-          gamesWon = 0;
-          gamesLost = 0;
-          energyGenerated = 0;
-          energyUsed = 0;
-          energyWasted = 0;
-          totalDamageDealt = 0;
-          totalDamageTaken = 0;
-          totalDamageCrit = 0;
-          totalDamageEvaded = 0;
-          totalXpEarned = 0;
-          totalGamesWithFaction = [];
-          totalGamesGameMode = [];
-          totalGamesWithCharacter = [];
-        };
-        playerGamesStats.put(PlayerId, initialStats);
+            // Initialize player stats
+            let initialStats: PlayerGamesStats = {
+                gamesPlayed = 0;
+                gamesWon = 0;
+                gamesLost = 0;
+                energyGenerated = 0;
+                energyUsed = 0;
+                energyWasted = 0;
+                totalDamageDealt = 0;
+                totalDamageTaken = 0;
+                totalDamageCrit = 0;
+                totalDamageEvaded = 0;
+                totalXpEarned = 0;
+                totalGamesWithFaction = [];
+                totalGamesGameMode = [];
+                totalGamesWithCharacter = [];
+            };
+            playerGamesStats.put(PlayerId, initialStats);
 
-        return (true, PlayerId);
-      };
-      case (?_) {
-        return (false, PlayerId); // User already exists
-      };
+            // Assign new missions to the user
+            await assignNewMissionsToUser(PlayerId);
+
+            return (true, PlayerId);
+        };
+        case (?_) {
+            return (false, PlayerId); // User already exists
+        };
     };
-  };
+};
 
   // Function to update username
   public shared ({ caller: PlayerId }) func updateUsername(username: Username) : async (Bool, PlayerId) {
@@ -1808,239 +1811,315 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
 };
 
 // Rewards
-  private let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000; 
-private let NULL_PRINCIPAL: Principal = Principal.fromText("aaaaa-aa");
-private let ANON_PRINCIPAL: Principal = Principal.fromText("2vxsx-fae");
 
-// Stable Variables
-private stable var rewardID: Nat = 1;
-private stable var _activeRewards: [(Nat, Reward)] = [];
-private stable var _userProgress: [(Principal, [RewardsUser])] = [];
-private stable var _claimedRewards: [(Principal, [Nat])] = [];
+    // Constants
+    private let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000; 
+    private let NULL_PRINCIPAL: Principal = Principal.fromText("aaaaa-aa");
+    private let ANON_PRINCIPAL: Principal = Principal.fromText("2vxsx-fae");
 
-// HashMaps
-var activeRewards: HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_activeRewards.vals(), 0, _natEqual, _natHash);
-var userProgress: HashMap.HashMap<Principal, [RewardsUser]> = HashMap.fromIter(_userProgress.vals(), 0, Principal.equal, Principal.hash);
-var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
+    // Stable Variables
+    // Stable Variables
+    private stable var rewardID: Nat = 1;
+    private stable var _missions: [(Nat, Reward)] = [];
+    private stable var _activeMissions: [(Nat, Reward)] = [];
+    private stable var _userProgress: [(Principal, [RewardsUser])] = [];
+    private stable var _claimedMissions: [(Principal, [Nat])] = [];
 
-// Function to Add a Reward
-public shared (msg) func addReward(reward: Reward) : async (Bool, Text, Nat) {
-    if (Principal.notEqual(msg.caller, _cosmicraftsPrincipal)) {
-        return (false, "Unauthorized", 0);
+    // HashMaps
+    var missions: HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_missions.vals(), 0, _natEqual, _natHash);
+    var activeMissions: HashMap.HashMap<Nat, Reward> = HashMap.fromIter(_activeMissions.vals(), 0, _natEqual, _natHash);
+    var userProgress: HashMap.HashMap<Principal, [RewardsUser]> = HashMap.fromIter(_userProgress.vals(), 0, Principal.equal, Principal.hash);
+    var claimedMissions: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedMissions.vals(), 0, Principal.equal, Principal.hash);
+
+    // Factory Method for Creating Missions
+    public func createMission(name: Text, rewardType: RewardType, prizeType: PrizeType, prizeAmount: Nat, total: Float, hours_active: Nat64): async (Bool, Text, Nat) {
+        let id = rewardID;
+        rewardID += 1;
+        let now = Nat64.fromIntWrap(Time.now());
+        let hoursActive = ONE_HOUR * hours_active;
+        let endDate = now + hoursActive;
+
+        let newMission = {
+            id = id;
+            name = name;
+            rewardType = rewardType;
+            prize_type = prizeType;
+            prize_amount = prizeAmount;
+            start_date = now;
+            end_date = endDate;
+            total = total;
+        };
+
+        missions.put(id, newMission);
+        activeMissions.put(id, newMission);
+        Debug.print("Mission created with ID: " # Nat.toText(id) # ", End Date: " # Nat64.toText(endDate) # ", Start Date: " # Nat64.toText(now));
+        
+        return (true, "Mission created successfully", id);
     };
-    let newID = rewardID;
-    activeRewards.put(newID, reward);
-    rewardID := rewardID + 1;
-    return (true, "Reward added successfully", newID);
-};
 
-// Function to Track Progress for a User
-public shared func addProgressToRewards(user: Principal, rewardsProgress: [RewardProgress]): async (Bool, Text) {
-    if (Principal.equal(user, NULL_PRINCIPAL) or Principal.equal(user, ANON_PRINCIPAL)) {
-        return (false, "Invalid user");
-    };
-
+// Function to Assign New Missions to a User
+public shared func assignNewMissionsToUser(user: Principal): async () {
     var userRewards = switch (userProgress.get(user)) {
         case (null) { [] };
         case (?rewards) { rewards };
     };
 
-    if (rewardsProgress.size() == 0) {
-        return (false, "No progress data provided");
+    var claimedMissionsForUser = switch (claimedMissions.get(user)) {
+        case (null) { [] };
+        case (?claimed) { claimed };
     };
 
-    let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-    let updatedRewards = Buffer.Buffer<RewardsUser>(userRewards.size());
+    let now = Nat64.fromNat(Int.abs(Time.now()));
+    let buffer = Buffer.Buffer<RewardsUser>(0);
 
+    // Remove expired or claimed missions
     for (reward in userRewards.vals()) {
-        if (reward.finished or reward.expiration < now) {
-            updatedRewards.add(reward);
-        } else {
-            var updatedReward = reward;
-            for (progress in rewardsProgress.vals()) {
-                if (reward.rewardType == progress.rewardType) {
-                    let updatedProgress = reward.progress + progress.progress;
-                    if (updatedProgress >= reward.total) {
-                        updatedReward := {
-                            reward with
-                            progress = updatedProgress;
-                            finished = true;
-                            finish_date = now;
-                        };
-                    } else {
-                        updatedReward := {
-                            reward with
-                            progress = updatedProgress;
-                        };
+        if (reward.expiration >= now and not contains(claimedMissionsForUser, reward.id_reward, _natEqual)) {
+            buffer.add(reward);
+        }
+    };
+
+    // Collect IDs of current rewards to avoid duplication
+    let currentRewardIds = Buffer.Buffer<Nat>(buffer.size());
+    for (reward in buffer.vals()) {
+        currentRewardIds.add(reward.id_reward);
+    };
+
+    // Add new active missions to the user
+    for ((id, mission) in activeMissions.entries()) {
+        if (not contains(Buffer.toArray(currentRewardIds), id, _natEqual)) {
+            buffer.add({
+                id_reward = id;
+                prize_amount = mission.prize_amount;
+                start_date = mission.start_date;
+                progress = 0.0;
+                finish_date = 0;
+                expiration = mission.end_date;
+                rewardType = mission.rewardType;
+                finished = false;
+                prize_type = mission.prize_type;
+                total = mission.total;
+            });
+        }
+    };
+
+    userProgress.put(user, Buffer.toArray(buffer));
+};
+
+    // Function to Clean Up Expired Missions
+    public func cleanupExpiredMissions() {
+        let now = Nat64.fromIntWrap(Time.now());
+        for ((id, mission) in activeMissions.entries()) {
+            if (mission.end_date < now) {
+                switch (activeMissions.remove(id)) {
+                    case (?removedMission) {
+                        // The mission was successfully removed
+                    };
+                    case (null) {
+                        // Handle the case where the mission was not found, if necessary
                     };
                 };
             };
-            updatedRewards.add(updatedReward);
         };
     };
 
-    userProgress.put(user, Buffer.toArray(updatedRewards));
-    return (true, "Progress added successfully");
-};
-
-
-// Function to Claim a Reward
-public shared(msg) func claimReward(idReward: Nat): async (Bool, Text) {
-    let rewardOpt = await getUserReward(msg.caller, idReward);
-    switch (rewardOpt) {
-        case (null) {
-            return (false, "Reward not found");
+    // Function to Add Progress to Rewards for a User
+    public shared func addProgressToRewards(user: Principal, rewardsProgress: [RewardProgress]): async (Bool, Text) {
+        if (Principal.equal(user, NULL_PRINCIPAL) or Principal.equal(user, ANON_PRINCIPAL)) {
+            return (false, "Invalid user");
         };
-        case (?reward) {
-            if (reward.finished and reward.finish_date <= reward.expiration) {
-                let (success, message) = await mintReward(reward, msg.caller);
-                return (success, message);
+
+        var userRewards = switch (userProgress.get(user)) {
+            case (null) { [] };
+            case (?rewards) { rewards };
+        };
+
+        if (rewardsProgress.size() == 0) {
+            return (false, "No progress data provided");
+        };
+
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        let updatedRewards = Buffer.Buffer<RewardsUser>(userRewards.size());
+
+        for (reward in userRewards.vals()) {
+            if (reward.finished or reward.expiration < now) {
+                updatedRewards.add(reward);
             } else {
-                return (false, "Reward not finished or expired");
-            };
-        };
-    };
-};
-
-
-// Function to check if a value exists in an array
-func contains<T>(array: [T], value: T, eq: (T, T) -> Bool): Bool {
-    for (element in array.vals()) {
-        if (eq(element, value)) {
-            return true;
-        };
-    };
-    return false;
-};
-
-// Function to Mint a Reward
-func mintReward(reward: RewardsUser, caller: Principal): async (Bool, Text) {
-    var claimHistory = switch (claimedRewards.get(caller)) {
-        case (null) { [] };
-        case (?history) { history };
-    };
-
-    if (contains(claimHistory, reward.id_reward, func(a: Nat, b: Nat): Bool { return a == b; })) {
-        return (false, "Reward already claimed");
-    };
-
-    switch (reward.prize_type) {
-        case (#Chest) {
-            let uuid = await Utils.generateUUID64();
-            let mintArgs: TypesICRC7.MintArgs = {
-                to = { owner = caller; subaccount = null };
-                token_id = uuid;
-                metadata = Utils.getChestMetadata(reward.prize_amount);
-            };
-            let mintResult = await chests.mint(mintArgs);
-            switch (mintResult) {
-                case (#Ok(_transactionID)) {
-                    let claimHistoryBuffer = Buffer.Buffer<Nat>(claimHistory.size() + 1);
-                    for (claim in claimHistory.vals()) {
-                        claimHistoryBuffer.add(claim);
+                var updatedReward = reward;
+                for (progress in rewardsProgress.vals()) {
+                    if (reward.rewardType == progress.rewardType) {
+                        let updatedProgress = reward.progress + progress.progress;
+                        if (updatedProgress >= reward.total) {
+                            updatedReward := {
+                                reward with
+                                progress = updatedProgress;
+                                finished = true;
+                                finish_date = now;
+                            };
+                        } else {
+                            updatedReward := {
+                                reward with
+                                progress = updatedProgress;
+                            };
+                        };
                     };
-                    claimHistoryBuffer.add(reward.id_reward);
-                    claimedRewards.put(caller, Buffer.toArray(claimHistoryBuffer));
-                    return (true, "Chest minted and reward claimed");
                 };
-                case (#Err(_error)) {
-                    return (false, "Minting chest failed");
+                updatedRewards.add(updatedReward);
+            };
+        };
+
+        userProgress.put(user, Buffer.toArray(updatedRewards));
+        return (true, "Progress added successfully");
+    };
+
+    // Function to Claim a Reward
+    public shared(msg) func claimReward(idReward: Nat): async (Bool, Text) {
+        let rewardOpt = await getMissionDetails(msg.caller, idReward);
+        switch (rewardOpt) {
+            case (null) {
+                return (false, "Reward not found");
+            };
+            case (?reward) {
+                if (reward.finished and reward.finish_date <= reward.expiration) {
+                    let (success, message) = await mintReward(reward, msg.caller);
+                    return (success, message);
+                } else {
+                    return (false, "Reward not finished or expired");
                 };
             };
         };
-        case (#Flux) {
-            let mintArgs: TypesICRC1.Mint = {
-                to = { owner = caller; subaccount = null };
-                amount = reward.prize_amount;
-                memo = null;
-                created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+    };
+
+    // Function to Check if a Value Exists in an Array
+    func contains<T>(array: [T], value: T, eq: (T, T) -> Bool): Bool {
+        for (element in array.vals()) {
+            if (eq(element, value)) {
+                return true;
             };
-            let mintResult = await flux.mint(mintArgs);
-            switch (mintResult) {
-                case (#Ok(_transactionID)) {
-                    let claimHistoryBuffer = Buffer.Buffer<Nat>(claimHistory.size() + 1);
-                    for (claim in claimHistory.vals()) {
-                        claimHistoryBuffer.add(claim);
+        };
+        return false;
+    };
+
+    // Function to Mint a Reward
+    func mintReward(reward: RewardsUser, caller: Principal): async (Bool, Text) {
+        var claimHistory = switch (claimedMissions.get(caller)) {
+            case (null) { [] };
+            case (?history) { history };
+        };
+
+        if (contains(claimHistory, reward.id_reward, _natEqual)) {
+            return (false, "Reward already claimed");
+        };
+
+        switch (reward.prize_type) {
+            case (#Chest) {
+                let uuid = await Utils.generateUUID64();
+                let mintArgs: TypesICRC7.MintArgs = {
+                    to = { owner = caller; subaccount = null };
+                    token_id = uuid;
+                    metadata = Utils.getChestMetadata(reward.prize_amount);
+                };
+                let mintResult = await chests.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [reward.id_reward]);
+                        claimedMissions.put(caller, claimHistory);
+                        return (true, "Chest minted and reward claimed. UUID: " # Nat.toText(uuid) # ", Rarity: " # Nat.toText(reward.prize_amount));
                     };
-                    claimHistoryBuffer.add(reward.id_reward);
-                    claimedRewards.put(caller, Buffer.toArray(claimHistoryBuffer));
-                    return (true, "Flux minted and reward claimed");
-                };
-                case (#Err(_error)) {
-                    return (false, "Minting flux failed");
-                };
-            };
-        };
-        case (#Shards) {
-            let mintArgs: TypesICRC1.Mint = {
-                to = { owner = caller; subaccount = null };
-                amount = reward.prize_amount;
-                memo = null;
-                created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-            };
-            let mintResult = await shards.mint(mintArgs);
-            switch (mintResult) {
-                case (#Ok(_transactionID)) {
-                    let claimHistoryBuffer = Buffer.Buffer<Nat>(claimHistory.size() + 1);
-                    for (claim in claimHistory.vals()) {
-                        claimHistoryBuffer.add(claim);
+                    case (#Err(_error)) {
+                        return (false, "Minting chest failed");
                     };
-                    claimHistoryBuffer.add(reward.id_reward);
-                    claimedRewards.put(caller, Buffer.toArray(claimHistoryBuffer));
-                    return (true, "Shards minted and reward claimed");
                 };
-                case (#Err(_error)) {
-                    return (false, "Minting shards failed");
+            };
+            case (#Flux) {
+                let mintArgs: TypesICRC1.Mint = {
+                    to = { owner = caller; subaccount = null };
+                    amount = reward.prize_amount;
+                    memo = null;
+                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+                };
+                let mintResult = await flux.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [reward.id_reward]);
+                        claimedMissions.put(caller, claimHistory);
+                        return (true, "Flux minted and reward claimed. Quantity: " # Nat.toText(reward.prize_amount));
+                    };
+                    case (#Err(_error)) {
+                        return (false, "Minting flux failed");
+                    };
+                };
+            };
+            case (#Shards) {
+                let mintArgs: TypesICRC1.Mint = {
+                    to = { owner = caller; subaccount = null };
+                    amount = reward.prize_amount;
+                    memo = null;
+                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+                };
+                let mintResult = await shards.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [reward.id_reward]);
+                        claimedMissions.put(caller, claimHistory);
+                        return (true, "Shards minted and reward claimed. Quantity: " # Nat.toText(reward.prize_amount));
+                    };
+                    case (#Err(_error)) {
+                        return (false, "Minting shards failed");
+                    };
                 };
             };
         };
     };
-};
 
-
-// Function to Retrieve Unclaimed and Unexpired Rewards for a User
-public query func getUserRewards(user: Principal): async [RewardsUser] {
-    let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-    var userRewards = switch (userProgress.get(user)) {
-        case (null) { [] };
-        case (?rewards) { rewards };
-    };
-
-    let unclaimedRewards = Buffer.Buffer<RewardsUser>(0);
-    for (reward in userRewards.vals()) {
-        if (not reward.finished and reward.expiration >= now) {
-            unclaimedRewards.add(reward);
+    // Function to Retrieve Unclaimed and Unexpired Rewards for a User
+    public query func getUserActiveRewards(user: Principal): async [RewardsUser] {
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        var userRewards = switch (userProgress.get(user)) {
+            case (null) { [] };
+            case (?rewards) { rewards };
         };
-    };
 
-    return Buffer.toArray(unclaimedRewards);
-};
-
-// Query Functions
-public query func getAllActiveRewards(): async [Reward] {
-    let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-    let active = Buffer.Buffer<Reward>(activeRewards.size());
-    for (reward in activeRewards.vals()) {
-        if (reward.start_date <= now and reward.end_date > now) {
-            active.add(reward);
+        let unclaimedRewards = Buffer.Buffer<RewardsUser>(0);
+        for (reward in userRewards.vals()) {
+            if (not reward.finished and reward.expiration >= now) {
+                unclaimedRewards.add(reward);
+            }
         };
-    };
-    return Buffer.toArray(active);
-};
 
-public query func getUserReward(user: Principal, rewardID: Nat): async ?RewardsUser {
-    let userRewards = switch (userProgress.get(user)) {
-        case (null) return null;
-        case (?rewards) rewards;
+        return Buffer.toArray(unclaimedRewards);
     };
 
-    for (reward in userRewards.vals()) {
-        if (reward.id_reward == rewardID) {
-            return ?reward;
+
+
+    // Query Functions
+    public query func getAllActiveMissions(): async [Reward] {
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        let active = Buffer.Buffer<Reward>(activeMissions.size());
+        for (reward in activeMissions.vals()) {
+            if (reward.start_date <= now and reward.end_date > now) {
+                active.add(reward);
+                Debug.print("Active mission with ID: " # Nat.toText(reward.id) # " is within the active period.");
+            } else {
+                Debug.print("Mission with ID: " # Nat.toText(reward.id) # " is not within the active period.");
+            };
         };
+        return Buffer.toArray(active);
     };
-    return null;
-};
+
+    public query func getMissionDetails(user: Principal, rewardID: Nat): async ?RewardsUser {
+        let userRewards = switch (userProgress.get(user)) {
+            case (null) return null;
+            case (?rewards) rewards;
+        };
+
+        for (reward in userRewards.vals()) {
+            if (reward.id_reward == rewardID) {
+                return ?reward;
+            };
+        };
+        return null;
+    };
 
     // public shared(msg) func adminGetUserRewards(_player : Principal) : async [Types.RewardsUser] {
     //     return addNewRewardsToUser(_player);

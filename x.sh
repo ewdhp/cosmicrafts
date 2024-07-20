@@ -6,7 +6,7 @@ commands=(
     "reset"
     "dfx identity use bizkit"
     "dfx canister uninstall-code cosmicrafts"
-    "dfx deploy"
+    "dfx deploy cosmicrafts"
 )
 
 for command in "${commands[@]}"; do
@@ -20,7 +20,7 @@ expect <<EOF
     set timeout -1
     spawn python scripts/registerPlayer.py
     expect "Enter the number of users to register: "
-    send "50\r"
+    send "2\r"
     expect eof
 EOF
 
@@ -29,9 +29,9 @@ expect <<EOF
     set timeout -1
     spawn python scripts/matchmaking.py
     expect "Enter the number of matches to run: "
-    send "25\r"
+    send "1\r"
     expect "Do you want to loop indefinitely? (y/n): "
-    send "y\r"
+    send "n\r"
     expect eof
 EOF
 
