@@ -1496,327 +1496,329 @@ private func structMatchData(_p1 : MMInfo, _p2 : ?MMInfo, _m : MatchData) : Matc
         return overallStats;
     };
 
-// ICRCs
-type Result <S, E> = Result.Result<S, E>;
+    // ICRCs
+    type Result <S, E> = Result.Result<S, E>;
 
-let shards: ICRC1Interface = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : ICRC1Interface;
+    let shards: ICRC1Interface = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : ICRC1Interface;
 
-let flux: ICRC1Interface = actor("b77ix-eeaaa-aaaaa-qaada-cai") : ICRC1Interface;
+    let flux: ICRC1Interface = actor("b77ix-eeaaa-aaaaa-qaada-cai") : ICRC1Interface;
 
-let gameNFTs: ICRC7Interface = actor("be2us-64aaa-aaaaa-qaabq-cai") : ICRC7Interface;
+    let gameNFTs: ICRC7Interface = actor("be2us-64aaa-aaaaa-qaabq-cai") : ICRC7Interface;
 
-let chests: ICRC7Interface = actor("br5f7-7uaaa-aaaaa-qaaca-cai") : ICRC7Interface;
+    let chests: ICRC7Interface = actor("br5f7-7uaaa-aaaaa-qaaca-cai") : ICRC7Interface;
 
-// private stable var nftID : TokenID = 0;
+    // ICRC 1
+    type ICRC1Interface = actor {
+        icrc1_name: shared () -> async Text;
+        icrc1_symbol: shared () -> async Text;
+        icrc1_decimals: shared () -> async Nat8;
+        icrc1_fee: shared () -> async TypesICRC1.Balance;
+        icrc1_metadata: shared () -> async [TypesICRC1.MetaDatum];
+        icrc1_total_supply: shared () -> async TypesICRC1.Balance;
+        icrc1_minting_account: shared () -> async ?TypesICRC1.Account;
+        icrc1_balance_of: shared (args: TypesICRC1.Account) -> async TypesICRC1.Balance;
+        icrc1_supported_standards: shared () -> async [TypesICRC1.SupportedStandard];
+        icrc1_transfer: shared (args: TypesICRC1.TransferArgs) -> async TypesICRC1.TransferResult;
+        icrc1_pay_for_transaction: shared (args: TypesICRC1.TransferArgs, from: Principal) -> async TypesICRC1.TransferResult;
+        mint: shared (args: TypesICRC1.Mint) -> async TypesICRC1.TransferResult;
+        burn: shared (args: TypesICRC1.BurnArgs) -> async TypesICRC1.TransferResult;
+        get_transactions: shared (req: TypesICRC1.GetTransactionsRequest) -> async TypesICRC1.GetTransactionsResponse;
+        get_transaction: shared (i: TypesICRC1.TxIndex) -> async ?TypesICRC1.Transaction;
+        deposit_cycles: shared () -> async ();
+    };
 
-// private stable var chestID : TokenID = 0;
+    // ICRC 7
+    type ICRC7Interface = actor {
+        icrc7_collection_metadata: shared () -> async TypesICRC7.CollectionMetadata;
+        icrc7_name: shared () -> async Text;
+        icrc7_symbol: shared () -> async Text;
+        icrc7_royalties: shared () -> async ?Nat16;
+        icrc7_royalty_recipient: shared () -> async ?TypesICRC7.Account;
+        icrc7_description: shared () -> async ?Text;
+        icrc7_image: shared () -> async ?Blob;
+        icrc7_total_supply: shared () -> async Nat;
+        icrc7_supply_cap: shared () -> async ?Nat;
+        icrc7_metadata: shared (tokenId: TypesICRC7.TokenId) -> async TypesICRC7.MetadataResult;
+        icrc7_owner_of: shared (tokenId: TypesICRC7.TokenId) -> async TypesICRC7.OwnerResult;
+        icrc7_balance_of: shared (account: TypesICRC7.Account) -> async TypesICRC7.BalanceResult;
+        icrc7_tokens_of: shared (account: TypesICRC7.Account) -> async TypesICRC7.TokensOfResult;
+        icrc7_transfer: shared (transferArgs: TypesICRC7.TransferArgs) -> async TypesICRC7.TransferReceipt;
+        icrc7_approve: shared (approvalArgs: TypesICRC7.ApprovalArgs) -> async TypesICRC7.ApprovalReceipt;
+        icrc7_supported_standards: shared () -> async [TypesICRC7.SupportedStandard];
+        mint: shared (mintArgs: TypesICRC7.MintArgs) -> async TypesICRC7.MintReceipt;
+        upgradeNFT: shared (upgradeArgs: TypesICRC7.UpgradeArgs) -> async TypesICRC7.UpgradeReceipt;
+        mintDeck: shared (deck: [TypesICRC7.MintArgs]) -> async TypesICRC7.MintReceipt;
+        get_transactions: shared (getTransactionsArgs: TypesICRC7.GetTransactionsArgs) -> async TypesICRC7.GetTransactionsResult;
+        openChest: shared (args: TypesICRC7.OpenArgs) -> async TypesICRC7.OpenReceipt;
+        updateChestMetadata: shared (updateArgs: TypesICRC7.UpdateArgs) -> async TypesICRC7.Result<TypesICRC7.TokenId, TypesICRC7.UpdateError>;
+    };
 
+    // GameNFTs
 
-// ICRC 1
-type ICRC1Interface = actor {
-    icrc1_name: shared () -> async Text;
-    icrc1_symbol: shared () -> async Text;
-    icrc1_decimals: shared () -> async Nat8;
-    icrc1_fee: shared () -> async TypesICRC1.Balance;
-    icrc1_metadata: shared () -> async [TypesICRC1.MetaDatum];
-    icrc1_total_supply: shared () -> async TypesICRC1.Balance;
-    icrc1_minting_account: shared () -> async ?TypesICRC1.Account;
-    icrc1_balance_of: shared (args: TypesICRC1.Account) -> async TypesICRC1.Balance;
-    icrc1_supported_standards: shared () -> async [TypesICRC1.SupportedStandard];
-    icrc1_transfer: shared (args: TypesICRC1.TransferArgs) -> async TypesICRC1.TransferResult;
-    icrc1_pay_for_transaction: shared (args: TypesICRC1.TransferArgs, from: Principal) -> async TypesICRC1.TransferResult;
-    mint: shared (args: TypesICRC1.Mint) -> async TypesICRC1.TransferResult;
-    burn: shared (args: TypesICRC1.BurnArgs) -> async TypesICRC1.TransferResult;
-    get_transactions: shared (req: TypesICRC1.GetTransactionsRequest) -> async TypesICRC1.GetTransactionsResponse;
-    get_transaction: shared (i: TypesICRC1.TxIndex) -> async ?TypesICRC1.Transaction;
-    deposit_cycles: shared () -> async ();
-};
+    // Mint deck with 8 units and random rarity within a range provided
+    public shared({ caller }) func mintDeck() : async (Bool, Text) {
+        let units = Utils.initDeck();
 
- // ICRC 7
-type ICRC7Interface = actor {
-    icrc7_collection_metadata: shared () -> async TypesICRC7.CollectionMetadata;
-    icrc7_name: shared () -> async Text;
-    icrc7_symbol: shared () -> async Text;
-    icrc7_royalties: shared () -> async ?Nat16;
-    icrc7_royalty_recipient: shared () -> async ?TypesICRC7.Account;
-    icrc7_description: shared () -> async ?Text;
-    icrc7_image: shared () -> async ?Blob;
-    icrc7_total_supply: shared () -> async Nat;
-    icrc7_supply_cap: shared () -> async ?Nat;
-    icrc7_metadata: shared (tokenId: TypesICRC7.TokenId) -> async TypesICRC7.MetadataResult;
-    icrc7_owner_of: shared (tokenId: TypesICRC7.TokenId) -> async TypesICRC7.OwnerResult;
-    icrc7_balance_of: shared (account: TypesICRC7.Account) -> async TypesICRC7.BalanceResult;
-    icrc7_tokens_of: shared (account: TypesICRC7.Account) -> async TypesICRC7.TokensOfResult;
-    icrc7_transfer: shared (transferArgs: TypesICRC7.TransferArgs) -> async TypesICRC7.TransferReceipt;
-    icrc7_approve: shared (approvalArgs: TypesICRC7.ApprovalArgs) -> async TypesICRC7.ApprovalReceipt;
-    icrc7_supported_standards: shared () -> async [TypesICRC7.SupportedStandard];
-    mint: shared (mintArgs: TypesICRC7.MintArgs) -> async TypesICRC7.MintReceipt;
-    upgradeNFT: shared (upgradeArgs: TypesICRC7.UpgradeArgs) -> async TypesICRC7.UpgradeReceipt;
-    mintDeck: shared (deck: [TypesICRC7.MintArgs]) -> async TypesICRC7.MintReceipt;
-    get_transactions: shared (getTransactionsArgs: TypesICRC7.GetTransactionsArgs) -> async TypesICRC7.GetTransactionsResult;
-    openChest: shared (args: TypesICRC7.OpenArgs) -> async TypesICRC7.OpenReceipt;
-    updateChestMetadata: shared (updateArgs: TypesICRC7.UpdateArgs) -> async TypesICRC7.Result<TypesICRC7.TokenId, TypesICRC7.UpdateError>;
-};
+        var _deck = Buffer.Buffer<TypesICRC7.MintArgs>(8);
 
-// GameNFTs
+        for (i in Iter.range(0, 7)) {
+            let (name, damage, hp, rarity) = units[i];
+            let uuid = await Utils.generateUUID64();
+            let _mintArgs: TypesICRC7.MintArgs = {
+                to = { owner = caller; subaccount = null };
+                token_id = uuid;
+                metadata = Utils.getBaseMetadataWithAttributes(rarity, i + 1, name, damage, hp);
+            };
+            _deck.add(_mintArgs);
+        };
 
-// Mint deck with 8 units and random rarity within a range provided
-public shared({ caller }) func mintDeck() : async (Bool, Text) {
-    let units = Utils.initDeck();
+        let mintResult = await gameNFTs.mintDeck(Buffer.toArray(_deck));
+        switch (mintResult) {
+            case (#Ok(_transactionID)) {
+                return (true, "Deck minted. # NFTs: " # Nat.toText(_transactionID));
+            };
+            case (#Err(_e)) {
+                switch (_e) {
+                    case (#AlreadyExistTokenId) {
+                        return (false, "Deck mint failed: Token ID already exists");
+                    };
+                    case (#GenericError(_g)) {
+                        return (false, "Deck mint failed: GenericError: " # _g.message);
+                    };
+                    case (#InvalidRecipient) {
+                        return (false, "Deck mint failed: InvalidRecipient");
+                    };
+                    case (#Unauthorized) {
+                        return (false, "Deck mint failed: Unauthorized");
+                    };
+                    case (#SupplyCapOverflow) {
+                        return (false, "Deck mint failed: SupplyCapOverflow");
+                    };
+                };
+            };
+        };
+    };
 
-    var _deck = Buffer.Buffer<TypesICRC7.MintArgs>(8);
+    public shared(msg) func upgradeNFT(nftID: TokenID) : async (Bool, Text) {
+        // Initiate metadata retrieval in the background
+        let metadataFuture = async { await gameNFTs.icrc7_metadata(nftID) };
 
-    for (i in Iter.range(0, 7)) {
-        let (name, damage, hp, rarity) = units[i];
+        // Perform ownership check
+        let ownerof: TypesICRC7.OwnerResult = await gameNFTs.icrc7_owner_of(nftID);
+        let _owner: TypesICRC7.Account = switch (ownerof) {
+            case (#Ok(owner)) owner;
+            case (#Err(_)) return (false, "{\"success\":false, \"message\":\"NFT not found\"}");
+        };
+        if (Principal.notEqual(_owner.owner, msg.caller)) {
+            return (false, "{\"success\":false, \"message\":\"You do not own this NFT.\"}");
+        };
+
+        // Wait for metadata retrieval
+        let metadataResult = await metadataFuture;
+        let _nftMetadata: [(Text, TypesICRC7.Metadata)] = switch (metadataResult) {
+            case (#Ok(metadata)) metadata;
+            case (#Err(_)) return (false, "NFT not found");
+        };
+
+        // Send the process to the background
+        ignore _processUpgrade(nftID, msg.caller, _nftMetadata);
+
+        // Immediate placeholder response to Unity
+        let placeholderResponse = "{\"success\":true, \"message\":\"Upgrade initiated\"}";
+        return (true, placeholderResponse);
+    };
+
+    // Function to handle the upgrade process in the background
+    private func _processUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(Text, TypesICRC7.Metadata)]): async () {
+        // Calculate upgrade cost
+        let nftLevel: Nat = Utils.getNFTLevel(_nftMetadata);
+        let upgradeCost = Utils.calculateCost(nftLevel);
+        let fee = await shards.icrc1_fee();
+
+        // Create transaction arguments for the upgrade cost
+        let _transactionsArgs = {
+            amount: TypesICRC1.Balance = upgradeCost;
+            created_at_time: ?Nat64 = ?Nat64.fromNat(Int.abs(Time.now()));
+            fee = ?fee;
+            from_subaccount: ?TypesICRC1.Subaccount = null;
+            memo: ?Blob = null;
+            to: TypesICRC1.Account = { owner = Principal.fromText("aaaaa-aa"); subaccount = null; };
+        };
+
+        // Transfer the upgrade cost
+        let transfer: TypesICRC1.TransferResult = await shards.icrc1_pay_for_transaction(_transactionsArgs, caller);
+
+        switch (transfer) {
+            case (#Ok(_tok)) {
+                // Execute the metadata update
+                await _executeUpgrade(nftID, caller, _nftMetadata);
+                Debug.print("[upgradeNFT]Upgrade successful for NFT ID: " # Nat.toText(nftID) # " by caller: " # Principal.toText(caller));
+            };
+            case (#Err(_e)) {
+                Debug.print("[upgradeNFT]Upgrade cost transfer failed: ");
+            };
+        };
+    };
+
+    // Function to execute NFT upgrade
+    private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(Text, TypesICRC7.Metadata)]): async () {
+        // Prepare for upgrade
+        let _newArgsBuffer = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_nftMetadata.size());
+        let nftLevel: Nat = Utils.getNFTLevel(_nftMetadata);
+
+        // Update metadata
+        for (_md in _nftMetadata.vals()) {
+            let _mdKey: Text = _md.0;
+            let _mdValue: TypesICRC7.Metadata = _md.1;
+            switch (_mdKey) {
+                case ("skin") _newArgsBuffer.add(("skin", _mdValue));
+                case ("skills") {
+                    let _upgradedAdvanced = Utils.upgradeAdvancedAttributes(nftLevel, _mdValue);
+                    _newArgsBuffer.add(("skills", _upgradedAdvanced));
+                };
+                case ("souls") _newArgsBuffer.add(("souls", _mdValue));
+                case ("basic_stats") {
+                    let _basic_stats = Utils.updateBasicStats(_mdValue);
+                    _newArgsBuffer.add(("basic_stats", _basic_stats));
+                };
+                case ("general") _newArgsBuffer.add(("general", _mdValue));
+                case (_) _newArgsBuffer.add((_mdKey, _mdValue));
+            };
+        };
+
+        let _upgradeArgs: TypesICRC7.UpgradeArgs = {
+            from = { owner = caller; subaccount = null };
+            token_id = nftID;
+            metadata = Buffer.toArray(_newArgsBuffer);
+            date_time = ?{ timestamp_nanos = Nat64.fromNat(Int.abs(Time.now())) };
+        };
+        let upgrade: TypesICRC7.UpgradeReceipt = await gameNFTs.upgradeNFT(_upgradeArgs);
+        switch (upgrade) {
+            case (#Ok(_)) Debug.print("[_executeUpgrade]NFT upgraded successfully.");
+            case (#Err(_e)) Debug.print("[_executeUpgrade]NFT upgrade failed:");
+        };
+    };
+
+    // Chests
+    public shared({ caller }) func mintChest(rarity: Nat) : async (Bool, Text) {
         let uuid = await Utils.generateUUID64();
         let _mintArgs: TypesICRC7.MintArgs = {
             to = { owner = caller; subaccount = null };
             token_id = uuid;
-            metadata = Utils.getBaseMetadataWithAttributes(rarity, i + 1, name, damage, hp);
+            metadata = Utils.getChestMetadata(rarity);
         };
-        _deck.add(_mintArgs);
-    };
-
-    let mintResult = await gameNFTs.mintDeck(Buffer.toArray(_deck));
-    switch (mintResult) {
-        case (#Ok(_transactionID)) {
-            return (true, "Deck minted. # NFTs: " # Nat.toText(_transactionID));
-        };
-        case (#Err(_e)) {
-            switch (_e) {
-                case (#AlreadyExistTokenId) {
-                    return (false, "Deck mint failed: Token ID already exists");
-                };
-                case (#GenericError(_g)) {
-                    return (false, "Deck mint failed: GenericError: " # _g.message);
-                };
-                case (#InvalidRecipient) {
-                    return (false, "Deck mint failed: InvalidRecipient");
-                };
-                case (#Unauthorized) {
-                    return (false, "Deck mint failed: Unauthorized");
-                };
-                case (#SupplyCapOverflow) {
-                    return (false, "Deck mint failed: SupplyCapOverflow");
+        let mintResult = await chests.mint(_mintArgs);
+        switch (mintResult) {
+            case (#Ok(_transactionID)) {
+                return (true, "NFT minted. Transaction ID: " # Nat.toText(_transactionID));
+            };
+            case (#Err(_e)) {
+                switch (_e) {
+                    case (#AlreadyExistTokenId) {
+                        return (false, "NFT mint failed: Token ID already exists");
+                    };
+                    case (#GenericError(_g)) {
+                        return (false, "NFT mint failed: GenericError: " # _g.message);
+                    };
+                    case (#InvalidRecipient) {
+                        return (false, "NFT mint failed: InvalidRecipient");
+                    };
+                    case (#Unauthorized) {
+                        return (false, "NFT mint failed: Unauthorized");
+                    };
+                    case (#SupplyCapOverflow) {
+                        return (false, "NFT mint failed: SupplyCapOverflow");
+                    };
                 };
             };
         };
     };
-};
 
-public shared(msg) func upgradeNFT(nftID: TokenID) : async (Bool, Text) {
-    // Initiate metadata retrieval in the background
-    let metadataFuture = async { await gameNFTs.icrc7_metadata(nftID) };
-
-    // Perform ownership check
-    let ownerof: TypesICRC7.OwnerResult = await gameNFTs.icrc7_owner_of(nftID);
-    let _owner: TypesICRC7.Account = switch (ownerof) {
-        case (#Ok(owner)) owner;
-        case (#Err(_)) return (false, "{\"success\":false, \"message\":\"NFT not found\"}");
-    };
-    if (Principal.notEqual(_owner.owner, msg.caller)) {
-        return (false, "{\"success\":false, \"message\":\"You do not own this NFT.\"}");
-    };
-
-    // Wait for metadata retrieval
-    let metadataResult = await metadataFuture;
-    let _nftMetadata: [(Text, TypesICRC7.Metadata)] = switch (metadataResult) {
-        case (#Ok(metadata)) metadata;
-        case (#Err(_)) return (false, "NFT not found");
-    };
-
-    // Send the process to the background
-    ignore _processUpgrade(nftID, msg.caller, _nftMetadata);
-
-    // Immediate placeholder response to Unity
-    let placeholderResponse = "{\"success\":true, \"message\":\"Upgrade initiated\"}";
-    return (true, placeholderResponse);
-};
-
-// Function to handle the upgrade process in the background
-private func _processUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(Text, TypesICRC7.Metadata)]): async () {
-    // Calculate upgrade cost
-    let nftLevel: Nat = Utils.getNFTLevel(_nftMetadata);
-    let upgradeCost = Utils.calculateCost(nftLevel);
-    let fee = await shards.icrc1_fee();
-
-    // Create transaction arguments for the upgrade cost
-    let _transactionsArgs = {
-        amount: TypesICRC1.Balance = upgradeCost;
-        created_at_time: ?Nat64 = ?Nat64.fromNat(Int.abs(Time.now()));
-        fee = ?fee;
-        from_subaccount: ?TypesICRC1.Subaccount = null;
-        memo: ?Blob = null;
-        to: TypesICRC1.Account = { owner = Principal.fromText("aaaaa-aa"); subaccount = null; };
-    };
-
-    // Transfer the upgrade cost
-    let transfer: TypesICRC1.TransferResult = await shards.icrc1_pay_for_transaction(_transactionsArgs, caller);
-
-    switch (transfer) {
-        case (#Ok(_tok)) {
-            // Execute the metadata update
-            await _executeUpgrade(nftID, caller, _nftMetadata);
-            Debug.print("[upgradeNFT]Upgrade successful for NFT ID: " # Nat.toText(nftID) # " by caller: " # Principal.toText(caller));
+    public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
+        // Perform ownership check
+        let ownerof: TypesICRC7.OwnerResult = await chests.icrc7_owner_of(chestID);
+        let _owner: TypesICRC7.Account = switch (ownerof) {
+            case (#Ok(owner)) owner;
+            case (#Err(_)) return (false, "{\"error\":true, \"message\":\"Chest not found\"}");
         };
-        case (#Err(_e)) {
-            Debug.print("[upgradeNFT]Upgrade cost transfer failed: ");
+
+        if (Principal.notEqual(_owner.owner, caller)) {
+            return (false, "{\"error\":true, \"message\":\"Not the owner of the chest\"}");
         };
-    };
-};
 
-// Function to execute NFT upgrade
-private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(Text, TypesICRC7.Metadata)]): async () {
-    // Prepare for upgrade
-    let _newArgsBuffer = Buffer.Buffer<(Text, TypesICRC7.Metadata)>(_nftMetadata.size());
-    let nftLevel: Nat = Utils.getNFTLevel(_nftMetadata);
-
-    // Update metadata
-    for (_md in _nftMetadata.vals()) {
-        let _mdKey: Text = _md.0;
-        let _mdValue: TypesICRC7.Metadata = _md.1;
-        switch (_mdKey) {
-            case ("skin") _newArgsBuffer.add(("skin", _mdValue));
-            case ("skills") {
-                let _upgradedAdvanced = Utils.upgradeAdvancedAttributes(nftLevel, _mdValue);
-                _newArgsBuffer.add(("skills", _upgradedAdvanced));
-            };
-            case ("souls") _newArgsBuffer.add(("souls", _mdValue));
-            case ("basic_stats") {
-                let _basic_stats = Utils.updateBasicStats(_mdValue);
-                _newArgsBuffer.add(("basic_stats", _basic_stats));
-            };
-            case ("general") _newArgsBuffer.add(("general", _mdValue));
-            case (_) _newArgsBuffer.add((_mdKey, _mdValue));
+        // Get tokens to be minted and burn the chest
+        let _chestArgs: TypesICRC7.OpenArgs = {
+            from = _owner;
+            token_id = chestID;
         };
-    };
 
-    let _upgradeArgs: TypesICRC7.UpgradeArgs = {
-        from = { owner = caller; subaccount = null };
-        token_id = nftID;
-        metadata = Buffer.toArray(_newArgsBuffer);
-        date_time = ?{ timestamp_nanos = Nat64.fromNat(Int.abs(Time.now())) };
-    };
-    let upgrade: TypesICRC7.UpgradeReceipt = await gameNFTs.upgradeNFT(_upgradeArgs);
-    switch (upgrade) {
-        case (#Ok(_)) Debug.print("[_executeUpgrade]NFT upgraded successfully.");
-        case (#Err(_e)) Debug.print("[_executeUpgrade]NFT upgrade failed:");
-    };
-};
-
-// Chests
-public shared({ caller }) func mintChest(rarity: Nat) : async (Bool, Text) {
-    let uuid = await Utils.generateUUID64();
-    let _mintArgs: TypesICRC7.MintArgs = {
-        to = { owner = caller; subaccount = null };
-        token_id = uuid;
-        metadata = Utils.getChestMetadata(rarity);
-    };
-    let mintResult = await chests.mint(_mintArgs);
-    switch (mintResult) {
-        case (#Ok(_transactionID)) {
-            return (true, "NFT minted. Transaction ID: " # Nat.toText(_transactionID));
+        // Additional checks before calling openChest
+        if (Principal.notEqual(_chestArgs.from.owner, caller)) {
+            return (false, "{\"error\":true, \"message\":\"Unauthorized: Owner mismatch in _chestArgs\"}");
         };
-        case (#Err(_e)) {
-            switch (_e) {
-                case (#AlreadyExistTokenId) {
-                    return (false, "NFT mint failed: Token ID already exists");
+
+        let _tokens: TypesICRC7.OpenReceipt = await chests.openChest(_chestArgs);
+
+        var _tokensResults: Text = "";
+
+        // Handle the result of opening the chest
+        switch (_tokens) {
+            case (#Ok(_t)) {
+                // Determine chest rarity based on metadata
+                let metadataResult = await chests.icrc7_metadata(chestID);
+                let rarity = switch (metadataResult) {
+                    case (#Ok(metadata)) Utils.getRarityFromMetadata(metadata);
+                    case (#Err(_)) 1;
                 };
-                case (#GenericError(_g)) {
-                    return (false, "NFT mint failed: GenericError: " # _g.message);
+
+                let (shardsAmount, fluxAmount) = Utils.getTokensAmount(rarity);
+
+                // Prepare mint arguments
+                let _shardsArgs: TypesICRC1.Mint = {
+                    to = { owner = caller; subaccount = null };
+                    amount = shardsAmount;
+                    memo = null;
+                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
                 };
-                case (#InvalidRecipient) {
-                    return (false, "NFT mint failed: InvalidRecipient");
+
+                let _fluxArgs: TypesICRC1.Mint = {
+                    to = { owner = caller; subaccount = null };
+                    amount = fluxAmount;
+                    memo = null;
+                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
                 };
-                case (#Unauthorized) {
-                    return (false, "NFT mint failed: Unauthorized");
+
+                // Mint shards and flux tokens concurrently
+                let shardsMintedFuture = async { await shards.mint(_shardsArgs) };
+                let fluxMintedFuture = async { await flux.mint(_fluxArgs) };
+
+                let shardsMinted = await shardsMintedFuture;
+                let fluxMinted = await fluxMintedFuture;
+
+                // Handle shards minting result
+                let shardsResult = switch (shardsMinted) {
+                    case (#Ok(_tid)) "{\"token\":\"Shards\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(shardsAmount) # "}";
+                    case (#Err(_e)) Utils.handleMintError("Shards", _e);
                 };
-                case (#SupplyCapOverflow) {
-                    return (false, "NFT mint failed: SupplyCapOverflow");
+
+                // Handle flux minting result
+                let fluxResult = switch (fluxMinted) {
+                    case (#Ok(_tid)) "{\"token\":\"Flux\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(fluxAmount) # "}";
+                    case (#Err(_e)) Utils.handleMintError("Flux", _e);
                 };
+
+                _tokensResults := shardsResult # ", " # fluxResult;
+            };
+            case (#Err(_e)) {
+                return (false, Utils.handleChestError(_e));
             };
         };
-    };
-};
 
-public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
-    // Perform ownership check
-    let ownerof: TypesICRC7.OwnerResult = await chests.icrc7_owner_of(chestID);
-    let _owner: TypesICRC7.Account = switch (ownerof) {
-        case (#Ok(owner)) owner;
-        case (#Err(_)) return (false, "{\"error\":true, \"message\":\"Chest not found\"}");
+        return (true, _tokensResults);
     };
 
-    if (Principal.notEqual(_owner.owner, caller)) {
-        return (false, "{\"error\":true, \"message\":\"Not the owner of the chest\"}");
-    };
 
-    // Get tokens to be minted and burn the chest
-    let _chestArgs: TypesICRC7.OpenArgs = {
-        from = _owner;
-        token_id = chestID;
-    };
-
-    // Additional checks before calling openChest
-    if (Principal.notEqual(_chestArgs.from.owner, caller)) {
-        return (false, "{\"error\":true, \"message\":\"Unauthorized: Owner mismatch in _chestArgs\"}");
-    };
-
-    let _tokens: TypesICRC7.OpenReceipt = await chests.openChest(_chestArgs);
-
-    var _tokensResults: Text = "";
-
-    // Handle the result of opening the chest
-    switch (_tokens) {
-        case (#Ok(_t)) {
-            // Determine chest rarity based on metadata
-            let metadataResult = await chests.icrc7_metadata(chestID);
-            let rarity = switch (metadataResult) {
-                case (#Ok(metadata)) Utils.getRarityFromMetadata(metadata);
-                case (#Err(_)) 1;
-            };
-
-            let (shardsAmount, fluxAmount) = Utils.getTokensAmount(rarity);
-
-            // Mint shards tokens
-            let _shardsArgs: TypesICRC1.Mint = {
-                to = { owner = caller; subaccount = null };
-                amount = shardsAmount;
-                memo = null;
-                created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-            };
-            let _shardsMinted: TypesICRC1.TransferResult = await shards.mint(_shardsArgs);
-
-            let shardsResult = switch (_shardsMinted) {
-                case (#Ok(_tid)) "{\"token\":\"Shards\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(shardsAmount) # "}";
-                case (#Err(_e)) Utils.handleMintError("Shards", _e);
-            };
-
-            // Mint flux tokens
-            let _fluxArgs: TypesICRC1.Mint = {
-                to = { owner = caller; subaccount = null };
-                amount = fluxAmount;
-                memo = null;
-                created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-            };
-            let _fluxMinted: TypesICRC1.TransferResult = await flux.mint(_fluxArgs);
-
-            let fluxResult = switch (_fluxMinted) {
-                case (#Ok(_tid)) "{\"token\":\"Flux\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(fluxAmount) # "}";
-                case (#Err(_e)) Utils.handleMintError("Flux", _e);
-            };
-
-            _tokensResults := shardsResult # ", " # fluxResult;
-        };
-        case (#Err(_e)) {
-            return (false, Utils.handleChestError(_e));
-        };
-    };
-
-    return (true, _tokensResults);
-};
-
-// Rewards
+    // Rewards
 
     // Constants
     private let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000; 
@@ -2128,5 +2130,28 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
             };
         };
         return null;
+    };
+
+    // Function to Retrieve Unclaimed and Unexpired Rewards for a User (Query Version)
+    public query func searchActiveMissions(user: Principal): async [RewardsUser] {
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        var userRewards = switch (userProgress.get(user)) {
+            case (null) { [] };
+            case (?rewards) { rewards };
+        };
+
+        var userClaimedMissions = switch (claimedMissions.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+
+        let activeRewards = Buffer.Buffer<RewardsUser>(0);
+        for (reward in userRewards.vals()) {
+            if (reward.expiration >= now and not Utils.contains(userClaimedMissions, reward.id_reward, _natEqual)) {
+                activeRewards.add(reward);
+            }
+        };
+
+        return Buffer.toArray(activeRewards);
     };
 };
