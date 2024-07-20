@@ -72,57 +72,57 @@ shared actor class Cosmicrafts() {
     return Utils._natHash(a);
   };
 
-  // Players
-  private stable var _players: [(PlayerId, Player)] = [];
-  var players: HashMap.HashMap<PlayerId, Player> = HashMap.fromIter(_players.vals(), 0, Principal.equal, Principal.hash);
+    // Players
+    private stable var _players: [(PlayerId, Player)] = [];
+    var players: HashMap.HashMap<PlayerId, Player> = HashMap.fromIter(_players.vals(), 0, Principal.equal, Principal.hash);
 
-  // Function to register a new player
-public shared ({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID) : async (Bool, PlayerId) {
-    let PlayerId = caller;
-    switch (players.get(PlayerId)) {
-        case (null) {
-            let registrationDate = Time.now();
-            let newPlayer: Player = {
-                id = PlayerId;
-                username = username;
-                avatar = avatar;
-                description = "";
-                registrationDate = registrationDate;
-                level = 1;
-                elo = 1200;
-                friends = [];
+    // Function to register a new player
+    public shared ({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID) : async (Bool, PlayerId) {
+        let PlayerId = caller;
+        switch (players.get(PlayerId)) {
+            case (null) {
+                let registrationDate = Time.now();
+                let newPlayer: Player = {
+                    id = PlayerId;
+                    username = username;
+                    avatar = avatar;
+                    description = "";
+                    registrationDate = registrationDate;
+                    level = 1;
+                    elo = 1200;
+                    friends = [];
+                };
+                players.put(PlayerId, newPlayer);
+
+                // Initialize player stats
+                let initialStats: PlayerGamesStats = {
+                    gamesPlayed = 0;
+                    gamesWon = 0;
+                    gamesLost = 0;
+                    energyGenerated = 0;
+                    energyUsed = 0;
+                    energyWasted = 0;
+                    totalDamageDealt = 0;
+                    totalDamageTaken = 0;
+                    totalDamageCrit = 0;
+                    totalDamageEvaded = 0;
+                    totalXpEarned = 0;
+                    totalGamesWithFaction = [];
+                    totalGamesGameMode = [];
+                    totalGamesWithCharacter = [];
+                };
+                playerGamesStats.put(PlayerId, initialStats);
+
+                // Assign new missions to the user
+                await assignNewMissionsToUser(PlayerId);
+
+                return (true, PlayerId);
             };
-            players.put(PlayerId, newPlayer);
-
-            // Initialize player stats
-            let initialStats: PlayerGamesStats = {
-                gamesPlayed = 0;
-                gamesWon = 0;
-                gamesLost = 0;
-                energyGenerated = 0;
-                energyUsed = 0;
-                energyWasted = 0;
-                totalDamageDealt = 0;
-                totalDamageTaken = 0;
-                totalDamageCrit = 0;
-                totalDamageEvaded = 0;
-                totalXpEarned = 0;
-                totalGamesWithFaction = [];
-                totalGamesGameMode = [];
-                totalGamesWithCharacter = [];
+            case (?_) {
+                return (false, PlayerId); // User already exists
             };
-            playerGamesStats.put(PlayerId, initialStats);
-
-            // Assign new missions to the user
-            await assignNewMissionsToUser(PlayerId);
-
-            return (true, PlayerId);
-        };
-        case (?_) {
-            return (false, PlayerId); // User already exists
         };
     };
-};
 
   // Function to update username
   public shared ({ caller: PlayerId }) func updateUsername(username: Username) : async (Bool, PlayerId) {
@@ -503,11 +503,11 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
         };
         let _progressRewards = Buffer.toArray(_progressRewardsBuffer);
 
-        Debug.print("Before addProgressToRewards: " # debug_show(userProgress.get(msg.caller)));
+        Debug.print("[saveFinishedGame]Before addProgressToRewards: " # debug_show(userProgress.get(msg.caller)));
 
         let _progressAdded = await addProgressToRewards(msg.caller, _progressRewards);
 
-        Debug.print("After addProgressToRewards: " # debug_show(userProgress.get(msg.caller)));
+        Debug.print("[saveFinishedGame]After addProgressToRewards: " # debug_show(userProgress.get(msg.caller)));
 
         _txt := _progressAdded.1;
 
@@ -1657,10 +1657,10 @@ private func _processUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
         case (#Ok(_tok)) {
             // Execute the metadata update
             await _executeUpgrade(nftID, caller, _nftMetadata);
-            Debug.print("Upgrade successful for NFT ID: " # Nat.toText(nftID) # " by caller: " # Principal.toText(caller));
+            Debug.print("[upgradeNFT]Upgrade successful for NFT ID: " # Nat.toText(nftID) # " by caller: " # Principal.toText(caller));
         };
         case (#Err(_e)) {
-            Debug.print("Upgrade cost transfer failed: ");
+            Debug.print("[upgradeNFT]Upgrade cost transfer failed: ");
         };
     };
 };
@@ -1699,8 +1699,8 @@ private func _executeUpgrade(nftID: TokenID, caller: Principal, _nftMetadata: [(
     };
     let upgrade: TypesICRC7.UpgradeReceipt = await gameNFTs.upgradeNFT(_upgradeArgs);
     switch (upgrade) {
-        case (#Ok(_)) Debug.print("NFT upgraded successfully.");
-        case (#Err(_e)) Debug.print("NFT upgrade failed:");
+        case (#Ok(_)) Debug.print("[_executeUpgrade]NFT upgraded successfully.");
+        case (#Err(_e)) Debug.print("[_executeUpgrade]NFT upgrade failed:");
     };
 };
 
@@ -1858,23 +1858,21 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
 
         missions.put(id, newMission);
         activeMissions.put(id, newMission);
-        Debug.print("Mission created with ID: " # Nat.toText(id) # ", End Date: " # Nat64.toText(endDate) # ", Start Date: " # Nat64.toText(now));
+        Debug.print("[createMission]Mission created with ID: " # Nat.toText(id) # ", End Date: " # Nat64.toText(endDate) # ", Start Date: " # Nat64.toText(now));
         
         return (true, "Mission created successfully", id);
     };
 
     // Function to Assign New Missions to a User
-    public shared func assignNewMissionsToUser(user: Principal): async () {
-        Debug.print("Adding progress to rewards for user: " # Principal.toText(user));
+    private func assignNewMissionsToUser(user: Principal): async () {
+        Debug.print("[assignNewMissionsToUser]Assigning new missions to user: " # Principal.toText(user));
 
         var userRewards = switch (userProgress.get(user)) {
             case (null) { [] };
             case (?rewards) { rewards };
         };
 
-        Debug.print("User rewards before update: " # debug_show(userRewards));
-
-        // let updatedRewards = Buffer.Buffer<RewardsUser>(userRewards.size()); // new line added
+        Debug.print("[assignNewMissionsToUser]User rewards before update: " # debug_show(userRewards));
 
         var claimedMissionsForUser = switch (claimedMissions.get(user)) {
             case (null) { [] };
@@ -1886,7 +1884,7 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
 
         // Remove expired or claimed missions
         for (reward in userRewards.vals()) {
-            if (reward.expiration >= now and not contains(claimedMissionsForUser, reward.id_reward, _natEqual)) {
+            if (reward.expiration >= now and not Utils.contains(claimedMissionsForUser, reward.id_reward, _natEqual)) {
                 buffer.add(reward);
             }
         };
@@ -1899,7 +1897,7 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
 
         // Add new active missions to the user
         for ((id, mission) in activeMissions.entries()) {
-            if (not contains(Buffer.toArray(currentRewardIds), id, _natEqual) and not contains(claimedMissionsForUser, id, _natEqual)) {
+            if (not Utils.contains(Buffer.toArray(currentRewardIds), id, _natEqual) and not Utils.contains(claimedMissionsForUser, id, _natEqual)) {
                 buffer.add({
                     id_reward = id;
                     prize_amount = mission.prize_amount;
@@ -1916,40 +1914,17 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
         };
 
         userProgress.put(user, Buffer.toArray(buffer));
-        // userProgress.put(user, Buffer.toArray(updatedRewards));
-        Debug.print("User rewards after update: " # debug_show(userProgress.get(user)));
+
+        Debug.print("[assignNewMissionsToUser]User rewards after update: " # debug_show(userProgress.get(user)));
     };
 
-
-    // Function to Clean Up Expired Missions
-    public func cleanupExpiredMissions() {
-        let now = Nat64.fromIntWrap(Time.now());
-        for ((id, mission) in activeMissions.entries()) {
-            if (mission.end_date < now) {
-                switch (activeMissions.remove(id)) {
-                    case (?removedMission) {
-                        // The mission was successfully removed
-                    };
-                    case (null) {
-                        // Handle the case where the mission was not found, if necessary
-                    };
-                };
-            };
-        };
-    };
-
-    // Function to Add Progress to Rewards for a User
-    public shared func addProgressToRewards(user: Principal, rewardsProgress: [RewardProgress]): async (Bool, Text) {
-        if (Principal.equal(user, NULL_PRINCIPAL) or Principal.equal(user, ANON_PRINCIPAL)) {
-            return (false, "Invalid user");
-        };
-
-        Debug.print("Fetching active mission IDs for user: " # Principal.toText(user));
+    private func addProgressToRewards(user: Principal, rewardsProgress: [RewardProgress]): async (Bool, Text) {
+        // Debug.print("[addProgressToRewards]Fetching active mission IDs for user: " # Principal.toText(user));
         var userRewards = switch (userProgress.get(user)) {
             case (null) { [] };
             case (?rewards) { rewards };
         };
-        Debug.print("User rewards: " # debug_show(userRewards));
+        Debug.print("[addProgressToRewards]User rewards: " # debug_show(userRewards));
 
         if (rewardsProgress.size() == 0) {
             return (false, "No progress data provided");
@@ -1959,7 +1934,7 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
         let updatedRewards = Buffer.Buffer<RewardsUser>(userRewards.size());
 
         for (reward in userRewards.vals()) {
-            if (reward.finished or reward.expiration < now) {
+            if (reward.finished) {
                 updatedRewards.add(reward);
             } else {
                 var updatedReward = reward;
@@ -1986,6 +1961,7 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
         };
 
         userProgress.put(user, Buffer.toArray(updatedRewards));
+        // Debug.print("[addProgressToRewards] Updated user rewards: " # debug_show(userProgress.get(user)));
         return (true, "Progress added successfully");
     };
 
@@ -2027,25 +2003,14 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
         };
     };
 
-
-    // Function to Check if a Value Exists in an Array
-    func contains<T>(array: [T], value: T, eq: (T, T) -> Bool): Bool {
-        for (element in array.vals()) {
-            if (eq(element, value)) {
-                return true;
-            };
-        };
-        return false;
-    };
-
     // Function to Mint a Reward
-    func mintReward(reward: RewardsUser, caller: Principal): async (Bool, Text) {
+    private func mintReward(reward: RewardsUser, caller: Principal): async (Bool, Text) {
         var claimHistory = switch (claimedMissions.get(caller)) {
             case (null) { [] };
             case (?history) { history };
         };
 
-        if (contains(claimHistory, reward.id_reward, _natEqual)) {
+        if (Utils.contains(claimHistory, reward.id_reward, _natEqual)) {
             return (false, "Reward already claimed");
         };
 
@@ -2110,35 +2075,8 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
         };
     };
 
-    public query func getActiveMissionIDs(user: Principal): async [Nat] {
-        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-
-        Debug.print("Fetching active mission IDs for user: " # Principal.toText(user));
-        var userRewards = switch (userProgress.get(user)) {
-            case (null) { [] };
-            case (?rewards) { rewards };
-        };
-        Debug.print("User rewards: " # debug_show(userRewards));
-
-        var userClaimedMissions = switch (claimedMissions.get(user)) {
-            case (null) { [] };
-            case (?missions) { missions };
-        };
-        Debug.print("User claimed missions: " # debug_show(userClaimedMissions));
-
-        let activeMissionIDs = Buffer.Buffer<Nat>(0);
-        for (reward in userRewards.vals()) {
-            if (not reward.finished and reward.expiration >= now and not contains(userClaimedMissions, reward.id_reward, _natEqual)) {
-                activeMissionIDs.add(reward.id_reward);
-            }
-        };
-
-        return Buffer.toArray(activeMissionIDs);
-    };
-
-
     // Function to Retrieve Unclaimed and Unexpired Rewards for a User
-    public shared func getUserActiveRewards(user: Principal): async [RewardsUser] {
+    public shared func getUserActiveMissions(user: Principal): async [RewardsUser] {
         // Assign any new missions to the user if not already done
         await assignNewMissionsToUser(user);
 
@@ -2153,19 +2091,16 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
             case (?missions) { missions };
         };
 
-        let unclaimedRewards = Buffer.Buffer<RewardsUser>(0);
+        let activeRewards = Buffer.Buffer<RewardsUser>(0);
         for (reward in userRewards.vals()) {
-            if (not reward.finished and reward.expiration >= now and not contains(userClaimedMissions, reward.id_reward, _natEqual)) {
-                unclaimedRewards.add(reward);
+            if (reward.expiration >= now and not Utils.contains(userClaimedMissions, reward.id_reward, _natEqual)) {
+                activeRewards.add(reward);
             }
         };
 
-        return Buffer.toArray(unclaimedRewards);
+        return Buffer.toArray(activeRewards);
     };
 
-
-
-    // Query Functions
     public query func getAllActiveMissions(): async [Reward] {
         let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
         let active = Buffer.Buffer<Reward>(activeMissions.size());
@@ -2180,7 +2115,7 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
         return Buffer.toArray(active);
     };
 
-    // Progress of a Mission ID for a user
+    // Helper to track progress of a Mission ID
     public query func getMissionProgress(user: Principal, rewardID: Nat): async ?RewardsUser {
         let userRewards = switch (userProgress.get(user)) {
             case (null) return null;
@@ -2194,12 +2129,4 @@ public shared({ caller }) func openChest(chestID: Nat): async (Bool, Text) {
         };
         return null;
     };
-
-    // public shared(msg) func adminGetUserRewards(_player : Principal) : async [Types.RewardsUser] {
-    //     return addNewRewardsToUser(_player);
-    // };
-
-    // public query func adminGetUserLastUpdate() : async ([(Principal, Nat)]) {
-    //     return Iter.toArray(userLastReward.entries());
-    // };
 };

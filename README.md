@@ -326,3 +326,46 @@ private func _processChestContents(chestID: Nat, caller: Principal): async () {
     await shardsMinting;
     await fluxMinting;
 };
+
+
+
+
+
+
+// Mission helper queries
+
+    public query func getActiveMissionIDs(user: Principal): async [Nat] {
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+
+        Debug.print("[getActiveMissionIDs]Fetching active mission IDs for user: " # Principal.toText(user));
+        var userRewards = switch (userProgress.get(user)) {
+            case (null) { [] };
+            case (?rewards) { rewards };
+        };
+        Debug.print("[getActiveMissionIDs]User rewards: " # debug_show(userRewards));
+
+        var userClaimedMissions = switch (claimedMissions.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+        Debug.print("[getActiveMissionIDs]User claimed missions: " # debug_show(userClaimedMissions));
+
+        let activeMissionIDs = Buffer.Buffer<Nat>(0);
+        for (reward in userRewards.vals()) {
+            if (not Utils.contains(userClaimedMissions, reward.id_reward, _natEqual) and reward.expiration >= now) {
+                activeMissionIDs.add(reward.id_reward);
+            }
+        };
+
+        return Buffer.toArray(activeMissionIDs);
+    };
+
+    // obtain claimed rewards for a user (NOTE: claimed rewards do not show any progress, only the ID)
+    public query func getClaimedRewards(user: Principal): async [Nat] {
+        var userClaimedMissions = switch (claimedMissions.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+
+        return userClaimedMissions;
+    };

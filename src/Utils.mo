@@ -43,6 +43,16 @@ public func natToBytes(n: Nat): [Nat8] {
       return uuid;
   };
 
+    // Function to Check if a Value Exists in an Array
+    public func contains<T>(array: [T], value: T, eq: (T, T) -> Bool): Bool {
+        for (element in array.vals()) {
+            if (eq(element, value)) {
+                return true;
+            };
+        };
+        return false;
+    };
+
   // NFT Metadata
   public func initDeck(): [(Text, Nat, Nat, Nat)] {
         return [
