@@ -136,45 +136,52 @@ public type OverallGamesWithCharacter = {
     totalGamesWithCharacter: [OverallGamesWithCharacter];
   };
 
-  // Rewards
-  public type RewardType = {
+  // Missions
+  public type MissionType = {
     #GamesCompleted;
     #GamesWon;
     #LevelReached;
   };
 
-  public type PrizeType = {
+  public type RewardType = {
     #Chest;
     #Flux;
     #Shards;
   };
 
-  public type Reward = {
+  public type MissionOption = {
+    MissionType: MissionType;
+    minAmount: Nat;
+    maxAmount: Nat;
+    rarity: Nat;
+  };
+
+  public type Mission = {
     id: Nat;
-    rewardType: RewardType;
+    missionType: MissionType;
     name: Text;
-    prize_type: PrizeType;
-    prize_amount: Nat;
+    reward_type: RewardType;
+    reward_amount: Nat;
     start_date: Nat64;
     end_date: Nat64;
     total: Float;
   };
 
-  public type RewardsUser = {
-    id_reward: Nat;
+  public type MissionsUser = {
+    id_mission: Nat;
     total: Float;
     progress: Float;
     finished: Bool;
     finish_date: Nat64;
     start_date: Nat64;
     expiration: Nat64;
-    rewardType: RewardType;
-    prize_type: PrizeType;
-    prize_amount: Nat;
+    missionType: MissionType;
+    reward_type: RewardType;
+    reward_amount: Nat;
   };
 
-  public type RewardProgress = {
-    rewardType: RewardType;
+  public type MissionProgress = {
+    missionType: MissionType;
     progress: Float;
   };
 
@@ -260,6 +267,6 @@ public type FullMatchData = {
     mode: MatchOpt;
   };
 
-  // query por MatchID
+
 
 }
