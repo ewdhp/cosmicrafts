@@ -9,7 +9,7 @@ module Types {
   public type RegistrationDate = Time.Time;
   public type Level = Nat;
   public type MatchID = Nat;
-  public type TokenId = Nat;
+  public type TokenID = Nat;
 
   public type MatchResult = Text;
   public type MatchMap = Text;
@@ -28,7 +28,7 @@ module Types {
     friends: [FriendDetails];
   };
 
-    public type FriendDetails = {
+  public type FriendDetails = {
     playerId: PlayerId;
     username: Username;
     avatar: AvatarID;
@@ -54,18 +54,18 @@ module Types {
   };
 
   public type OverallGamesWithFaction = {
-      factionID: Nat;
-      gamesPlayed: Nat;
+    factionID: Nat;
+    gamesPlayed: Nat;
   };
 
-public type OverallGamesWithGameMode = {
-      gameModeID: Nat;
-      gamesPlayed: Nat;
+  public type OverallGamesWithGameMode = {
+    gameModeID: Nat;
+    gamesPlayed: Nat;
   };
 
-public type OverallGamesWithCharacter = {
-      characterID: Nat;
-      gamesPlayed: Nat;
+  public type OverallGamesWithCharacter = {
+    characterID: Nat;
+    gamesPlayed: Nat;
   };
 
   public type PlayerStats = {
@@ -141,14 +141,24 @@ public type OverallGamesWithCharacter = {
     #GamesCompleted;
     #GamesWon;
     #LevelReached;
+    #DamageDealt;
+    #DamageTaken;
+    #EnergyUsed;
+    #UnitsDeployed;
+    #FactionPlayed;
+    #GameModePlayed;
+    #XPEarned;
+    #Kills;
   };
 
   public type RewardType = {
     #Chest;
     #Flux;
     #Shards;
+    #Tokens;
   };
 
+  // MissionOptions refined for variety and reuse
   public type MissionOption = {
     MissionType: MissionType;
     minAmount: Nat;
@@ -167,6 +177,7 @@ public type OverallGamesWithCharacter = {
     total: Float;
   };
 
+  // Modified to add dynamic progress and expiration handling
   public type MissionsUser = {
     id_mission: Nat;
     total: Float;
@@ -185,6 +196,23 @@ public type OverallGamesWithCharacter = {
     progress: Float;
   };
 
+  // Mission Template and Reward Pool definitions
+  public type MissionTemplate = {
+    name: Text;
+    missionType: MissionType;
+    rewardType: RewardType;
+    minReward: Nat;
+    maxReward: Nat;
+    total: Float;
+    hoursActive: Nat64;
+  };
+
+  public type RewardPool = {
+    rewardType: RewardType;
+    minAmount: Nat;
+    maxAmount: Nat;
+  };
+
   // Matchmaking
   public type MMInfo = {
     id: PlayerId;
@@ -193,62 +221,64 @@ public type OverallGamesWithCharacter = {
     playerGameData: Text;
     lastPlayerActive: Nat64;
     username: Username;
-};
+  };
 
-public type MMStatus = {
+  public type MMStatus = {
     #Searching;
     #Reserved;
     #Accepting;
     #Accepted;
     #InGame;
     #Ended;
-};
-
-public type MMSearchStatus = {
-      #Assigned;
-      #Available;
-      #NotAvailable;
   };
 
-public type MMPlayerStatus = {
+  public type MMSearchStatus = {
+    #Assigned;
+    #Available;
+    #NotAvailable;
+  };
+
+  public type MMPlayerStatus = {
     status: MMStatus;
     matchID: MatchID;
-};
+  };
 
-public type MatchData = {
+  public type MatchData = {
     matchID: MatchID;
     player1: MMInfo;
     player2: ?MMInfo;
     status: MMStatus;
-};
+  };
 
-public type FullMatchData = {
+  public type FullMatchData = {
     matchID: MatchID;
     player1: {
-        id: PlayerId;
-        username: Username;
-        avatar: AvatarID;
-        level: Level;
-        matchAccepted: Bool;
-        elo: Float;
-        playerGameData: Text;
-       // faction: Faction;
+      id: PlayerId;
+      username: Username;
+      avatar: AvatarID;
+      level: Level;
+      matchAccepted: Bool;
+      elo: Float;
+      playerGameData: Text;
     };
     player2: ?{
-        id: PlayerId;
-        username: Username;
-        avatar: AvatarID;
-        level: Level;
-        matchAccepted: Bool;
-        elo: Float;
-        playerGameData: Text;
-        //faction: Faction;
+      id: PlayerId;
+      username: Username;
+      avatar: AvatarID;
+      level: Level;
+      matchAccepted: Bool;
+      elo: Float;
+      playerGameData: Text;
     };
     status: MMStatus;
-};
+  };
 
   // Match History
-  public type MatchOpt = { #Ranked; #Normal; #Tournament };
+  public type MatchOpt = {
+    #Ranked;
+    #Normal;
+    #Tournament;
+  };
 
   public type PlayerRecord = {
     playerId: Principal;
@@ -265,22 +295,5 @@ public type FullMatchData = {
     result: MatchResult;
     timestamp: Time.Time;
     mode: MatchOpt;
-  };
-
-//New
-public type MissionTemplate = {
-    name: Text;
-    missionType: MissionType;
-    rewardType: RewardType;
-    minReward: Nat;
-    maxReward: Nat;
-    total: Float;
-    hoursActive: Nat64;
-  };
-
-  public type RewardPool = {
-    rewardType: RewardType;
-    minAmount: Nat;
-    maxAmount: Nat;
   };
 }

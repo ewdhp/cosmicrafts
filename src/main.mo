@@ -66,7 +66,7 @@ shared actor class Cosmicrafts() {
   
 
   //ICRC
-  public type TokenID = Types.TokenId;
+  public type TokenID = Types.TokenID;
 
   // Utils
   func _natEqual(a : Nat, b : Nat) : Bool {
@@ -1940,28 +1940,28 @@ shared actor class Cosmicrafts() {
   };
 
     public shared ({ caller }) func getUserActiveMissions() : async [MissionsUser] {
-        // Assign any new missions to the user if not already done
-        await assignNewMissionsToUser(caller);
+            // Assign any new missions to the user if not already done
+            await assignNewMissionsToUser(caller);
 
-        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-        var userMissions = switch (userProgress.get(caller)) {
-        case (null) { [] };
-        case (?missions) { missions };
-        };
+            let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+            var userMissions = switch (userProgress.get(caller)) {
+            case (null) { [] };
+            case (?missions) { missions };
+            };
 
-        var userClaimedRewards = switch (claimedRewards.get(caller)) {
-        case (null) { [] };
-        case (?missions) { missions };
-        };
+            var userClaimedRewards = switch (claimedRewards.get(caller)) {
+            case (null) { [] };
+            case (?missions) { missions };
+            };
 
-        let activeMissions = Buffer.Buffer<MissionsUser>(0);
-        for (mission in userMissions.vals()) {
-        if (mission.expiration >= now and not Utils.contains(userClaimedRewards, mission.id_mission, _natEqual)) {
-            activeMissions.add(mission);
-        }
-        };
+            let activeMissions = Buffer.Buffer<MissionsUser>(0);
+            for (mission in userMissions.vals()) {
+            if (mission.expiration >= now and not Utils.contains(userClaimedRewards, mission.id_mission, _natEqual)) {
+                activeMissions.add(mission);
+            }
+            };
 
-        return Buffer.toArray(activeMissions);
+            return Buffer.toArray(activeMissions);
     };
 
   public query func getAllActiveMissions(): async [Mission] {
