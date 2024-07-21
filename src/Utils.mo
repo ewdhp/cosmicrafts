@@ -399,7 +399,7 @@ module Utils {
         }
     };
 
-    // Missions
+    // Missions Utils
     public func selectRandomRewardPool(rewardPools: [Types.RewardPool], blob: Blob): Types.RewardPool {
     let size: Nat8 = Nat8.fromNat(rewardPools.size() - 1);
     let index: Nat = Random.rangeFrom(size, blob);
@@ -407,7 +407,14 @@ module Utils {
   };
 
   public func calculateRewardAmount(minAmount: Nat, maxAmount: Nat, blob: Blob): Nat {
-    let range: Nat8 = Nat8.fromNat(maxAmount - minAmount);
-    return Random.rangeFrom(range, blob) + minAmount;
+    let range: Nat = maxAmount - minAmount;
+    let randomValue = Random.rangeFrom(Nat8.fromNat(range), blob);
+    return minAmount + randomValue;
+  };
+
+  public func getRandomMissionOption(options: [Types.MissionOption], blob: Blob): Types.MissionOption {
+    let size: Nat8 = Nat8.fromNat(options.size() - 1);
+    let index: Nat = Random.rangeFrom(size, blob);
+    return options[index];
   };
 };

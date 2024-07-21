@@ -20,6 +20,7 @@ import Utils "Utils";
 import TypesICRC7 "/icrc7/types";
 import TypesICRC1 "/icrc1/Types";
 import Validator "Validator";
+import MissionOptions "MissionOptions";
 
 shared actor class Cosmicrafts() {
 
@@ -60,10 +61,13 @@ shared actor class Cosmicrafts() {
   public type RewardType = Types.RewardType;
   public type Mission = Types.Mission;
   public type MissionsUser = Types.MissionsUser;
+
+
   public type MissionProgress = Types.MissionProgress;
   public type MissionTemplate = Types.MissionTemplate;
   public type RewardPool = Types.RewardPool;
-  
+  public type MissionOption = Types.MissionOption;
+
 
   //ICRC
   public type TokenID = Types.TokenID;
@@ -1803,7 +1807,7 @@ shared actor class Cosmicrafts() {
     };
 
 
-    // Missions
+    // Missions Actor
 
     // Constants
     private let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000; 
@@ -1823,11 +1827,18 @@ shared actor class Cosmicrafts() {
   var userProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_userProgress.vals(), 0, Principal.equal, Principal.hash);
   var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
 
-  private let missionOptions: [Types.MissionOption] = [
-    { MissionType = #GamesCompleted; minAmount = 1; maxAmount = 5; rarity = 1 },
-    { MissionType = #GamesWon; minAmount = 6; maxAmount = 10; rarity = 2 },
-    { MissionType = #LevelReached; minAmount = 50; maxAmount = 100; rarity = 0 }
-  ];
+    let missionOptions: [Types.MissionOption] = [
+        { MissionType = #GamesCompleted; minAmount = 1; maxAmount = 5; rarity = 1 },
+        { MissionType = #GamesWon; minAmount = 6; maxAmount = 10; rarity = 2 },
+        { MissionType = #LevelReached; minAmount = 50; maxAmount = 100; rarity = 0 }
+    ];
+
+    let rewardPools: [Types.RewardPool] = [
+        { chestRarity = (2, 2); flux = (50, 100); shards = (100, 200) }, // Hourly
+        { chestRarity = (3, 4); flux = (200, 300); shards = (300, 400) }, // Daily
+        { chestRarity = (5, 6); flux = (500, 1000); shards = (1000, 2000) } // Weekly
+    ];
+
 
   public func createMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Float, hours_active: Nat64): async (Bool, Text, Nat) {
     let id = missionID;
@@ -1909,7 +1920,7 @@ shared actor class Cosmicrafts() {
       };
       case (?mission) {
         if (mission.finished and mission.finish_date <= mission.expiration) {
-          let (success, message) = await mintMission(mission, msg.caller);
+          let (success, message) = await mintRewards(mission, msg.caller);
           if (success) {
             // Remove claimed reward from userProgress and add it to claimedRewards
             var userMissions = switch (userProgress.get(msg.caller)) {
@@ -1939,7 +1950,7 @@ shared actor class Cosmicrafts() {
     };
   };
 
-    public shared ({ caller }) func getUserActiveMissions() : async [MissionsUser] {
+  public shared ({ caller }) func getUserActiveMissions() : async [MissionsUser] {
             // Assign any new missions to the user if not already done
             await assignNewMissionsToUser(caller);
 
@@ -1962,7 +1973,7 @@ shared actor class Cosmicrafts() {
             };
 
             return Buffer.toArray(activeMissions);
-    };
+  };
 
   public query func getAllActiveMissions(): async [Mission] {
     let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
@@ -2014,110 +2025,152 @@ shared actor class Cosmicrafts() {
     return Buffer.toArray(activeMissions);
   };
 
-private func assignNewMissionsToUser(user: Principal): async () {
-    Debug.print("[assignNewMissionsToUser]Assigning new missions to user: " # Principal.toText(user));
+  private func assignNewMissionsToUser(user: Principal): async () {
+    Debug.print("[assignNewMissionsToUser] Assigning new missions to user: " # Principal.toText(user));
 
     var userMissions = switch (userProgress.get(user)) {
-        case (null) { [] };
-        case (?missions) { missions };
+      case (null) { [] };
+      case (?missions) { missions };
     };
 
-    Debug.print("[assignNewMissionsToUser]User missions before update: " # debug_show(userMissions));
+    Debug.print("[assignNewMissionsToUser] User missions before update: " # debug_show(userMissions));
 
     var claimedRewardsForUser = switch (claimedRewards.get(user)) {
-        case (null) { [] };
-        case (?claimed) { claimed };
+      case (null) { [] };
+      case (?claimed) { claimed };
     };
 
     let now = Nat64.fromNat(Int.abs(Time.now()));
-    let buffer = Buffer.Buffer<MissionsUser>(0);
+    let buffer = Buffer.Buffer<Types.MissionsUser>(0);
 
     // Remove expired or claimed missions
     for (mission in userMissions.vals()) {
-        if (mission.expiration >= now and not Utils.contains(claimedRewardsForUser, mission.id_mission, _natEqual)) {
-            buffer.add(mission);
-        }
+      if (mission.expiration >= now and not Utils.contains(claimedRewardsForUser, mission.id_mission, _natEqual)) {
+        buffer.add(mission);
+      }
     };
 
     // Collect IDs of current missions to avoid duplication
     let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
     for (mission in buffer.vals()) {
-        currentMissionIds.add(mission.id_mission);
+      currentMissionIds.add(mission.id_mission);
     };
 
     // Add new active missions to the user
     for ((id, mission) in activeMissions.entries()) {
-        if (not Utils.contains(Buffer.toArray(currentMissionIds), id, _natEqual) and not Utils.contains(claimedRewardsForUser, id, _natEqual)) {
-            buffer.add({
-                id_mission = id;
-                reward_amount = mission.reward_amount;
-                start_date = mission.start_date;
-                progress = 0.0;
-                finish_date = 0;
-                expiration = mission.end_date;
-                missionType = mission.missionType;
-                finished = false;
-                reward_type = mission.reward_type;
-                total = mission.total;
-            });
-        }
+      if (not Utils.contains(Buffer.toArray(currentMissionIds), id, _natEqual) and not Utils.contains(claimedRewardsForUser, id, _natEqual)) {
+        buffer.add({
+          id_mission = id;
+          reward_amount = mission.reward_amount;
+          start_date = mission.start_date;
+          progress = 0.0;
+          finish_date = 0;
+          expiration = mission.end_date;
+          missionType = mission.missionType;
+          finished = false;
+          reward_type = mission.reward_type;
+          total = mission.total;
+        });
+      }
     };
 
     userProgress.put(user, Buffer.toArray(buffer));
 
-    Debug.print("[assignNewMissionsToUser]User missions after update: " # debug_show(userProgress.get(user)));
-};
-
-
-    //New 
-
-private func generateUniqueMissionId(existingIds: Buffer.Buffer<Nat>): Nat {
-  var newId = Nat64.toNat(Nat64.fromIntWrap(Time.now()));  // Using current timestamp for simplicity
-  while (Utils.contains(Buffer.toArray(existingIds), newId, _natEqual)) {
-    newId += 1;  // Increment until a unique ID is found
+    Debug.print("[assignNewMissionsToUser] User missions after update: " # debug_show(userProgress.get(user)));
   };
-  return newId;
+
+ // New Concurrent Mission System
+
+public func assignConcurrentMissionsToUser(user: Principal): async () {
+    Debug.print("[assignConcurrentMissionsToUser] Assigning concurrent missions to user: " # Principal.toText(user));
+
+    let randomBlob = await Random.blob();
+    let templates: [Types.MissionTemplate] = Array.append(Array.append(MissionOptions.hourlyMissions, MissionOptions.dailyMissions), MissionOptions.weeklyMissions);
+
+    for (template in templates.vals()) {
+        // Select a random mission option
+        let missionOption = getRandomMissionOption(missionOptions, randomBlob);
+        // Select a random reward pool
+        let rewardPool = selectRandomRewardPool(rewardPools, randomBlob);
+        // Calculate reward amount
+        let rewardAmount = calculateRewardAmount(rewardPool.flux.0, rewardPool.flux.1, randomBlob);
+
+        let dynamicTemplate: Types.MissionTemplate = {
+            name = template.name;
+            missionType = missionOption.MissionType;
+            rewardType = template.rewardType;
+            minReward = rewardAmount;
+            maxReward = rewardAmount;
+            total = Float.fromInt(missionOption.minAmount);
+            hoursActive = template.hoursActive;
+        };
+
+        let newMission = await createMissionFromTemplate(dynamicTemplate);
+        Debug.print("[assignConcurrentMissionsToUser] Mission created: " # debug_show(newMission));
+    };
+
+    // Call the existing function to update user active missions
+    await assignNewMissionsToUser(user);
 };
 
+func getRandomMissionOption(options: [Types.MissionOption], blob: Blob): Types.MissionOption {
+  let size: Nat8 = Nat8.fromNat(options.size() - 1);
+  let random = Random.Finite(blob);
+  let index = switch (random.range(size)) {
+    case (?i) i;
+    case null 0; // Default to 0 if range generation fails
+  };
+  return options[index];
+};
 
-private func selectRandomRewardPool(rewardPools: [Types.RewardPool], blob: Blob): Types.RewardPool {
+func selectRandomRewardPool(rewardPools: [Types.RewardPool], blob: Blob): Types.RewardPool {
   let size: Nat8 = Nat8.fromNat(rewardPools.size() - 1);
-  let index: Nat = Random.rangeFrom(size, blob);
+  let random = Random.Finite(blob);
+  let index = switch (random.range(size)) {
+    case (?i) i;
+    case null 0; // Default to 0 if range generation fails
+  };
   return rewardPools[index];
 };
 
-
-private func calculateRewardAmount(minAmount: Nat, maxAmount: Nat, blob: Blob): Nat {
-  let range: Nat8 = Nat8.fromNat(maxAmount - minAmount);
-  return Random.rangeFrom(range, blob) + minAmount;
+func calculateRewardAmount(minAmount: Nat, maxAmount: Nat, blob: Blob): Nat {
+  let range: Nat = maxAmount - minAmount;
+  let randomValue = switch (Random.Finite(blob).range(Nat8.fromNat(range))) {
+    case (?v) v;
+    case null 0;
+  };
+  return minAmount + randomValue;
 };
 
-
+// Function to create missions from templates
 public func createMissionFromTemplate(template: Types.MissionTemplate): async (Bool, Text, Nat) {
     let id = missionID;
     missionID += 1;
     let now = Nat64.fromIntWrap(Time.now());
     let endDate = now + (template.hoursActive * ONE_HOUR);
 
+    // Generate random blob for reward amount calculation
+    let randomBytes = await Random.blob();
+
     let newMission = {
-        id = id;
-        name = template.name;
-        missionType = template.missionType;
-        reward_type = template.rewardType;
-        reward_amount = template.minReward; // Default to min reward, actual reward will be calculated dynamically
-        start_date = now;
-        end_date = endDate;
-        total = template.total;
+      id = id;
+      name = template.name;
+      missionType = template.missionType;
+      reward_type = template.rewardType;
+      reward_amount = Utils.calculateRewardAmount(template.minReward, template.maxReward, randomBytes);
+      start_date = now;
+      end_date = endDate;
+      total = template.total;
     };
 
     missions.put(id, newMission);
     activeMissions.put(id, newMission);
-    Debug.print("[createMissionFromTemplate]Mission created with ID: " # Nat.toText(id) # ", End Date: " # Nat64.toText(endDate) # ", Start Date: " # Nat64.toText(now));
+    Debug.print("[createMissionFromTemplate] Mission created with ID: " # Nat.toText(id) # ", End Date: " # Nat64.toText(endDate) # ", Start Date: " # Nat64.toText(now));
 
     return (true, "Mission created successfully", id);
 };
 
-private func mintMission(mission: MissionsUser, caller: Principal): async (Bool, Text) {
+private func mintRewards(mission: MissionsUser, caller: Principal): async (Bool, Text) {
     var claimHistory = switch (claimedRewards.get(caller)) {
       case (null) { [] };
       case (?history) { history };
@@ -2186,6 +2239,6 @@ private func mintMission(mission: MissionsUser, caller: Principal): async (Bool,
         };
       };
     };
-  };
+};
 
 };

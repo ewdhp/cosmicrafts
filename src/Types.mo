@@ -136,7 +136,7 @@ module Types {
     totalGamesWithCharacter: [OverallGamesWithCharacter];
   };
 
-  // Missions
+  // Missions Types
   public type MissionType = {
     #GamesCompleted;
     #GamesWon;
@@ -155,10 +155,8 @@ module Types {
     #Chest;
     #Flux;
     #Shards;
-    #Tokens;
   };
 
-  // MissionOptions refined for variety and reuse
   public type MissionOption = {
     MissionType: MissionType;
     minAmount: Nat;
@@ -177,7 +175,6 @@ module Types {
     total: Float;
   };
 
-  // Modified to add dynamic progress and expiration handling
   public type MissionsUser = {
     id_mission: Nat;
     total: Float;
@@ -196,7 +193,6 @@ module Types {
     progress: Float;
   };
 
-  // Mission Template and Reward Pool definitions
   public type MissionTemplate = {
     name: Text;
     missionType: MissionType;
@@ -208,9 +204,9 @@ module Types {
   };
 
   public type RewardPool = {
-    rewardType: RewardType;
-    minAmount: Nat;
-    maxAmount: Nat;
+    chestRarity: (Nat, Nat);
+    flux: (Nat, Nat);
+    shards: (Nat, Nat);
   };
 
   // Matchmaking
