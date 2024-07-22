@@ -133,13 +133,33 @@ module MissionOptions {
         }
     ];
 
-    public let dailyFreeReward: Types.MissionTemplate = {
-        name = "Daily Free Reward";
+    public let dailyFreeReward: [Types.MissionTemplate] = [
+        {
+        name = "Daily Free Chest";
         missionType = #GamesCompleted; // Not tied to gameplay
         rewardType = #Chest;
         minReward = 1;
         maxReward = 1;
         total = 0; // No gameplay required
         hoursActive = 24;
-    };
+        },
+        {
+        name = "Daily Free Flux";
+        missionType = #GamesCompleted; // Not tied to gameplay
+        rewardType = #Shards;
+        minReward = 10;
+        maxReward = 20;
+        total = 0; // No gameplay required
+        hoursActive = 24;
+        },
+        {
+        name = "Daily Free Reward";
+        missionType = #GamesCompleted; // Not tied to gameplay
+        rewardType = #Flux;
+        minReward = 4;
+        maxReward = 8;
+        total = 0; // No gameplay required
+        hoursActive = 24;
+        }
+    ];
 }

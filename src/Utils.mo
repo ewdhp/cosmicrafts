@@ -9,9 +9,12 @@ import Nat "mo:base/Nat";
 import Int64 "mo:base/Int64";
 import Float "mo:base/Float";
 import Debug "mo:base/Debug";
+import Array "mo:base/Array";
+import Bool "mo:base/Bool";
 import Types "Types";
 import TypesICRC7 "/icrc7/types";
 import TypesICRC1 "/icrc1/Types";
+
 
 module Utils {
     public func natToBytes(n: Nat): [Nat8] {
@@ -43,6 +46,24 @@ module Utils {
         return hash;
     };
 
+    public func shuffleArray(arr: [Nat]): async [Nat] {
+        let len = Array.size<Nat>(arr);
+        var shuffled = Array.thaw<Nat>(arr);
+        var i = len;
+        while (i > 1) {
+            i -= 1;
+            let randomBytes = await Random.blob();
+            let randomValue = Blob.toArray(randomBytes)[0];
+            let j = Nat8.toNat(randomValue) % (i + 1);
+            let temp = shuffled[i];
+            shuffled[i] := shuffled[j];
+            shuffled[j] := temp;
+        };
+        return Array.freeze<Nat>(shuffled);
+    };
+
+
+
     public func generateUUID64() : async Nat {
         let randomBytes = await Random.blob();
         var uuid : Nat = 0;
@@ -68,7 +89,6 @@ module Utils {
 
         return level;
     };
-
 
     // Function to Check if a Value Exists in an Array
     public func contains<T>(array: [T], value: T, eq: (T, T) -> Bool): Bool {
@@ -430,5 +450,11 @@ module Utils {
         let size: Nat8 = Nat8.fromNat(options.size() - 1);
         let index: Nat = Random.rangeFrom(size, blob);
         return options[index];
+    };
+
+    public func logMissionResults(results: [(Bool, Text, Nat)], missionType: Text): async () {
+        for ((success, message, id) in results.vals()) {
+            Debug.print("[logMissionResults] " # missionType # " Mission ID: " # Nat.toText(id) # " - Success: " # Bool.toText(success) # " - Message: " # message);
+        }
     };
 };

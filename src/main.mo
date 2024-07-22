@@ -12,9 +12,11 @@ import Array "mo:base/Array";
 import Result "mo:base/Result";
 import Debug "mo:base/Debug";
 import Text "mo:base/Text";
-//import Random "mo:base/Random";
+import Random "mo:base/Random";
 import Nat8 "mo:base/Nat8";
 import Timer "mo:base/Timer";
+import Blob "mo:base/Blob";
+import Bool "mo:base/Bool";
 
 import Types "Types";
 import Utils "Utils";
@@ -73,40 +75,62 @@ shared actor class Cosmicrafts() {
   public type Duration = Timer.Duration;
   public type TimerId = Timer.TimerId;
 
+
+
+
+
+
+
+    var lastHourlyMissionCreationTime: Nat64 = 0;
+    var lastDailyMissionCreationTime: Nat64 = 0;
+    var lastWeeklyMissionCreationTime: Nat64 = 0;
+
     // Main initialization function
     public func init(): async () {
-        await createAndAssignMissionsPeriodically();
+        await createMissionsPeriodically();
     };
 
-    // Function to periodically create and assign missions
-    func createAndAssignMissionsPeriodically(): async () {
-        let now = Nat64.fromIntWrap(Time.now());
-        Debug.print("[createAndAssignMissionsPeriodically] Current time: " # Nat64.toText(now));
-        if (now - lastMissionCreationTime >= ONE_HOUR) {
-            Debug.print("[createAndAssignMissionsPeriodically] Time to create and assign missions.");
+// Function to periodically create and assign missions
+func createMissionsPeriodically(): async () {
+    let now = Nat64.fromIntWrap(Time.now());
+    Debug.print("[createAndAssignMissionsPeriodically] Current time: " # Nat64.toText(now));
 
-            // Create concurrent missions and add them to the active missions list
-            let templates: [Types.MissionTemplate] = Array.append(Array.append(MissionOptions.hourlyMissions, MissionOptions.dailyMissions), MissionOptions.weeklyMissions);
-
-            for (template in templates.vals()) {
-               // let newMission = await createConcurrentMission(template);
-               // Debug.print("[createAndAssignMissionsPeriodically] Concurrent mission created: " # debug_show(newMission));
-            };
-
-            // Assign missions to all users
-            for (user in players.keys()) {
-                await assignNewMissionsToUser(user);
-            };
-
-            // Update the last mission creation time
-            lastMissionCreationTime := now;
-        };
-
-        // Set the timer to call this function again after 1 hour
-        let _ : Timer.TimerId = Timer.setTimer<system>(#seconds(60 * 60), func(): async () {
-            await createAndAssignMissionsPeriodically();
-        });
+    // Create and assign hourly missions
+    if (now - lastHourlyMissionCreationTime >= ONE_HOUR) {
+        Debug.print("[createAndAssignMissionsPeriodically] Time to create and assign hourly missions.");
+        let hourlyResults = await createHourlyMissions();
+        await Utils.logMissionResults(hourlyResults, "Hourly");
+        lastHourlyMissionCreationTime := now;
     };
+
+    // Create and assign daily missions
+    if (now - lastDailyMissionCreationTime >= ONE_DAY) {
+        Debug.print("[createAndAssignMissionsPeriodically] Time to create and assign daily missions.");
+        let dailyResults = await createDailyMissions();
+        await Utils.logMissionResults(dailyResults, "Daily");
+        let dailyFreeResults = await createDailyFreeRewardMissions();
+        await Utils.logMissionResults(dailyFreeResults, "Daily Free Reward");
+        lastDailyMissionCreationTime := now;
+    };
+
+    // Create and assign weekly missions
+    if (now - lastWeeklyMissionCreationTime >= ONE_WEEK) {
+        Debug.print("[createAndAssignMissionsPeriodically] Time to create and assign weekly missions.");
+        let weeklyResults = await createWeeklyMissions();
+        await Utils.logMissionResults(weeklyResults, "Weekly");
+        lastWeeklyMissionCreationTime := now;
+    };
+
+    // Set the timer to call this function again after 1 hour
+    let _ : Timer.TimerId = Timer.setTimer<system>(#seconds(60 * 60), func(): async () {
+        await createMissionsPeriodically();
+    });
+};
+
+
+
+
+
 
   //ICRC
   public type TokenID = Types.TokenID;
@@ -124,6 +148,8 @@ shared actor class Cosmicrafts() {
 
     // Constants
     let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000;
+    let ONE_DAY: Nat64 = 60 * 60 * 24 * 1_000_000_000;
+    let ONE_WEEK: Nat64 = 60 * 60 * 24 * 7 * 1_000_000_000;
 
     // Stable Variables
     stable var missionID: Nat = 1;
@@ -131,7 +157,6 @@ shared actor class Cosmicrafts() {
     stable var _activeMissions: [(Nat, Mission)] = [];
     stable var _userProgress: [(Principal, [MissionsUser])] = [];
     stable var _claimedRewards: [(Principal, [Nat])] = [];
-    stable var lastMissionCreationTime: Nat64 = 0;
 
     // HashMaps
     var missions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_missions.vals(), 0, _natEqual, _natHash);
@@ -450,6 +475,148 @@ shared actor class Cosmicrafts() {
     };
 
     // New Concurrent Mission System
+
+// Helper function to generate a random reward amount within the min and max range
+public func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
+    let randomBytes = await Random.blob(); // Generating random bytes
+    let byteArray = Blob.toArray(randomBytes);
+    let randomByte = byteArray[0]; // Use the first byte for randomness
+    let range = maxReward - minReward + 1;
+    let randomValue = Nat8.toNat(randomByte) % range;
+    return minReward + randomValue;
+};
+
+
+public func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
+    let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
+    return await createMission(
+        template.name,
+        template.missionType,
+        template.rewardType,
+        rewardAmount,
+        template.total,
+        template.hoursActive
+    );
+};
+
+
+stable var shuffledDailyIndices: [Nat] = [];
+stable var currentDailyIndex: Nat = 0;
+
+stable var shuffledHourlyIndices: [Nat] = [];
+stable var currentHourlyIndex: Nat = 0;
+
+stable var shuffledWeeklyIndices: [Nat] = [];
+stable var currentWeeklyIndex: Nat = 0;
+
+stable var shuffledDailyFreeRewardIndices: [Nat] = [];
+stable var currentDailyFreeRewardIndex: Nat = 0;
+
+
+public func initializeShuffledHourlyMissions(): async () {
+    let indices: [Nat] = Array.tabulate(MissionOptions.hourlyMissions.size(), func(i: Nat): Nat { i });
+    shuffledHourlyIndices := await Utils.shuffleArray(indices);
+    currentHourlyIndex := 0;
+};
+
+public func initializeShuffledDailyMissions(): async () {
+    let indices: [Nat] = Array.tabulate(MissionOptions.dailyMissions.size(), func(i: Nat): Nat { i });
+    shuffledDailyIndices := await Utils.shuffleArray(indices);
+    currentDailyIndex := 0;
+};
+
+public func initializeShuffledWeeklyMissions(): async () {
+    let indices: [Nat] = Array.tabulate(MissionOptions.weeklyMissions.size(), func(i: Nat): Nat { i });
+    shuffledWeeklyIndices := await Utils.shuffleArray(indices);
+    currentWeeklyIndex := 0;
+};
+
+public func initializeShuffledDailyFreeRewardMissions(): async () {
+    let indices: [Nat] = Array.tabulate(MissionOptions.dailyFreeReward.size(), func(i: Nat): Nat { i });
+    shuffledDailyFreeRewardIndices := await Utils.shuffleArray(indices);
+    currentDailyFreeRewardIndex := 0;
+};
+
+
+public func createHourlyMissions(): async [(Bool, Text, Nat)] {
+    var results: [(Bool, Text, Nat)] = [];
+
+    // Check if the list needs to be shuffled
+    if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
+        await initializeShuffledHourlyMissions();
+    };
+
+    // Select the next mission from the shuffled list
+    let index = shuffledHourlyIndices[currentHourlyIndex];
+    let template = MissionOptions.hourlyMissions[index];
+    let result = await createSingleConcurrentMission(template);
+    results := Array.append(results, [result]);
+
+    // Move to the next index
+    currentHourlyIndex += 1;
+
+    return results;
+};
+
+public func createDailyMissions(): async [(Bool, Text, Nat)] {
+    var results: [(Bool, Text, Nat)] = [];
+
+    // Check if the list needs to be shuffled
+    if (shuffledDailyIndices.size() == 0 or currentDailyIndex >= shuffledDailyIndices.size()) {
+        await initializeShuffledDailyMissions();
+    };
+
+    // Select the next mission from the shuffled list
+    let index = shuffledDailyIndices[currentDailyIndex];
+    let template = MissionOptions.dailyMissions[index];
+    let result = await createSingleConcurrentMission(template);
+    results := Array.append(results, [result]);
+
+    // Move to the next index
+    currentDailyIndex += 1;
+
+    return results;
+};
+
+public func createWeeklyMissions(): async [(Bool, Text, Nat)] {
+    var results: [(Bool, Text, Nat)] = [];
+
+    // Check if the list needs to be shuffled
+    if (shuffledWeeklyIndices.size() == 0 or currentWeeklyIndex >= shuffledWeeklyIndices.size()) {
+        await initializeShuffledWeeklyMissions();
+    };
+
+    // Select the next mission from the shuffled list
+    let index = shuffledWeeklyIndices[currentWeeklyIndex];
+    let template = MissionOptions.weeklyMissions[index];
+    let result = await createSingleConcurrentMission(template);
+    results := Array.append(results, [result]);
+
+    // Move to the next index
+    currentWeeklyIndex += 1;
+
+    return results;
+};
+
+public func createDailyFreeRewardMissions(): async [(Bool, Text, Nat)] {
+    var results: [(Bool, Text, Nat)] = [];
+
+    // Check if the list needs to be shuffled
+    if (shuffledDailyFreeRewardIndices.size() == 0 or currentDailyFreeRewardIndex >= shuffledDailyFreeRewardIndices.size()) {
+        await initializeShuffledDailyFreeRewardMissions();
+    };
+
+    // Select the next mission from the shuffled list
+    let index = shuffledDailyFreeRewardIndices[currentDailyFreeRewardIndex];
+    let template = MissionOptions.dailyFreeReward[index];
+    let result = await createSingleConcurrentMission(template);
+    results := Array.append(results, [result]);
+
+    // Move to the next index
+    currentDailyFreeRewardIndex += 1;
+
+    return results;
+};
 
 
     // Players
