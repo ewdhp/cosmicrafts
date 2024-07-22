@@ -7,7 +7,7 @@ commands=(
     "dfx identity use bizkit"
     "dfx canister uninstall-code cosmicrafts"
     "dfx deploy cosmicrafts"
-    "python scripts/missions.py"
+   # "python scripts/missions.py"
 )
 
 for command in "${commands[@]}"; do

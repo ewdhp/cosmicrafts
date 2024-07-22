@@ -77,18 +77,38 @@ shared actor class Cosmicrafts() {
 
 
 
-
-
-
-
     var lastHourlyMissionCreationTime: Nat64 = 0;
     var lastDailyMissionCreationTime: Nat64 = 0;
     var lastWeeklyMissionCreationTime: Nat64 = 0;
 
-    // Main initialization function
-    public func init(): async () {
-        await createMissionsPeriodically();
-    };
+
+// Define the admin principal
+let ADMIN_PRINCIPAL = Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae");
+
+// Define an enum for the different functions
+public type AdminFunction = {
+    #CreateMission : (Text, MissionType, RewardType, Nat, Nat, Nat64);
+    #CreateMissionsPeriodically : ();
+};
+
+// Define a public admin function to call private functions
+public shared({ caller }) func adminManagement(funcToCall: AdminFunction) : async (Bool, Text) {
+    if (caller == ADMIN_PRINCIPAL) {
+        Debug.print("Admin function called by admin.");
+        switch (funcToCall) {
+            case (#CreateMission(name, missionType, rewardType, rewardAmount, total, hours_active)) {
+                let (success, message, id) = await createMission(name, missionType, rewardType, rewardAmount, total, hours_active);
+                return (success, message # " Mission ID: " # Nat.toText(id));
+            };
+            case (#CreateMissionsPeriodically()) {
+                await createMissionsPeriodically();
+                return (true, "Missions created.");
+            };
+        }
+    } else {
+        return (false, "Access denied: Only admin can call this function.");
+    }
+};
 
 // Function to periodically create and assign missions
 func createMissionsPeriodically(): async () {
@@ -128,10 +148,6 @@ func createMissionsPeriodically(): async () {
 };
 
 
-
-
-
-
   //ICRC
   public type TokenID = Types.TokenID;
 
@@ -164,7 +180,7 @@ func createMissionsPeriodically(): async () {
     var userProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_userProgress.vals(), 0, Principal.equal, Principal.hash);
     var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
 
-    public func createMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hours_active: Nat64): async (Bool, Text, Nat) {
+    func createMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hours_active: Nat64): async (Bool, Text, Nat) {
         let id = missionID;
         missionID += 1;
         let now = Nat64.fromIntWrap(Time.now());
@@ -345,31 +361,6 @@ func createMissionsPeriodically(): async () {
         };
     };
 
-    public shared ({ caller }) func getUserActiveMissions(): async [MissionsUser] {
-        // Assign any new missions to the user if not already done
-        await assignNewMissionsToUser(caller);
-
-        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-        var userMissions = switch (userProgress.get(caller)) {
-            case (null) { [] };
-            case (?missions) { missions };
-        };
-
-        var userClaimedRewards = switch (claimedRewards.get(caller)) {
-            case (null) { [] };
-            case (?missions) { missions };
-        };
-
-        let activeMissions = Buffer.Buffer<MissionsUser>(0);
-        for (mission in userMissions.vals()) {
-            if (mission.expiration >= now and not Utils.contains(userClaimedRewards, mission.id_mission, _natEqual)) {
-                activeMissions.add(mission);
-            }
-        };
-
-        return Buffer.toArray(activeMissions);
-    };
-
     public query func getAllActiveMissions(): async [Mission] {
         let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
         let active = Buffer.Buffer<Mission>(activeMissions.size());
@@ -420,59 +411,60 @@ func createMissionsPeriodically(): async () {
         return Buffer.toArray(activeMissions);
     };
 
-    public func assignNewMissionsToUser(user: Principal): async () {
+    public shared(msg) func assignNewMissionsToUser(): async () {
+        let user = msg.caller;
         Debug.print("[assignNewMissionsToUser] Assigning new missions to user: " # Principal.toText(user));
 
         var userMissions = switch (userProgress.get(user)) {
             case (null) { [] };
             case (?missions) { missions };
+        };
+
+        Debug.print("[assignNewMissionsToUser] User missions before update: " # debug_show(userMissions));
+
+        var claimedRewardsForUser = switch (claimedRewards.get(user)) {
+            case (null) { [] };
+            case (?claimed) { claimed };
+        };
+
+        let now = Nat64.fromNat(Int.abs(Time.now()));
+        let buffer = Buffer.Buffer<Types.MissionsUser>(0);
+
+        // Remove expired or claimed missions
+        for (mission in userMissions.vals()) {
+            if (mission.expiration >= now and not Utils.contains(claimedRewardsForUser, mission.id_mission, _natEqual)) {
+                buffer.add(mission);
+            }
+        };
+
+        // Collect IDs of current missions to avoid duplication
+        let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
+        for (mission in buffer.vals()) {
+            currentMissionIds.add(mission.id_mission);
+        };
+
+        // Add new active missions to the user
+        for ((id, mission) in activeMissions.entries()) {
+            if (not Utils.contains(Buffer.toArray(currentMissionIds), id, _natEqual) and not Utils.contains(claimedRewardsForUser, id, _natEqual)) {
+                buffer.add({
+                    id_mission = id;
+                    reward_amount = mission.reward_amount;
+                    start_date = mission.start_date;
+                    progress = mission.total; // set progress to total for missions with total=0
+                    finish_date = if (mission.total == 0) now else 0;
+                    expiration = mission.end_date;
+                    missionType = mission.missionType;
+                    finished = mission.total == 0; // Mark as finished if total is 0
+                    reward_type = mission.reward_type;
+                    total = mission.total;
+                });
+            }
+        };
+
+        userProgress.put(user, Buffer.toArray(buffer));
+
+        Debug.print("[assignNewMissionsToUser] User missions after update: " # debug_show(userProgress.get(user)));
     };
-
-    Debug.print("[assignNewMissionsToUser] User missions before update: " # debug_show(userMissions));
-
-    var claimedRewardsForUser = switch (claimedRewards.get(user)) {
-        case (null) { [] };
-        case (?claimed) { claimed };
-    };
-
-    let now = Nat64.fromNat(Int.abs(Time.now()));
-    let buffer = Buffer.Buffer<Types.MissionsUser>(0);
-
-    // Remove expired or claimed missions
-    for (mission in userMissions.vals()) {
-        if (mission.expiration >= now and not Utils.contains(claimedRewardsForUser, mission.id_mission, _natEqual)) {
-            buffer.add(mission);
-        }
-    };
-
-    // Collect IDs of current missions to avoid duplication
-    let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
-    for (mission in buffer.vals()) {
-        currentMissionIds.add(mission.id_mission);
-    };
-
-    // Add new active missions to the user
-    for ((id, mission) in activeMissions.entries()) {
-        if (not Utils.contains(Buffer.toArray(currentMissionIds), id, _natEqual) and not Utils.contains(claimedRewardsForUser, id, _natEqual)) {
-            buffer.add({
-                id_mission = id;
-                reward_amount = mission.reward_amount;
-                start_date = mission.start_date;
-                progress = mission.total; // set progress to total for missions with total=0
-                finish_date = if (mission.total == 0) now else 0;
-                expiration = mission.end_date;
-                missionType = mission.missionType;
-                finished = mission.total == 0; // Mark as finished if total is 0
-                reward_type = mission.reward_type;
-                total = mission.total;
-            });
-        }
-    };
-
-    userProgress.put(user, Buffer.toArray(buffer));
-
-    Debug.print("[assignNewMissionsToUser] User missions after update: " # debug_show(userProgress.get(user)));
-};
 
 
     // New Concurrent Mission System
@@ -643,7 +635,7 @@ public func createDailyFreeRewardMissions(): async [(Bool, Text, Nat)] {
                 players.put(PlayerId, newPlayer);
 
                 // Assign new missions to the user
-                await assignNewMissionsToUser(PlayerId);
+                await assignNewMissionsToUser();
 
                 return (true, PlayerId);
             };
