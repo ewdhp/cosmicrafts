@@ -35,6 +35,50 @@ module Types {
   };
 
   // Statistics
+  public type PlayerStats = {
+    playerId: PlayerId;
+    energyUsed: Nat;
+    energyGenerated: Nat;
+    energyWasted: Nat;
+    energyChargeRate: Nat;
+    xpEarned: Nat;
+    damageDealt: Nat;
+    damageTaken: Nat;
+    damageCritic: Nat;
+    damageEvaded: Nat;
+    kills: Nat;
+    deploys: Nat;
+    secRemaining: Nat;
+    wonGame: Bool;
+    faction: Nat;
+    characterID: Nat;
+    gameMode: Nat;
+    botMode: Nat;
+    botDifficulty: Nat;
+  };
+
+  public type BasicStats = {
+    playerStats: [PlayerStats];
+  };
+
+  public type PlayerGamesStats = {
+    gamesPlayed: Nat;
+    gamesWon: Nat;
+    gamesLost: Nat;
+    energyGenerated: Nat;
+    energyUsed: Nat;
+    energyWasted: Nat;
+    totalKills: Nat;
+    totalDamageDealt: Nat;
+    totalDamageTaken: Nat;
+    totalDamageCrit: Nat;
+    totalDamageEvaded: Nat;
+    totalXpEarned: Nat;
+    totalGamesWithFaction: [GamesWithFaction];
+    totalGamesGameMode: [GamesWithGameMode];
+    totalGamesWithCharacter: [GamesWithCharacter];
+  };
+
   public type GamesWithFaction = {
     factionID: Nat;
     gamesPlayed: Nat;
@@ -53,7 +97,32 @@ module Types {
     gamesWon: Nat;
   };
 
-  public type OverallGamesWithFaction = {
+  public type AverageStats = {
+    averageEnergyGenerated: Nat;
+    averageEnergyUsed: Nat;
+    averageEnergyWasted: Nat;
+    averageDamageDealt: Nat;
+    averageKills: Nat;
+    averageXpEarned: Nat;
+  };
+
+  public type OverallStats = {
+    totalGamesPlayed: Nat;
+    totalGamesSP: Nat;
+    totalGamesMP: Nat;
+    totalDamageDealt: Nat;
+    totalTimePlayed: Nat;
+    totalKills: Nat;
+    totalEnergyGenerated: Nat;
+    totalEnergyUsed: Nat;
+    totalEnergyWasted: Nat;
+    totalXpEarned: Nat;
+    totalGamesWithFaction: [OverallGamesWithFaction];
+    totalGamesGameMode: [OverallGamesWithGameMode];
+    totalGamesWithCharacter: [OverallGamesWithCharacter];
+  };
+
+    public type OverallGamesWithFaction = {
     factionID: Nat;
     gamesPlayed: Nat;
   };
@@ -66,74 +135,6 @@ module Types {
   public type OverallGamesWithCharacter = {
     characterID: Nat;
     gamesPlayed: Nat;
-  };
-
-  public type PlayerStats = {
-    playerId: PlayerId;
-    energyUsed: Float;
-    energyGenerated: Float;
-    energyWasted: Float;
-    energyChargeRate: Float;
-    xpEarned: Float;
-    damageDealt: Float;
-    damageTaken: Float;
-    damageCritic: Float;
-    damageEvaded: Float;
-    kills: Float;
-    deploys: Float;
-    secRemaining: Float;
-    wonGame: Bool;
-    faction: Nat;
-    characterID: Nat;
-    gameMode: Nat;
-    botMode: Nat;
-    botDifficulty: Nat;
-  };
-
-  public type BasicStats = {
-    playerStats: [PlayerStats];
-  };
-
-  public type PlayerGamesStats = {
-    gamesPlayed: Nat;
-    gamesWon: Nat;
-    gamesLost: Nat;
-    energyGenerated: Float;
-    energyUsed: Float;
-    energyWasted: Float;
-    totalDamageDealt: Float;
-    totalDamageTaken: Float;
-    totalDamageCrit: Float;
-    totalDamageEvaded: Float;
-    totalXpEarned: Float;
-    totalGamesWithFaction: [GamesWithFaction];
-    totalGamesGameMode: [GamesWithGameMode];
-    totalGamesWithCharacter: [GamesWithCharacter];
-  };
-
-  public type AverageStats = {
-    averageEnergyGenerated: Float;
-    averageEnergyUsed: Float;
-    averageEnergyWasted: Float;
-    averageDamageDealt: Float;
-    averageKills: Float;
-    averageXpEarned: Float;
-  };
-
-  public type OverallStats = {
-    totalGamesPlayed: Nat;
-    totalGamesSP: Nat;
-    totalGamesMP: Nat;
-    totalDamageDealt: Float;
-    totalTimePlayed: Float;
-    totalKills: Float;
-    totalEnergyGenerated: Float;
-    totalEnergyUsed: Float;
-    totalEnergyWasted: Float;
-    totalXpEarned: Float;
-    totalGamesWithFaction: [OverallGamesWithFaction];
-    totalGamesGameMode: [OverallGamesWithGameMode];
-    totalGamesWithCharacter: [OverallGamesWithCharacter];
   };
 
   // Missions Types
@@ -172,13 +173,13 @@ module Types {
     reward_amount: Nat;
     start_date: Nat64;
     end_date: Nat64;
-    total: Float;
+    total: Nat;
   };
 
   public type MissionsUser = {
     id_mission: Nat;
-    total: Float;
-    progress: Float;
+    total: Nat;
+    progress: Nat;
     finished: Bool;
     finish_date: Nat64;
     start_date: Nat64;
@@ -190,7 +191,7 @@ module Types {
 
   public type MissionProgress = {
     missionType: MissionType;
-    progress: Float;
+    progress: Nat;
   };
 
   public type MissionTemplate = {
@@ -199,7 +200,7 @@ module Types {
     rewardType: RewardType;
     minReward: Nat;
     maxReward: Nat;
-    total: Float;
+    total: Nat;
     hoursActive: Nat64;
   };
 

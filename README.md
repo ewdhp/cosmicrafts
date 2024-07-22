@@ -19,6 +19,13 @@
     }
 
 
+    // convert float xp into level nat
+    public func calculateLevel(xp: Float) : Nat {
+        let levelFloat = if (xp < 100.0) 1.0 else Float.trunc(Float.log(xp / 100.0) / Float.log(2.0)) + 1.0;
+        let levelInt = Float.toInt(levelFloat);
+        let levelNat64 = Nat64.fromIntWrap(levelInt);
+        return Nat64.toNat(levelNat64);
+    };
 
 Key Areas in the Code
 Reward Management:

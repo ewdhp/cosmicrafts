@@ -32,9 +32,8 @@ def create_mission(mission_name, reward_type):
     mission_type = 'variant { "GamesCompleted" }'
     reward_variant = f'variant {{ "{reward_type}" }}'
     nat_value = 1
-    float_value = 1.0
     nat64_value = 1
-    command = f'dfx canister call cosmicrafts createMission \'("{mission_name}", {mission_type}, {reward_variant}, {nat_value}, {float_value}, {nat64_value})\''
+    command = f'dfx canister call cosmicrafts createMission \'("{mission_name}", {mission_type}, {reward_variant}, {nat_value}, {nat_value}, {nat64_value})\''
     return execute_dfx_command(command)
 
 def run_missions():

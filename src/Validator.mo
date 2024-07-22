@@ -1,7 +1,7 @@
 module Validator {
-  public func validateGame(timeInSeconds: Float, score: Float) : (Bool, Text) {
-      let maxScoreRate: Float = 550000.0 / (5.0 * 60.0);
-      let maxPlausibleScore: Float = maxScoreRate * timeInSeconds;
+  public func validateGame(timeInSeconds: Nat, score: Nat) : (Bool, Text) {
+      let maxScoreRate: Nat = 550000 / (5 * 60);
+      let maxPlausibleScore: Nat = maxScoreRate * timeInSeconds;
       let isScoreValid: Bool = score <= maxPlausibleScore;
 
       if (isScoreValid) {

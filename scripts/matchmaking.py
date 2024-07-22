@@ -61,29 +61,29 @@ def is_game_matched(identity_name):
     return execute_dfx_command(command)
 
 def save_finished_game(identity_name, game_id, stats):
-    """Saves the finished game statistics."""
+    """Saves the finished game statistics using Nat values."""
     switch_identity(identity_name)
 
     stats_str = (
         'record {'
         f'botDifficulty = {stats["botDifficulty"]}; '
         f'botMode = {stats["botMode"]}; '
-        f'characterID = {stats["characterID"]}; '  # Remove quotes to treat as integer
-        f'damageCritic = {stats["damageCritic"]}; '
-        f'damageDealt = {stats["damageDealt"]}; '
-        f'damageEvaded = {stats["damageEvaded"]}; '
-        f'damageTaken = {stats["damageTaken"]}; '
-        f'deploys = {stats["deploys"]}; '
-        f'energyChargeRate = {stats["energyChargeRate"]}; '
-        f'energyGenerated = {stats["energyGenerated"]}; '
-        f'energyUsed = {stats["energyUsed"]}; '
-        f'energyWasted = {stats["energyWasted"]}; '
+        f'characterID = {stats["characterID"]}; '
+        f'damageCritic = {stats["damageCritic"]}; '        # Changed to Nat
+        f'damageDealt = {stats["damageDealt"]}; '          # Changed to Nat
+        f'damageEvaded = {stats["damageEvaded"]}; '        # Changed to Nat
+        f'damageTaken = {stats["damageTaken"]}; '          # Changed to Nat
+        f'deploys = {stats["deploys"]}; '                  # Changed to Nat
+        f'energyChargeRate = {stats["energyChargeRate"]}; '  # Changed to Nat
+        f'energyGenerated = {stats["energyGenerated"]}; '  # Already Nat
+        f'energyUsed = {stats["energyUsed"]}; '            # Changed to Nat
+        f'energyWasted = {stats["energyWasted"]}; '        # Changed to Nat
         f'faction = {stats["faction"]}; '
         f'gameMode = {stats["gameMode"]}; '
-        f'kills = {stats["kills"]}; '
-        f'secRemaining = {stats["secRemaining"]}; '
+        f'kills = {stats["kills"]}; '                      # Changed to Nat
+        f'secRemaining = {stats["secRemaining"]}; '        # Already Nat
         f'wonGame = {str(stats["wonGame"]).lower()}; '
-        f'xpEarned = {stats["xpEarned"]}; '
+        f'xpEarned = {stats["xpEarned"]}; '                # Changed to Nat
         '}'
     )
 
@@ -113,26 +113,26 @@ def parse_match_id(search_result):
 
 
 def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
-    """Generates randomized game statistics."""
+    """Generates randomized game statistics using Nat values."""
     stats = {
         "botDifficulty": random.randint(0, 5),
         "botMode": random.randint(0, 5),
         "characterID": random.randint(1, 2),
-        "damageCritic": random.uniform(1000, 25000),
-        "damageDealt": random.uniform(1000, 25000),
-        "damageEvaded": random.uniform(1000, 25000),
-        "damageTaken": random.uniform(1000, 25000),
-        "deploys": random.uniform(10, 225),
-        "energyChargeRate": random.uniform(33, 200),
-        "energyGenerated": float(shared_energy_generated),
-        "energyUsed": random.uniform(33, 200),
-        "energyWasted": random.uniform(33, 200),
+        "damageCritic": random.randint(1000, 25000),  # Changed to random integer
+        "damageDealt": random.randint(1000, 25000),   # Changed to random integer
+        "damageEvaded": random.randint(1000, 25000),  # Changed to random integer
+        "damageTaken": random.randint(1000, 25000),   # Changed to random integer
+        "deploys": random.randint(10, 225),           # Changed to random integer
+        "energyChargeRate": random.randint(33, 200),  # Changed to random integer
+        "energyGenerated": shared_energy_generated,   # Already Nat
+        "energyUsed": random.randint(33, 200),        # Changed to random integer
+        "energyWasted": random.randint(33, 200),      # Changed to random integer
         "faction": random.randint(0, 2),
         "gameMode": random.randint(1, 2),
-        "kills": random.uniform(10, 250),
-        "secRemaining": float(shared_sec_remaining),
+        "kills": random.randint(10, 250),             # Changed to random integer
+        "secRemaining": shared_sec_remaining,         # Already Nat
         "wonGame": won,
-        "xpEarned": random.uniform(1000, 25000)
+        "xpEarned": random.randint(1000, 25000)       # Changed to random integer
     }
     return stats
 

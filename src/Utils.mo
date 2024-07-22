@@ -3,7 +3,6 @@ import Iter "mo:base/Iter";
 import Nat8 "mo:base/Nat8";
 import Buffer "mo:base/Buffer";
 import Nat32 "mo:base/Nat32";
-import Nat64 "mo:base/Nat64";
 import Random "mo:base/Random";
 import Blob "mo:base/Blob";
 import Nat "mo:base/Nat";
@@ -55,13 +54,21 @@ module Utils {
         return uuid;
     };
 
-    // convert float xp into level nat
-    public func calculateLevel(xp: Float) : Nat {
-        let levelFloat = if (xp < 100.0) 1.0 else Float.trunc(Float.log(xp / 100.0) / Float.log(2.0)) + 1.0;
-        let levelInt = Float.toInt(levelFloat);
-        let levelNat64 = Nat64.fromIntWrap(levelInt);
-        return Nat64.toNat(levelNat64);
+    public func calculateLevel(xp: Nat) : Nat {
+        // Assuming each level requires twice as much XP as the previous one, starting with 100 XP for level 2.
+        let baseXP: Nat = 100;
+        var level: Nat = 1;
+        var requiredXP: Nat = baseXP;
+
+        // Increase level as long as XP meets or exceeds the required XP for the next level.
+        while (xp >= requiredXP) {
+            level := level + 1;
+            requiredXP := requiredXP * 2;
+        };
+
+        return level;
     };
+
 
     // Function to Check if a Value Exists in an Array
     public func contains<T>(array: [T], value: T, eq: (T, T) -> Bool): Bool {
@@ -401,20 +408,27 @@ module Utils {
 
     // Missions Utils
     public func selectRandomRewardPool(rewardPools: [Types.RewardPool], blob: Blob): Types.RewardPool {
-    let size: Nat8 = Nat8.fromNat(rewardPools.size() - 1);
-    let index: Nat = Random.rangeFrom(size, blob);
-    return rewardPools[index];
-  };
+        let size: Nat8 = Nat8.fromNat(rewardPools.size() - 1);
+        let random = Random.Finite(blob);
+        let index = switch (random.range(size)) {
+            case (?i) i;
+            case null 0; // Default to 0 if range generation fails
+        };
+        return rewardPools[index];
+    };
 
-  public func calculateRewardAmount(minAmount: Nat, maxAmount: Nat, blob: Blob): Nat {
-    let range: Nat = maxAmount - minAmount;
-    let randomValue = Random.rangeFrom(Nat8.fromNat(range), blob);
-    return minAmount + randomValue;
-  };
+    public func calculateRewardAmount(minAmount: Nat, maxAmount: Nat, blob: Blob): Nat {
+        let range: Nat = maxAmount - minAmount;
+        let randomValue = switch (Random.Finite(blob).range(Nat8.fromNat(range))) {
+            case (?v) v;
+            case null 0;
+        };
+        return minAmount + randomValue;
+    };
 
-  public func getRandomMissionOption(options: [Types.MissionOption], blob: Blob): Types.MissionOption {
-    let size: Nat8 = Nat8.fromNat(options.size() - 1);
-    let index: Nat = Random.rangeFrom(size, blob);
-    return options[index];
-  };
+    public func getRandomMissionOption(options: [Types.MissionOption], blob: Blob): Types.MissionOption {
+        let size: Nat8 = Nat8.fromNat(options.size() - 1);
+        let index: Nat = Random.rangeFrom(size, blob);
+        return options[index];
+    };
 };
