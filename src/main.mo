@@ -426,58 +426,59 @@ func createMissionsPeriodically(): async () {
         var userMissions = switch (userProgress.get(user)) {
             case (null) { [] };
             case (?missions) { missions };
-        };
-
-        Debug.print("[assignNewMissionsToUser] User missions before update: " # debug_show(userMissions));
-
-        var claimedRewardsForUser = switch (claimedRewards.get(user)) {
-            case (null) { [] };
-            case (?claimed) { claimed };
-        };
-
-        let now = Nat64.fromNat(Int.abs(Time.now()));
-        let buffer = Buffer.Buffer<Types.MissionsUser>(0);
-
-        // Remove expired or claimed missions
-        for (mission in userMissions.vals()) {
-            if (mission.expiration >= now and not Utils.contains(claimedRewardsForUser, mission.id_mission, _natEqual)) {
-                buffer.add(mission);
-            }
-        };
-
-        // Collect IDs of current missions to avoid duplication
-        let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
-        for (mission in buffer.vals()) {
-            currentMissionIds.add(mission.id_mission);
-        };
-
-        // Add new active missions to the user
-        for ((id, mission) in activeMissions.entries()) {
-            if (not Utils.contains(Buffer.toArray(currentMissionIds), id, _natEqual) and not Utils.contains(claimedRewardsForUser, id, _natEqual)) {
-                buffer.add({
-                    id_mission = id;
-                    reward_amount = mission.reward_amount;
-                    start_date = mission.start_date;
-                    progress = 0;
-                    finish_date = 0;
-                    expiration = mission.end_date;
-                    missionType = mission.missionType;
-                    finished = false;
-                    reward_type = mission.reward_type;
-                    total = mission.total;
-                });
-            }
-        };
-
-        userProgress.put(user, Buffer.toArray(buffer));
-
-        Debug.print("[assignNewMissionsToUser] User missions after update: " # debug_show(userProgress.get(user)));
     };
+
+    Debug.print("[assignNewMissionsToUser] User missions before update: " # debug_show(userMissions));
+
+    var claimedRewardsForUser = switch (claimedRewards.get(user)) {
+        case (null) { [] };
+        case (?claimed) { claimed };
+    };
+
+    let now = Nat64.fromNat(Int.abs(Time.now()));
+    let buffer = Buffer.Buffer<Types.MissionsUser>(0);
+
+    // Remove expired or claimed missions
+    for (mission in userMissions.vals()) {
+        if (mission.expiration >= now and not Utils.contains(claimedRewardsForUser, mission.id_mission, _natEqual)) {
+            buffer.add(mission);
+        }
+    };
+
+    // Collect IDs of current missions to avoid duplication
+    let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
+    for (mission in buffer.vals()) {
+        currentMissionIds.add(mission.id_mission);
+    };
+
+    // Add new active missions to the user
+    for ((id, mission) in activeMissions.entries()) {
+        if (not Utils.contains(Buffer.toArray(currentMissionIds), id, _natEqual) and not Utils.contains(claimedRewardsForUser, id, _natEqual)) {
+            buffer.add({
+                id_mission = id;
+                reward_amount = mission.reward_amount;
+                start_date = mission.start_date;
+                progress = mission.total; // set progress to total for missions with total=0
+                finish_date = if (mission.total == 0) now else 0;
+                expiration = mission.end_date;
+                missionType = mission.missionType;
+                finished = mission.total == 0; // Mark as finished if total is 0
+                reward_type = mission.reward_type;
+                total = mission.total;
+            });
+        }
+    };
+
+    userProgress.put(user, Buffer.toArray(buffer));
+
+    Debug.print("[assignNewMissionsToUser] User missions after update: " # debug_show(userProgress.get(user)));
+};
+
 
     // New Concurrent Mission System
 
 // Helper function to generate a random reward amount within the min and max range
-public func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
+func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
     let randomBytes = await Random.blob(); // Generating random bytes
     let byteArray = Blob.toArray(randomBytes);
     let randomByte = byteArray[0]; // Use the first byte for randomness
@@ -487,7 +488,7 @@ public func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
 };
 
 
-public func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
+func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
     let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
     return await createMission(
         template.name,
@@ -513,25 +514,25 @@ stable var shuffledDailyFreeRewardIndices: [Nat] = [];
 stable var currentDailyFreeRewardIndex: Nat = 0;
 
 
-public func initializeShuffledHourlyMissions(): async () {
+func initializeShuffledHourlyMissions(): async () {
     let indices: [Nat] = Array.tabulate(MissionOptions.hourlyMissions.size(), func(i: Nat): Nat { i });
     shuffledHourlyIndices := await Utils.shuffleArray(indices);
     currentHourlyIndex := 0;
 };
 
-public func initializeShuffledDailyMissions(): async () {
+func initializeShuffledDailyMissions(): async () {
     let indices: [Nat] = Array.tabulate(MissionOptions.dailyMissions.size(), func(i: Nat): Nat { i });
     shuffledDailyIndices := await Utils.shuffleArray(indices);
     currentDailyIndex := 0;
 };
 
-public func initializeShuffledWeeklyMissions(): async () {
+func initializeShuffledWeeklyMissions(): async () {
     let indices: [Nat] = Array.tabulate(MissionOptions.weeklyMissions.size(), func(i: Nat): Nat { i });
     shuffledWeeklyIndices := await Utils.shuffleArray(indices);
     currentWeeklyIndex := 0;
 };
 
-public func initializeShuffledDailyFreeRewardMissions(): async () {
+func initializeShuffledDailyFreeRewardMissions(): async () {
     let indices: [Nat] = Array.tabulate(MissionOptions.dailyFreeReward.size(), func(i: Nat): Nat { i });
     shuffledDailyFreeRewardIndices := await Utils.shuffleArray(indices);
     currentDailyFreeRewardIndex := 0;
