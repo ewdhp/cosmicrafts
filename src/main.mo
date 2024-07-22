@@ -75,97 +75,50 @@ shared actor class Cosmicrafts() {
   public type Duration = Timer.Duration;
   public type TimerId = Timer.TimerId;
 
-
-
-    var lastHourlyMissionCreationTime: Nat64 = 0;
-    var lastDailyMissionCreationTime: Nat64 = 0;
-    var lastWeeklyMissionCreationTime: Nat64 = 0;
-
-
-// Define the admin principal
-let ADMIN_PRINCIPAL = Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae");
-
-// Define an enum for the different functions
-public type AdminFunction = {
-    #CreateMission : (Text, MissionType, RewardType, Nat, Nat, Nat64);
-    #CreateMissionsPeriodically : ();
-};
-
-// Define a public admin function to call private functions
-public shared({ caller }) func adminManagement(funcToCall: AdminFunction) : async (Bool, Text) {
-    if (caller == ADMIN_PRINCIPAL) {
-        Debug.print("Admin function called by admin.");
-        switch (funcToCall) {
-            case (#CreateMission(name, missionType, rewardType, rewardAmount, total, hours_active)) {
-                let (success, message, id) = await createMission(name, missionType, rewardType, rewardAmount, total, hours_active);
-                return (success, message # " Mission ID: " # Nat.toText(id));
-            };
-            case (#CreateMissionsPeriodically()) {
-                await createMissionsPeriodically();
-                return (true, "Missions created.");
-            };
-        }
-    } else {
-        return (false, "Access denied: Only admin can call this function.");
-    }
-};
-
-// Function to periodically create and assign missions
-func createMissionsPeriodically(): async () {
-    let now = Nat64.fromIntWrap(Time.now());
-    Debug.print("[createAndAssignMissionsPeriodically] Current time: " # Nat64.toText(now));
-
-    // Create and assign hourly missions
-    if (now - lastHourlyMissionCreationTime >= ONE_HOUR) {
-        Debug.print("[createAndAssignMissionsPeriodically] Time to create and assign hourly missions.");
-        let hourlyResults = await createHourlyMissions();
-        await Utils.logMissionResults(hourlyResults, "Hourly");
-        lastHourlyMissionCreationTime := now;
-    };
-
-    // Create and assign daily missions
-    if (now - lastDailyMissionCreationTime >= ONE_DAY) {
-        Debug.print("[createAndAssignMissionsPeriodically] Time to create and assign daily missions.");
-        let dailyResults = await createDailyMissions();
-        await Utils.logMissionResults(dailyResults, "Daily");
-        let dailyFreeResults = await createDailyFreeRewardMissions();
-        await Utils.logMissionResults(dailyFreeResults, "Daily Free Reward");
-        lastDailyMissionCreationTime := now;
-    };
-
-    // Create and assign weekly missions
-    if (now - lastWeeklyMissionCreationTime >= ONE_WEEK) {
-        Debug.print("[createAndAssignMissionsPeriodically] Time to create and assign weekly missions.");
-        let weeklyResults = await createWeeklyMissions();
-        await Utils.logMissionResults(weeklyResults, "Weekly");
-        lastWeeklyMissionCreationTime := now;
-    };
-
-    // Set the timer to call this function again after 1 hour
-    let _ : Timer.TimerId = Timer.setTimer<system>(#seconds(60 * 60), func(): async () {
-        await createMissionsPeriodically();
-    });
-};
-
-
   //ICRC
   public type TokenID = Types.TokenID;
 
-  // Utils
-  func _natEqual(a : Nat, b : Nat) : Bool {
-    return a == b;
-  };
 
-  func _natHash(a: Nat): Hash.Hash {
-    return Utils._natHash(a);
-  };
+// Admin Tools
+
+    // Define the admin principal
+    let ADMIN_PRINCIPAL = Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae");
+
+    // Define an enum for the different functions
+    public type AdminFunction = {
+        #CreateMission : (Text, MissionType, RewardType, Nat, Nat, Nat64);
+        #CreateMissionsPeriodically : ();
+    };
+
+    // Define a public admin function to call private functions
+    public shared({ caller }) func adminManagement(funcToCall: AdminFunction) : async (Bool, Text) {
+        if (caller == ADMIN_PRINCIPAL) {
+            Debug.print("Admin function called by admin.");
+            switch (funcToCall) {
+                case (#CreateMission(name, missionType, rewardType, rewardAmount, total, hours_active)) {
+                    let (success, message, id) = await createMission(name, missionType, rewardType, rewardAmount, total, hours_active);
+                    return (success, message # " Mission ID: " # Nat.toText(id));
+                };
+                case (#CreateMissionsPeriodically()) {
+                    await createMissionsPeriodically();
+                    return (true, "Missions created.");
+                };
+            }
+        } else {
+            return (false, "Access denied: Only admin can call this function.");
+        }
+    };
+
+    // Utils
+    func _natEqual(a : Nat, b : Nat) : Bool {
+        return a == b;
+    };
+
+    func _natHash(a: Nat): Hash.Hash {
+        return Utils._natHash(a);
+    };
 
 // Missions
-
-    // Constants
-    let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000;
-    let ONE_DAY: Nat64 = 60 * 60 * 24 * 1_000_000_000;
-    let ONE_WEEK: Nat64 = 60 * 60 * 24 * 7 * 1_000_000_000;
 
     // Stable Variables
     stable var missionID: Nat = 1;
@@ -466,153 +419,192 @@ func createMissionsPeriodically(): async () {
         Debug.print("[assignNewMissionsToUser] User missions after update: " # debug_show(userProgress.get(user)));
     };
 
-
     // New Concurrent Mission System
 
-// Helper function to generate a random reward amount within the min and max range
-func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
-    let randomBytes = await Random.blob(); // Generating random bytes
-    let byteArray = Blob.toArray(randomBytes);
-    let randomByte = byteArray[0]; // Use the first byte for randomness
-    let range = maxReward - minReward + 1;
-    let randomValue = Nat8.toNat(randomByte) % range;
-    return minReward + randomValue;
-};
+    let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000;
+    let ONE_DAY: Nat64 = 60 * 60 * 24 * 1_000_000_000;
+    let ONE_WEEK: Nat64 = 60 * 60 * 24 * 7 * 1_000_000_000;
+
+    var lastHourlyMissionCreationTime: Nat64 = 0;
+    var lastDailyMissionCreationTime: Nat64 = 0;
+    var lastWeeklyMissionCreationTime: Nat64 = 0;
+
+    stable var shuffledDailyIndices: [Nat] = [];
+    stable var currentDailyIndex: Nat = 0;
+
+    stable var shuffledHourlyIndices: [Nat] = [];
+    stable var currentHourlyIndex: Nat = 0;
+
+    stable var shuffledWeeklyIndices: [Nat] = [];
+    stable var currentWeeklyIndex: Nat = 0;
+
+    stable var shuffledDailyFreeRewardIndices: [Nat] = [];
+    stable var currentDailyFreeRewardIndex: Nat = 0;
 
 
-func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
-    let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
-    return await createMission(
-        template.name,
-        template.missionType,
-        template.rewardType,
-        rewardAmount,
-        template.total,
-        template.hoursActive
-    );
-};
-
-
-stable var shuffledDailyIndices: [Nat] = [];
-stable var currentDailyIndex: Nat = 0;
-
-stable var shuffledHourlyIndices: [Nat] = [];
-stable var currentHourlyIndex: Nat = 0;
-
-stable var shuffledWeeklyIndices: [Nat] = [];
-stable var currentWeeklyIndex: Nat = 0;
-
-stable var shuffledDailyFreeRewardIndices: [Nat] = [];
-stable var currentDailyFreeRewardIndex: Nat = 0;
-
-
-func initializeShuffledHourlyMissions(): async () {
-    let indices: [Nat] = Array.tabulate(MissionOptions.hourlyMissions.size(), func(i: Nat): Nat { i });
-    shuffledHourlyIndices := await Utils.shuffleArray(indices);
-    currentHourlyIndex := 0;
-};
-
-func initializeShuffledDailyMissions(): async () {
-    let indices: [Nat] = Array.tabulate(MissionOptions.dailyMissions.size(), func(i: Nat): Nat { i });
-    shuffledDailyIndices := await Utils.shuffleArray(indices);
-    currentDailyIndex := 0;
-};
-
-func initializeShuffledWeeklyMissions(): async () {
-    let indices: [Nat] = Array.tabulate(MissionOptions.weeklyMissions.size(), func(i: Nat): Nat { i });
-    shuffledWeeklyIndices := await Utils.shuffleArray(indices);
-    currentWeeklyIndex := 0;
-};
-
-func initializeShuffledDailyFreeRewardMissions(): async () {
-    let indices: [Nat] = Array.tabulate(MissionOptions.dailyFreeReward.size(), func(i: Nat): Nat { i });
-    shuffledDailyFreeRewardIndices := await Utils.shuffleArray(indices);
-    currentDailyFreeRewardIndex := 0;
-};
-
-
-public func createHourlyMissions(): async [(Bool, Text, Nat)] {
-    var results: [(Bool, Text, Nat)] = [];
-
-    // Check if the list needs to be shuffled
-    if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
-        await initializeShuffledHourlyMissions();
+    func initializeShuffledHourlyMissions(): async () {
+        let indices: [Nat] = Array.tabulate(MissionOptions.hourlyMissions.size(), func(i: Nat): Nat { i });
+        shuffledHourlyIndices := await Utils.shuffleArray(indices);
+        currentHourlyIndex := 0;
     };
 
-    // Select the next mission from the shuffled list
-    let index = shuffledHourlyIndices[currentHourlyIndex];
-    let template = MissionOptions.hourlyMissions[index];
-    let result = await createSingleConcurrentMission(template);
-    results := Array.append(results, [result]);
-
-    // Move to the next index
-    currentHourlyIndex += 1;
-
-    return results;
-};
-
-public func createDailyMissions(): async [(Bool, Text, Nat)] {
-    var results: [(Bool, Text, Nat)] = [];
-
-    // Check if the list needs to be shuffled
-    if (shuffledDailyIndices.size() == 0 or currentDailyIndex >= shuffledDailyIndices.size()) {
-        await initializeShuffledDailyMissions();
+    func initializeShuffledDailyMissions(): async () {
+        let indices: [Nat] = Array.tabulate(MissionOptions.dailyMissions.size(), func(i: Nat): Nat { i });
+        shuffledDailyIndices := await Utils.shuffleArray(indices);
+        currentDailyIndex := 0;
     };
 
-    // Select the next mission from the shuffled list
-    let index = shuffledDailyIndices[currentDailyIndex];
-    let template = MissionOptions.dailyMissions[index];
-    let result = await createSingleConcurrentMission(template);
-    results := Array.append(results, [result]);
-
-    // Move to the next index
-    currentDailyIndex += 1;
-
-    return results;
-};
-
-public func createWeeklyMissions(): async [(Bool, Text, Nat)] {
-    var results: [(Bool, Text, Nat)] = [];
-
-    // Check if the list needs to be shuffled
-    if (shuffledWeeklyIndices.size() == 0 or currentWeeklyIndex >= shuffledWeeklyIndices.size()) {
-        await initializeShuffledWeeklyMissions();
+    func initializeShuffledWeeklyMissions(): async () {
+        let indices: [Nat] = Array.tabulate(MissionOptions.weeklyMissions.size(), func(i: Nat): Nat { i });
+        shuffledWeeklyIndices := await Utils.shuffleArray(indices);
+        currentWeeklyIndex := 0;
     };
 
-    // Select the next mission from the shuffled list
-    let index = shuffledWeeklyIndices[currentWeeklyIndex];
-    let template = MissionOptions.weeklyMissions[index];
-    let result = await createSingleConcurrentMission(template);
-    results := Array.append(results, [result]);
-
-    // Move to the next index
-    currentWeeklyIndex += 1;
-
-    return results;
-};
-
-public func createDailyFreeRewardMissions(): async [(Bool, Text, Nat)] {
-    var results: [(Bool, Text, Nat)] = [];
-
-    // Check if the list needs to be shuffled
-    if (shuffledDailyFreeRewardIndices.size() == 0 or currentDailyFreeRewardIndex >= shuffledDailyFreeRewardIndices.size()) {
-        await initializeShuffledDailyFreeRewardMissions();
+    func initializeShuffledDailyFreeRewardMissions(): async () {
+        let indices: [Nat] = Array.tabulate(MissionOptions.dailyFreeReward.size(), func(i: Nat): Nat { i });
+        shuffledDailyFreeRewardIndices := await Utils.shuffleArray(indices);
+        currentDailyFreeRewardIndex := 0;
     };
 
-    // Select the next mission from the shuffled list
-    let index = shuffledDailyFreeRewardIndices[currentDailyFreeRewardIndex];
-    let template = MissionOptions.dailyFreeReward[index];
-    let result = await createSingleConcurrentMission(template);
-    results := Array.append(results, [result]);
+    public func createHourlyMissions(): async [(Bool, Text, Nat)] {
+        var results: [(Bool, Text, Nat)] = [];
 
-    // Move to the next index
-    currentDailyFreeRewardIndex += 1;
+        // Check if the list needs to be shuffled
+        if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
+            await initializeShuffledHourlyMissions();
+        };
 
-    return results;
-};
+        // Select the next mission from the shuffled list
+        let index = shuffledHourlyIndices[currentHourlyIndex];
+        let template = MissionOptions.hourlyMissions[index];
+        let result = await createSingleConcurrentMission(template);
+        results := Array.append(results, [result]);
 
+        // Move to the next index
+        currentHourlyIndex += 1;
 
-    // Players
+        return results;
+    };
+
+    public func createDailyMissions(): async [(Bool, Text, Nat)] {
+        var results: [(Bool, Text, Nat)] = [];
+
+        // Check if the list needs to be shuffled
+        if (shuffledDailyIndices.size() == 0 or currentDailyIndex >= shuffledDailyIndices.size()) {
+            await initializeShuffledDailyMissions();
+        };
+
+        // Select the next mission from the shuffled list
+        let index = shuffledDailyIndices[currentDailyIndex];
+        let template = MissionOptions.dailyMissions[index];
+        let result = await createSingleConcurrentMission(template);
+        results := Array.append(results, [result]);
+
+        // Move to the next index
+        currentDailyIndex += 1;
+
+        return results;
+    };
+
+    public func createWeeklyMissions(): async [(Bool, Text, Nat)] {
+        var results: [(Bool, Text, Nat)] = [];
+
+        // Check if the list needs to be shuffled
+        if (shuffledWeeklyIndices.size() == 0 or currentWeeklyIndex >= shuffledWeeklyIndices.size()) {
+            await initializeShuffledWeeklyMissions();
+        };
+
+        // Select the next mission from the shuffled list
+        let index = shuffledWeeklyIndices[currentWeeklyIndex];
+        let template = MissionOptions.weeklyMissions[index];
+        let result = await createSingleConcurrentMission(template);
+        results := Array.append(results, [result]);
+
+        // Move to the next index
+        currentWeeklyIndex += 1;
+
+        return results;
+    };
+
+    public func createDailyFreeRewardMissions(): async [(Bool, Text, Nat)] {
+        var results: [(Bool, Text, Nat)] = [];
+
+        // Check if the list needs to be shuffled
+        if (shuffledDailyFreeRewardIndices.size() == 0 or currentDailyFreeRewardIndex >= shuffledDailyFreeRewardIndices.size()) {
+            await initializeShuffledDailyFreeRewardMissions();
+        };
+
+        // Select the next mission from the shuffled list
+        let index = shuffledDailyFreeRewardIndices[currentDailyFreeRewardIndex];
+        let template = MissionOptions.dailyFreeReward[index];
+        let result = await createSingleConcurrentMission(template);
+        results := Array.append(results, [result]);
+
+        // Move to the next index
+        currentDailyFreeRewardIndex += 1;
+
+        return results;
+    };
+
+    func createMissionsPeriodically(): async () {
+        let now = Nat64.fromIntWrap(Time.now());
+        Debug.print("[createMissionsPeriodically] Current time: " # Nat64.toText(now));
+
+        // Create and assign hourly missions
+        if (now - lastHourlyMissionCreationTime >= ONE_HOUR) {
+            Debug.print("[createMissionsPeriodically] Time to create and assign hourly missions.");
+            let hourlyResults = await createHourlyMissions();
+            await Utils.logMissionResults(hourlyResults, "Hourly");
+            lastHourlyMissionCreationTime := now;
+        };
+
+        // Create and assign daily missions
+        if (now - lastDailyMissionCreationTime >= ONE_DAY) {
+            Debug.print("[createMissionsPeriodically] Time to create and assign daily missions.");
+            let dailyResults = await createDailyMissions();
+            await Utils.logMissionResults(dailyResults, "Daily");
+            let dailyFreeResults = await createDailyFreeRewardMissions();
+            await Utils.logMissionResults(dailyFreeResults, "Daily Free Reward");
+            lastDailyMissionCreationTime := now;
+        };
+
+        // Create and assign weekly missions
+        if (now - lastWeeklyMissionCreationTime >= ONE_WEEK) {
+            Debug.print("[createMissionsPeriodically] Time to create and assign weekly missions.");
+            let weeklyResults = await createWeeklyMissions();
+            await Utils.logMissionResults(weeklyResults, "Weekly");
+            lastWeeklyMissionCreationTime := now;
+        };
+
+        // Set the timer to call this function again after 1 hour
+        let _ : Timer.TimerId = Timer.setTimer<system>(#seconds(60 * 60), func(): async () {
+            await createMissionsPeriodically();
+        });
+    };
+
+    func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
+        let randomBytes = await Random.blob(); // Generating random bytes
+        let byteArray = Blob.toArray(randomBytes);
+        let randomByte = byteArray[0]; // Use the first byte for randomness
+        let range = maxReward - minReward + 1;
+        let randomValue = Nat8.toNat(randomByte) % range;
+        return minReward + randomValue;
+    };
+
+    func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
+        let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
+        return await createMission(
+            template.name,
+            template.missionType,
+            template.rewardType,
+            rewardAmount,
+            template.total,
+            template.hoursActive
+        );
+    };
+
+// Players
+
     stable var _players: [(PlayerId, Player)] = [];
     var players: HashMap.HashMap<PlayerId, Player> = HashMap.fromIter(_players.vals(), 0, Principal.equal, Principal.hash);
 
@@ -852,7 +844,8 @@ public func createDailyFreeRewardMissions(): async [(Bool, Text, Nat)] {
     };
 
 
-  // Statistics
+// Statistics
+
   // Nulls or Anons cannot use matchmaking (later add non registered players and Level req. + loss default inactivity)
   let NULL_PRINCIPAL: Principal = Principal.fromText("aaaaa-aa");
   let ANON_PRINCIPAL: Principal = Principal.fromText("2vxsx-fae");
@@ -1018,230 +1011,229 @@ public func createDailyFreeRewardMissions(): async [(Bool, Text, Nat)] {
     };
 
     // Function to update player stats after a match
-public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
-    secRemaining: Nat;
-    energyGenerated: Nat;
-    damageDealt: Nat;
-    wonGame: Bool;
-    botMode: Nat;
-    deploys: Nat;
-    damageTaken: Nat;
-    damageCritic: Nat;
-    damageEvaded: Nat;
-    energyChargeRate: Nat;
-    faction: Nat;
-    energyUsed: Nat;
-    gameMode: Nat;
-    energyWasted: Nat;
-    xpEarned: Nat;
-    characterID: Nat;
-    botDifficulty: Nat;
-    kills: Nat;
-    }) : async (Bool, Text) {
-    var _txt: Text = "";
+    public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
+        secRemaining: Nat;
+        energyGenerated: Nat;
+        damageDealt: Nat;
+        wonGame: Bool;
+        botMode: Nat;
+        deploys: Nat;
+        damageTaken: Nat;
+        damageCritic: Nat;
+        damageEvaded: Nat;
+        energyChargeRate: Nat;
+        faction: Nat;
+        energyUsed: Nat;
+        gameMode: Nat;
+        energyWasted: Nat;
+        xpEarned: Nat;
+        characterID: Nat;
+        botDifficulty: Nat;
+        kills: Nat;
+        }) : async (Bool, Text) {
+        var _txt: Text = "";
 
-    // Create a new PlayerStats record with playerId set to msg.caller
-    let playerStats = {
-        secRemaining = _playerStats.secRemaining;
-        energyGenerated = _playerStats.energyGenerated;
-        damageDealt = _playerStats.damageDealt;
-        wonGame = _playerStats.wonGame;
-        playerId = msg.caller;  // Set the playerId to the caller's principal
-        botMode = _playerStats.botMode;
-        deploys = _playerStats.deploys;
-        damageTaken = _playerStats.damageTaken;
-        damageCritic = _playerStats.damageCritic;
-        damageEvaded = _playerStats.damageEvaded;
-        energyChargeRate = _playerStats.energyChargeRate;
-        faction = _playerStats.faction;
-        energyUsed = _playerStats.energyUsed;
-        gameMode = _playerStats.gameMode;
-        energyWasted = _playerStats.energyWasted;
-        xpEarned = _playerStats.xpEarned;
-        characterID = _playerStats.characterID;
-        botDifficulty = _playerStats.botDifficulty;
-        kills = _playerStats.kills;
-    };
-
-    // Check if the match exists in basicStats
-    let isExistingMatch = switch (basicStats.get(matchID)) {
-        case (null) { false };
-        case (?_) { true };
-    };
-
-    // Set the game as over
-    let endingGame: (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
-
-    // Validate if the caller is part of the match
-    let isPartOfMatch = await isCallerPartOfMatch(matchID, msg.caller);
-    if (not isPartOfMatch) {
-        return (false, "You are not part of this match.");
-    };
-
-    if (isExistingMatch) {
-        // Check if the principal has already submitted stats
-        switch (basicStats.get(matchID)) {
-            case (null) {
-                return (false, "Unexpected error: Match not found");
-            };
-            case (?_bs) {
-                for (ps in _bs.playerStats.vals()) {
-                    if (ps.playerId == msg.caller) {
-                        return (false, "You have already submitted stats for this match.");
-                    };
-                };
-            };
-        };
-    };
-
-    if (not isExistingMatch) {
-        // Save the basic stats for a new match
-        let newBasicStats: BasicStats = {
-            playerStats = [playerStats];
-        };
-        basicStats.put(matchID, newBasicStats);
-
-        // Validate the game
-        let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
-        if (not _gameValid) {
-            onValidation.put(matchID, newBasicStats);
-            return (false, validationMsg);
+        // Create a new PlayerStats record with playerId set to msg.caller
+        let playerStats = {
+            secRemaining = _playerStats.secRemaining;
+            energyGenerated = _playerStats.energyGenerated;
+            damageDealt = _playerStats.damageDealt;
+            wonGame = _playerStats.wonGame;
+            playerId = msg.caller;  // Set the playerId to the caller's principal
+            botMode = _playerStats.botMode;
+            deploys = _playerStats.deploys;
+            damageTaken = _playerStats.damageTaken;
+            damageCritic = _playerStats.damageCritic;
+            damageEvaded = _playerStats.damageEvaded;
+            energyChargeRate = _playerStats.energyChargeRate;
+            faction = _playerStats.faction;
+            energyUsed = _playerStats.energyUsed;
+            gameMode = _playerStats.gameMode;
+            energyWasted = _playerStats.energyWasted;
+            xpEarned = _playerStats.xpEarned;
+            characterID = _playerStats.characterID;
+            botDifficulty = _playerStats.botDifficulty;
+            kills = _playerStats.kills;
         };
 
-        // Update player stats
-        let _winner = if (playerStats.wonGame) 1 else 0;
-        let _looser = if (not playerStats.wonGame) 1 else 0;
-        let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-        let _progressMissionsBuffer = Buffer.Buffer<MissionProgress>(1);
-        _progressMissionsBuffer.add({ missionType = #GamesCompleted; progress = 1; });
-        if (playerStats.wonGame) {
-            _progressMissionsBuffer.add({ missionType = #GamesWon; progress = 1; });
-        };
-        
-        // Add progress for all mission types
-        _progressMissionsBuffer.add({ missionType = #DamageDealt; progress = playerStats.damageDealt });
-        _progressMissionsBuffer.add({ missionType = #DamageTaken; progress = playerStats.damageTaken });
-        _progressMissionsBuffer.add({ missionType = #EnergyUsed; progress = playerStats.energyUsed });
-        _progressMissionsBuffer.add({ missionType = #UnitsDeployed; progress = playerStats.deploys });
-        _progressMissionsBuffer.add({ missionType = #FactionPlayed; progress = playerStats.faction });
-        _progressMissionsBuffer.add({ missionType = #GameModePlayed; progress = playerStats.gameMode });
-        _progressMissionsBuffer.add({ missionType = #XPEarned; progress = playerStats.xpEarned });
-        _progressMissionsBuffer.add({ missionType = #Kills; progress = playerStats.kills });
-
-        let _progressMissions = Buffer.toArray(_progressMissionsBuffer);
-
-        Debug.print("[saveFinishedGame]Before addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
-
-        let _progressAdded = await addProgressToMissions(msg.caller, _progressMissions);
-
-        Debug.print("[saveFinishedGame]After addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
-
-        _txt := _progressAdded.1;
-
-        // Update or create player game stats
-        updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
-
-        // Update overall stats
-        updateOverallStats(matchID, playerStats);
-
-        // Update player level
-        let playerOpt = players.get(msg.caller);
-        switch (playerOpt) {
-            case (?player) {
-                let updatedPlayer: Player = {
-                    id = player.id;
-                    username = player.username;
-                    avatar = player.avatar;
-                    description = player.description;
-                    registrationDate = player.registrationDate;
-                    level = Utils.calculateLevel(playerStats.xpEarned);
-                    elo = player.elo;
-                    friends = player.friends;
-                };
-                players.put(msg.caller, updatedPlayer);
-            };
-            case (null) {};
+        // Check if the match exists in basicStats
+        let isExistingMatch = switch (basicStats.get(matchID)) {
+            case (null) { false };
+            case (?_) { true };
         };
 
-        return (true, "Game saved");
-    } else {
-        // If the match was already saved, add the new player's stats
-        switch (basicStats.get(matchID)) {
-            case (null) {
-                return (false, "Unexpected error: Match not found");
-            };
-            case (?_bs) {
-                let updatedPlayerStatsBuffer = Buffer.Buffer<PlayerStats>(_bs.playerStats.size() + 1);
-                for (ps in _bs.playerStats.vals()) {
-                    updatedPlayerStatsBuffer.add(ps);
+        // Set the game as over
+        let endingGame: (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
+
+        // Validate if the caller is part of the match
+        let isPartOfMatch = await isCallerPartOfMatch(matchID, msg.caller);
+        if (not isPartOfMatch) {
+            return (false, "You are not part of this match.");
+        };
+
+        if (isExistingMatch) {
+            // Check if the principal has already submitted stats
+            switch (basicStats.get(matchID)) {
+                case (null) {
+                    return (false, "Unexpected error: Match not found");
                 };
-                updatedPlayerStatsBuffer.add(playerStats);
-                let updatedPlayerStats = Buffer.toArray(updatedPlayerStatsBuffer);
-                let updatedBasicStats: BasicStats = { playerStats = updatedPlayerStats };
-                basicStats.put(matchID, updatedBasicStats);
-
-                // Validate the game
-                let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
-                if (not _gameValid) {
-                    onValidation.put(matchID, updatedBasicStats);
-                    return (false, validationMsg);
-                };
-
-                // Update player stats
-                let _winner = if (playerStats.wonGame) 1 else 0;
-                let _looser = if (not playerStats.wonGame) 1 else 0;
-                let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-                let _progressMissionsBuffer = Buffer.Buffer<MissionProgress>(1);
-                _progressMissionsBuffer.add({ missionType = #GamesCompleted; progress = 1; });
-                if (playerStats.wonGame) {
-                    _progressMissionsBuffer.add({ missionType = #GamesWon; progress = 1; });
-                };
-
-                // Add progress for all mission types
-                _progressMissionsBuffer.add({ missionType = #DamageDealt; progress = playerStats.damageDealt });
-                _progressMissionsBuffer.add({ missionType = #DamageTaken; progress = playerStats.damageTaken });
-                _progressMissionsBuffer.add({ missionType = #EnergyUsed; progress = playerStats.energyUsed });
-                _progressMissionsBuffer.add({ missionType = #UnitsDeployed; progress = playerStats.deploys });
-                _progressMissionsBuffer.add({ missionType = #FactionPlayed; progress = playerStats.faction });
-                _progressMissionsBuffer.add({ missionType = #GameModePlayed; progress = playerStats.gameMode });
-                _progressMissionsBuffer.add({ missionType = #XPEarned; progress = playerStats.xpEarned });
-                _progressMissionsBuffer.add({ missionType = #Kills; progress = playerStats.kills });
-
-                let _progressMissions = Buffer.toArray(_progressMissionsBuffer);
-                let _progressAdded = await addProgressToMissions(msg.caller, _progressMissions);
-                _txt := _progressAdded.1;
-
-                // Update or create player game stats
-                updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
-
-                // Update overall stats
-                updateOverallStats(matchID, playerStats);
-
-                // Update player level
-                let playerOpt = players.get(msg.caller);
-                switch (playerOpt) {
-                    case (?player) {
-                        let updatedPlayer: Player = {
-                            id = player.id;
-                            username = player.username;
-                            avatar = player.avatar;
-                            description = player.description;
-                            registrationDate = player.registrationDate;
-                            level = Utils.calculateLevel(playerStats.xpEarned);
-                            elo = player.elo;
-                            friends = player.friends;
+                case (?_bs) {
+                    for (ps in _bs.playerStats.vals()) {
+                        if (ps.playerId == msg.caller) {
+                            return (false, "You have already submitted stats for this match.");
                         };
-                        players.put(msg.caller, updatedPlayer);
                     };
-                    case (null) {};
                 };
+            };
+        };
 
-                return (true, _txt # " - Game saved");
+        if (not isExistingMatch) {
+            // Save the basic stats for a new match
+            let newBasicStats: BasicStats = {
+                playerStats = [playerStats];
+            };
+            basicStats.put(matchID, newBasicStats);
+
+            // Validate the game
+            let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
+            if (not _gameValid) {
+                onValidation.put(matchID, newBasicStats);
+                return (false, validationMsg);
+            };
+
+            // Update player stats
+            let _winner = if (playerStats.wonGame) 1 else 0;
+            let _looser = if (not playerStats.wonGame) 1 else 0;
+            let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
+            let _progressMissionsBuffer = Buffer.Buffer<MissionProgress>(1);
+            _progressMissionsBuffer.add({ missionType = #GamesCompleted; progress = 1; });
+            if (playerStats.wonGame) {
+                _progressMissionsBuffer.add({ missionType = #GamesWon; progress = 1; });
+            };
+            
+            // Add progress for all mission types
+            _progressMissionsBuffer.add({ missionType = #DamageDealt; progress = playerStats.damageDealt });
+            _progressMissionsBuffer.add({ missionType = #DamageTaken; progress = playerStats.damageTaken });
+            _progressMissionsBuffer.add({ missionType = #EnergyUsed; progress = playerStats.energyUsed });
+            _progressMissionsBuffer.add({ missionType = #UnitsDeployed; progress = playerStats.deploys });
+            _progressMissionsBuffer.add({ missionType = #FactionPlayed; progress = playerStats.faction });
+            _progressMissionsBuffer.add({ missionType = #GameModePlayed; progress = playerStats.gameMode });
+            _progressMissionsBuffer.add({ missionType = #XPEarned; progress = playerStats.xpEarned });
+            _progressMissionsBuffer.add({ missionType = #Kills; progress = playerStats.kills });
+
+            let _progressMissions = Buffer.toArray(_progressMissionsBuffer);
+
+            Debug.print("[saveFinishedGame]Before addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
+
+            let _progressAdded = await addProgressToMissions(msg.caller, _progressMissions);
+
+            Debug.print("[saveFinishedGame]After addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
+
+            _txt := _progressAdded.1;
+
+            // Update or create player game stats
+            updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
+
+            // Update overall stats
+            updateOverallStats(matchID, playerStats);
+
+            // Update player level
+            let playerOpt = players.get(msg.caller);
+            switch (playerOpt) {
+                case (?player) {
+                    let updatedPlayer: Player = {
+                        id = player.id;
+                        username = player.username;
+                        avatar = player.avatar;
+                        description = player.description;
+                        registrationDate = player.registrationDate;
+                        level = Utils.calculateLevel(playerStats.xpEarned);
+                        elo = player.elo;
+                        friends = player.friends;
+                    };
+                    players.put(msg.caller, updatedPlayer);
+                };
+                case (null) {};
+            };
+
+            return (true, "Game saved");
+        } else {
+            // If the match was already saved, add the new player's stats
+            switch (basicStats.get(matchID)) {
+                case (null) {
+                    return (false, "Unexpected error: Match not found");
+                };
+                case (?_bs) {
+                    let updatedPlayerStatsBuffer = Buffer.Buffer<PlayerStats>(_bs.playerStats.size() + 1);
+                    for (ps in _bs.playerStats.vals()) {
+                        updatedPlayerStatsBuffer.add(ps);
+                    };
+                    updatedPlayerStatsBuffer.add(playerStats);
+                    let updatedPlayerStats = Buffer.toArray(updatedPlayerStatsBuffer);
+                    let updatedBasicStats: BasicStats = { playerStats = updatedPlayerStats };
+                    basicStats.put(matchID, updatedBasicStats);
+
+                    // Validate the game
+                    let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
+                    if (not _gameValid) {
+                        onValidation.put(matchID, updatedBasicStats);
+                        return (false, validationMsg);
+                    };
+
+                    // Update player stats
+                    let _winner = if (playerStats.wonGame) 1 else 0;
+                    let _looser = if (not playerStats.wonGame) 1 else 0;
+                    let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
+                    let _progressMissionsBuffer = Buffer.Buffer<MissionProgress>(1);
+                    _progressMissionsBuffer.add({ missionType = #GamesCompleted; progress = 1; });
+                    if (playerStats.wonGame) {
+                        _progressMissionsBuffer.add({ missionType = #GamesWon; progress = 1; });
+                    };
+
+                    // Add progress for all mission types
+                    _progressMissionsBuffer.add({ missionType = #DamageDealt; progress = playerStats.damageDealt });
+                    _progressMissionsBuffer.add({ missionType = #DamageTaken; progress = playerStats.damageTaken });
+                    _progressMissionsBuffer.add({ missionType = #EnergyUsed; progress = playerStats.energyUsed });
+                    _progressMissionsBuffer.add({ missionType = #UnitsDeployed; progress = playerStats.deploys });
+                    _progressMissionsBuffer.add({ missionType = #FactionPlayed; progress = playerStats.faction });
+                    _progressMissionsBuffer.add({ missionType = #GameModePlayed; progress = playerStats.gameMode });
+                    _progressMissionsBuffer.add({ missionType = #XPEarned; progress = playerStats.xpEarned });
+                    _progressMissionsBuffer.add({ missionType = #Kills; progress = playerStats.kills });
+
+                    let _progressMissions = Buffer.toArray(_progressMissionsBuffer);
+                    let _progressAdded = await addProgressToMissions(msg.caller, _progressMissions);
+                    _txt := _progressAdded.1;
+
+                    // Update or create player game stats
+                    updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
+
+                    // Update overall stats
+                    updateOverallStats(matchID, playerStats);
+
+                    // Update player level
+                    let playerOpt = players.get(msg.caller);
+                    switch (playerOpt) {
+                        case (?player) {
+                            let updatedPlayer: Player = {
+                                id = player.id;
+                                username = player.username;
+                                avatar = player.avatar;
+                                description = player.description;
+                                registrationDate = player.registrationDate;
+                                level = Utils.calculateLevel(playerStats.xpEarned);
+                                elo = player.elo;
+                                friends = player.friends;
+                            };
+                            players.put(msg.caller, updatedPlayer);
+                        };
+                        case (null) {};
+                    };
+
+                    return (true, _txt # " - Game saved");
+                };
             };
         };
     };
-};
-
 
     // Helper function to check if the caller is part of the match
     func isCallerPartOfMatch(matchID: MatchID, caller: Principal) : async Bool {
@@ -1267,191 +1259,191 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
 
     // Function to update player stats
     func updatePlayerGameStats(playerId: PlayerId, _playerStats: PlayerStats, _winner: Nat, _looser: Nat) {
-    switch (playerGamesStats.get(playerId)) {
-        case (null) {
-            let _gs: PlayerGamesStats = {
-                gamesPlayed = 1;
-                gamesWon = _winner;
-                gamesLost = _looser;
-                energyGenerated = _playerStats.energyGenerated;
-                energyUsed = _playerStats.energyUsed;
-                energyWasted = _playerStats.energyWasted;
-                totalKills = _playerStats.kills;
-                totalDamageDealt = _playerStats.damageDealt;
-                totalDamageTaken = _playerStats.damageTaken;
-                totalDamageCrit = _playerStats.damageCritic;
-                totalDamageEvaded = _playerStats.damageEvaded;
-                totalXpEarned = _playerStats.xpEarned;
-                totalGamesWithFaction = [{ factionID = _playerStats.faction; gamesPlayed = 1; gamesWon = _winner; }];
-                totalGamesGameMode = [{ gameModeID = _playerStats.gameMode; gamesPlayed = 1; gamesWon = _winner; }];
-                totalGamesWithCharacter = [{ characterID = _playerStats.characterID; gamesPlayed = 1; gamesWon = _winner; }];
-            };
-            playerGamesStats.put(playerId, _gs);
-        };
-        case (?_bs) {
-            let _gamesWithFactionBuffer = Buffer.Buffer<GamesWithFaction>(_bs.totalGamesWithFaction.size());
-            for (gf in _bs.totalGamesWithFaction.vals()) {
-                if (gf.factionID == _playerStats.faction) {
-                    _gamesWithFactionBuffer.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner; });
-                } else {
-                    _gamesWithFactionBuffer.add(gf);
+        switch (playerGamesStats.get(playerId)) {
+            case (null) {
+                let _gs: PlayerGamesStats = {
+                    gamesPlayed = 1;
+                    gamesWon = _winner;
+                    gamesLost = _looser;
+                    energyGenerated = _playerStats.energyGenerated;
+                    energyUsed = _playerStats.energyUsed;
+                    energyWasted = _playerStats.energyWasted;
+                    totalKills = _playerStats.kills;
+                    totalDamageDealt = _playerStats.damageDealt;
+                    totalDamageTaken = _playerStats.damageTaken;
+                    totalDamageCrit = _playerStats.damageCritic;
+                    totalDamageEvaded = _playerStats.damageEvaded;
+                    totalXpEarned = _playerStats.xpEarned;
+                    totalGamesWithFaction = [{ factionID = _playerStats.faction; gamesPlayed = 1; gamesWon = _winner; }];
+                    totalGamesGameMode = [{ gameModeID = _playerStats.gameMode; gamesPlayed = 1; gamesWon = _winner; }];
+                    totalGamesWithCharacter = [{ characterID = _playerStats.characterID; gamesPlayed = 1; gamesWon = _winner; }];
                 };
+                playerGamesStats.put(playerId, _gs);
             };
-            let _gamesWithFaction = Buffer.toArray(_gamesWithFactionBuffer);
-
-            let _gamesWithGameModeBuffer = Buffer.Buffer<GamesWithGameMode>(_bs.totalGamesGameMode.size());
-            for (gm in _bs.totalGamesGameMode.vals()) {
-                if (gm.gameModeID == _playerStats.gameMode) {
-                    _gamesWithGameModeBuffer.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner; });
-                } else {
-                    _gamesWithGameModeBuffer.add(gm);
+            case (?_bs) {
+                let _gamesWithFactionBuffer = Buffer.Buffer<GamesWithFaction>(_bs.totalGamesWithFaction.size());
+                for (gf in _bs.totalGamesWithFaction.vals()) {
+                    if (gf.factionID == _playerStats.faction) {
+                        _gamesWithFactionBuffer.add({ gamesPlayed = gf.gamesPlayed + 1; factionID = gf.factionID; gamesWon = gf.gamesWon + _winner; });
+                    } else {
+                        _gamesWithFactionBuffer.add(gf);
+                    };
                 };
-            };
-            let _gamesWithGameMode = Buffer.toArray(_gamesWithGameModeBuffer);
+                let _gamesWithFaction = Buffer.toArray(_gamesWithFactionBuffer);
 
-            let _totalGamesWithCharacterBuffer = Buffer.Buffer<GamesWithCharacter>(_bs.totalGamesWithCharacter.size());
-            for (gc in _bs.totalGamesWithCharacter.vals()) {
-                if (gc.characterID == _playerStats.characterID) {
-                    _totalGamesWithCharacterBuffer.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner; });
-                } else {
-                    _totalGamesWithCharacterBuffer.add(gc);
+                let _gamesWithGameModeBuffer = Buffer.Buffer<GamesWithGameMode>(_bs.totalGamesGameMode.size());
+                for (gm in _bs.totalGamesGameMode.vals()) {
+                    if (gm.gameModeID == _playerStats.gameMode) {
+                        _gamesWithGameModeBuffer.add({ gamesPlayed = gm.gamesPlayed + 1; gameModeID = gm.gameModeID; gamesWon = gm.gamesWon + _winner; });
+                    } else {
+                        _gamesWithGameModeBuffer.add(gm);
+                    };
                 };
-            };
-            let _totalGamesWithCharacter = Buffer.toArray(_totalGamesWithCharacterBuffer);
+                let _gamesWithGameMode = Buffer.toArray(_gamesWithGameModeBuffer);
 
-            var _thisGameXP = _playerStats.xpEarned;
-            if (_playerStats.wonGame) {
-                _thisGameXP := _thisGameXP * 2;
-            } else {
-                _thisGameXP := _thisGameXP * 1;
-            };
-            if (_playerStats.gameMode == 1) {
-                _thisGameXP := _thisGameXP * 2;
-            } else {
-                _thisGameXP := _thisGameXP * 1;
-            };
+                let _totalGamesWithCharacterBuffer = Buffer.Buffer<GamesWithCharacter>(_bs.totalGamesWithCharacter.size());
+                for (gc in _bs.totalGamesWithCharacter.vals()) {
+                    if (gc.characterID == _playerStats.characterID) {
+                        _totalGamesWithCharacterBuffer.add({ gamesPlayed = gc.gamesPlayed + 1; characterID = gc.characterID; gamesWon = gc.gamesWon + _winner; });
+                    } else {
+                        _totalGamesWithCharacterBuffer.add(gc);
+                    };
+                };
+                let _totalGamesWithCharacter = Buffer.toArray(_totalGamesWithCharacterBuffer);
 
-            let _gs: PlayerGamesStats = {
-                gamesPlayed = _bs.gamesPlayed + 1;
-                gamesWon = _bs.gamesWon + _winner;
-                gamesLost = _bs.gamesLost + _looser;
-                energyGenerated = _bs.energyGenerated + _playerStats.energyGenerated;
-                energyUsed = _bs.energyUsed + _playerStats.energyUsed;
-                energyWasted = _bs.energyWasted + _playerStats.energyWasted;
-                totalKills = _bs.totalKills + _playerStats.kills;
-                totalDamageDealt = _bs.totalDamageDealt + _playerStats.damageDealt;
-                totalDamageTaken = _bs.totalDamageTaken + _playerStats.damageTaken;
-                totalDamageCrit = _bs.totalDamageCrit + _playerStats.damageCritic;
-                totalDamageEvaded = _bs.totalDamageEvaded + _playerStats.damageEvaded;
-                totalXpEarned = _bs.totalXpEarned + _thisGameXP;
-                totalGamesWithFaction = _gamesWithFaction;
-                totalGamesGameMode = _gamesWithGameMode;
-                totalGamesWithCharacter = _totalGamesWithCharacter;
+                var _thisGameXP = _playerStats.xpEarned;
+                if (_playerStats.wonGame) {
+                    _thisGameXP := _thisGameXP * 2;
+                } else {
+                    _thisGameXP := _thisGameXP * 1;
+                };
+                if (_playerStats.gameMode == 1) {
+                    _thisGameXP := _thisGameXP * 2;
+                } else {
+                    _thisGameXP := _thisGameXP * 1;
+                };
+
+                let _gs: PlayerGamesStats = {
+                    gamesPlayed = _bs.gamesPlayed + 1;
+                    gamesWon = _bs.gamesWon + _winner;
+                    gamesLost = _bs.gamesLost + _looser;
+                    energyGenerated = _bs.energyGenerated + _playerStats.energyGenerated;
+                    energyUsed = _bs.energyUsed + _playerStats.energyUsed;
+                    energyWasted = _bs.energyWasted + _playerStats.energyWasted;
+                    totalKills = _bs.totalKills + _playerStats.kills;
+                    totalDamageDealt = _bs.totalDamageDealt + _playerStats.damageDealt;
+                    totalDamageTaken = _bs.totalDamageTaken + _playerStats.damageTaken;
+                    totalDamageCrit = _bs.totalDamageCrit + _playerStats.damageCritic;
+                    totalDamageEvaded = _bs.totalDamageEvaded + _playerStats.damageEvaded;
+                    totalXpEarned = _bs.totalXpEarned + _thisGameXP;
+                    totalGamesWithFaction = _gamesWithFaction;
+                    totalGamesGameMode = _gamesWithGameMode;
+                    totalGamesWithCharacter = _totalGamesWithCharacter;
+                };
+                playerGamesStats.put(playerId, _gs);
             };
-            playerGamesStats.put(playerId, _gs);
         };
     };
-};
 
-    
     // Helper function to update overall stats
-func updateOverallStats(matchID: MatchID, _playerStats: PlayerStats) {
-    // Ensure the match is counted only once
-    switch (countedMatches.get(matchID)) {
-        case (?_) {
-            return; // already counted match
+    func updateOverallStats(matchID: MatchID, _playerStats: PlayerStats) {
+        // Ensure the match is counted only once
+        switch (countedMatches.get(matchID)) {
+            case (?_) {
+                return; // already counted match
+            };
+            case (null) {
+                countedMatches.put(matchID, true);
+            };
         };
-        case (null) {
-            countedMatches.put(matchID, true);
-        };
-    };
 
-    let _totalGamesWithFactionBuffer = Buffer.Buffer<OverallGamesWithFaction>(overallStats.totalGamesWithFaction.size());
-    var factionFound = false;
-    for (gf in overallStats.totalGamesWithFaction.vals()) {
-        if (gf.factionID == _playerStats.faction) {
+        let _totalGamesWithFactionBuffer = Buffer.Buffer<OverallGamesWithFaction>(overallStats.totalGamesWithFaction.size());
+        var factionFound = false;
+        for (gf in overallStats.totalGamesWithFaction.vals()) {
+            if (gf.factionID == _playerStats.faction) {
+                _totalGamesWithFactionBuffer.add({
+                    gamesPlayed = gf.gamesPlayed + 1;
+                    factionID = gf.factionID;
+                });
+                factionFound := true;
+            } else {
+                _totalGamesWithFactionBuffer.add(gf);
+            };
+        };
+        if (not factionFound) {
             _totalGamesWithFactionBuffer.add({
-                gamesPlayed = gf.gamesPlayed + 1;
-                factionID = gf.factionID;
+                gamesPlayed = 1;
+                factionID = _playerStats.faction;
             });
-            factionFound := true;
-        } else {
-            _totalGamesWithFactionBuffer.add(gf);
         };
-    };
-    if (not factionFound) {
-        _totalGamesWithFactionBuffer.add({
-            gamesPlayed = 1;
-            factionID = _playerStats.faction;
-        });
-    };
-    let _totalGamesWithFaction = Buffer.toArray(_totalGamesWithFactionBuffer);
+        let _totalGamesWithFaction = Buffer.toArray(_totalGamesWithFactionBuffer);
 
-    let _totalGamesWithGameModeBuffer = Buffer.Buffer<OverallGamesWithGameMode>(overallStats.totalGamesGameMode.size());
-    var gameModeFound = false;
-    for (gm in overallStats.totalGamesGameMode.vals()) {
-        if (gm.gameModeID == _playerStats.gameMode) {
+        let _totalGamesWithGameModeBuffer = Buffer.Buffer<OverallGamesWithGameMode>(overallStats.totalGamesGameMode.size());
+        var gameModeFound = false;
+        for (gm in overallStats.totalGamesGameMode.vals()) {
+            if (gm.gameModeID == _playerStats.gameMode) {
+                _totalGamesWithGameModeBuffer.add({
+                    gamesPlayed = gm.gamesPlayed + 1;
+                    gameModeID = gm.gameModeID;
+                });
+                gameModeFound := true;
+            } else {
+                _totalGamesWithGameModeBuffer.add(gm);
+            };
+        };
+        if (not gameModeFound) {
             _totalGamesWithGameModeBuffer.add({
-                gamesPlayed = gm.gamesPlayed + 1;
-                gameModeID = gm.gameModeID;
+                gamesPlayed = 1;
+                gameModeID = _playerStats.gameMode;
             });
-            gameModeFound := true;
-        } else {
-            _totalGamesWithGameModeBuffer.add(gm);
         };
-    };
-    if (not gameModeFound) {
-        _totalGamesWithGameModeBuffer.add({
-            gamesPlayed = 1;
-            gameModeID = _playerStats.gameMode;
-        });
-    };
-    let _totalGamesWithGameMode = Buffer.toArray(_totalGamesWithGameModeBuffer);
+        let _totalGamesWithGameMode = Buffer.toArray(_totalGamesWithGameModeBuffer);
 
-    let _totalGamesWithCharacterBuffer = Buffer.Buffer<OverallGamesWithCharacter>(overallStats.totalGamesWithCharacter.size());
-    var characterFound = false;
-    for (gc in overallStats.totalGamesWithCharacter.vals()) {
-        if (gc.characterID == _playerStats.characterID) {
+        let _totalGamesWithCharacterBuffer = Buffer.Buffer<OverallGamesWithCharacter>(overallStats.totalGamesWithCharacter.size());
+        var characterFound = false;
+        for (gc in overallStats.totalGamesWithCharacter.vals()) {
+            if (gc.characterID == _playerStats.characterID) {
+                _totalGamesWithCharacterBuffer.add({
+                    gamesPlayed = gc.gamesPlayed + 1;
+                    characterID = gc.characterID;
+                });
+                characterFound := true;
+            } else {
+                _totalGamesWithCharacterBuffer.add(gc);
+            };
+        };
+        if (not characterFound) {
             _totalGamesWithCharacterBuffer.add({
-                gamesPlayed = gc.gamesPlayed + 1;
-                characterID = gc.characterID;
+                gamesPlayed = 1;
+                characterID = _playerStats.characterID;
             });
-            characterFound := true;
-        } else {
-            _totalGamesWithCharacterBuffer.add(gc);
         };
+        let _totalGamesWithCharacter = Buffer.toArray(_totalGamesWithCharacterBuffer);
+
+        let maxGameTime: Nat = 300; // 5 minutes in seconds
+        let timePlayed: Nat = maxGameTime - _playerStats.secRemaining;
+
+        let _os: OverallStats = {
+            totalGamesPlayed = overallStats.totalGamesPlayed + 1;
+            totalGamesSP = if (_playerStats.gameMode == 2) overallStats.totalGamesSP + 1 else overallStats.totalGamesSP;
+            totalGamesMP = if (_playerStats.gameMode == 1) overallStats.totalGamesMP + 1 else overallStats.totalGamesMP;
+            totalDamageDealt = overallStats.totalDamageDealt + _playerStats.damageDealt;
+            totalTimePlayed = overallStats.totalTimePlayed + timePlayed;
+            totalKills = overallStats.totalKills + _playerStats.kills;
+            totalEnergyUsed = overallStats.totalEnergyUsed + _playerStats.energyUsed;
+            totalEnergyGenerated = overallStats.totalEnergyGenerated + _playerStats.energyGenerated;
+            totalEnergyWasted = overallStats.totalEnergyWasted + _playerStats.energyWasted;
+            totalGamesWithFaction = _totalGamesWithFaction;
+            totalGamesGameMode = _totalGamesWithGameMode;
+            totalGamesWithCharacter = _totalGamesWithCharacter;
+            totalXpEarned = overallStats.totalXpEarned + _playerStats.xpEarned;
+        };
+        overallStats := _os;
     };
-    if (not characterFound) {
-        _totalGamesWithCharacterBuffer.add({
-            gamesPlayed = 1;
-            characterID = _playerStats.characterID;
-        });
-    };
-    let _totalGamesWithCharacter = Buffer.toArray(_totalGamesWithCharacterBuffer);
-
-    let maxGameTime: Nat = 300; // 5 minutes in seconds
-    let timePlayed: Nat = maxGameTime - _playerStats.secRemaining;
-
-    let _os: OverallStats = {
-        totalGamesPlayed = overallStats.totalGamesPlayed + 1;
-        totalGamesSP = if (_playerStats.gameMode == 2) overallStats.totalGamesSP + 1 else overallStats.totalGamesSP;
-        totalGamesMP = if (_playerStats.gameMode == 1) overallStats.totalGamesMP + 1 else overallStats.totalGamesMP;
-        totalDamageDealt = overallStats.totalDamageDealt + _playerStats.damageDealt;
-        totalTimePlayed = overallStats.totalTimePlayed + timePlayed;
-        totalKills = overallStats.totalKills + _playerStats.kills;
-        totalEnergyUsed = overallStats.totalEnergyUsed + _playerStats.energyUsed;
-        totalEnergyGenerated = overallStats.totalEnergyGenerated + _playerStats.energyGenerated;
-        totalEnergyWasted = overallStats.totalEnergyWasted + _playerStats.energyWasted;
-        totalGamesWithFaction = _totalGamesWithFaction;
-        totalGamesGameMode = _totalGamesWithGameMode;
-        totalGamesWithCharacter = _totalGamesWithCharacter;
-        totalXpEarned = overallStats.totalXpEarned + _playerStats.xpEarned;
-    };
-    overallStats := _os;
-};
 
 
-  // MatchMaking
+// MatchMaking
+
   var ONE_SECOND : Nat64 = 1_000_000_000;
   stable var _matchID : Nat = 0;
   var inactiveSeconds : Nat64 = 30 * ONE_SECOND;
@@ -2031,7 +2023,8 @@ func updateOverallStats(matchID: MatchID, _playerStats: PlayerStats) {
         return overallStats;
     };
 
-    // ICRCs
+// ICRCs
+
     type Result <S, E> = Result.Result<S, E>;
 
     let shards: ICRC1Interface = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : ICRC1Interface;

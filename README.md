@@ -27,6 +27,7 @@
         return Nat64.toNat(levelNat64);
     };
 
+
 Key Areas in the Code
 Reward Management:
 

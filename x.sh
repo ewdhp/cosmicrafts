@@ -7,6 +7,7 @@ commands=(
     "dfx identity use bizkit"
     "dfx canister uninstall-code cosmicrafts"
     "dfx deploy cosmicrafts"
+    "dfx canister call cosmicrafts adminManagement '(variant { CreateMissionsPeriodically })'"
    # "python scripts/missions.py"
 )
 

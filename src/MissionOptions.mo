@@ -2,72 +2,140 @@ import Types "Types";
 
 module MissionOptions {
 
-    // Constants for mission options and reward pools
-    public let missionOptions: [Types.MissionOption] = [
-        { MissionType = #GamesCompleted; minAmount = 1; maxAmount = 5; rarity = 1 },
-        { MissionType = #GamesWon; minAmount = 6; maxAmount = 10; rarity = 2 },
-        { MissionType = #LevelReached; minAmount = 50; maxAmount = 100; rarity = 0 }
-    ];
-
-    public let rewardPools: [Types.RewardPool] = [
-        { chestRarity = (2, 2); flux = (50, 100); shards = (100, 200) }, // Hourly
-        { chestRarity = (3, 4); flux = (200, 300); shards = (300, 400) }, // Daily
-        { chestRarity = (5, 6); flux = (500, 1000); shards = (1000, 2000) } // Weekly
-    ];
-
     // Constant of Concurrent Missions
     public let hourlyMissions: [Types.MissionTemplate] = [
         {
-            name = "Win 1 Game";
-            missionType = #GamesWon;
-            rewardType = #Chest;
-            minReward = 1;
-            maxReward = 2;
+            name = "Complete 1 Game";
+            missionType = #GamesCompleted;
+            rewardType = #Shards;
+            minReward = 18;
+            maxReward = 36;
             total = 1;
             hoursActive = 1;
         },
         {
-            name = "Deal 5000 Damage";
+            name = "Win 1 Game";
+            missionType = #GamesWon;
+            rewardType = #Chest;
+            minReward = 2;
+            maxReward = 4;
+            total = 1;
+            hoursActive = 1;
+        },
+        {
+            name = "Deal 3000 Damage";
             missionType = #DamageDealt;
-            rewardType = #Chest;
-            minReward = 1;
-            maxReward = 2;
-            total = 5000;
-            hoursActive = 1;
-        },
-        {
-            name = "Deploy 20 Units";
-            missionType = #UnitsDeployed;
-            rewardType = #Chest;
-            minReward = 1;
-            maxReward = 2;
-            total = 20;
-            hoursActive = 1;
-        },
-        {
-            name = "Spend 3000 Energy";
-            missionType = #EnergyUsed;
-            rewardType = #Chest;
-            minReward = 1;
-            maxReward = 2;
+            rewardType = #Shards;
+            minReward = 20;
+            maxReward = 42;
             total = 3000;
+            hoursActive = 1;
+        },
+        {
+            name = "Take 2500 Damage";
+            missionType = #DamageTaken;
+            rewardType = #Chest;
+            minReward = 1;
+            maxReward = 3;
+            total = 2500;
+            hoursActive = 1;
+        },
+        {
+            name = "Use 100 Energy";
+            missionType = #EnergyUsed;
+            rewardType = #Shards;
+            minReward = 22;
+            maxReward = 38;
+            total = 100;
+            hoursActive = 1;
+        },
+        {
+            name = "Deploy 25 NFTs";
+            missionType = #UnitsDeployed;
+            rewardType = #Shards;
+            minReward = 22;
+            maxReward = 42;
+            total = 25;
+            hoursActive = 1;
+        },
+        {
+            name = "Earn 10000 XP";
+            missionType = #XPEarned;
+            rewardType = #Chest;
+            minReward = 2;
+            maxReward = 3;
+            total = 10000;
+            hoursActive = 1;
+        },
+        {
+            name = "Destroy 30 enemies";
+            missionType = #Kills;
+            rewardType = #Chest;
+            minReward = 2;
+            maxReward = 4;
+            total = 30;
             hoursActive = 1;
         }
     ];
 
     public let dailyMissions: [Types.MissionTemplate] = [
         {
-            name = "Win 10 Games";
-            missionType = #GamesWon;
-            rewardType = #Chest;
-            minReward = 3;
-            maxReward = 4;
-            total = 10;
+            name = "Complete 5 Games";
+            missionType = #GamesCompleted;
+            rewardType = #Shards;
+            minReward = 128;
+            maxReward = 256;
+            total = 5;
             hoursActive = 24;
         },
         {
-            name = "Deal 50000 Damage";
+            name = "Win 3 Games";
+            missionType = #GamesWon;
+            rewardType = #Chest;
+            minReward = 4;
+            maxReward = 6;
+            total = 3;
+            hoursActive = 24;
+        },
+        {
+            name = "Deal 10000 Damage";
             missionType = #DamageDealt;
+            rewardType = #Shards;
+            minReward = 128;
+            maxReward = 256;
+            total = 10000;
+            hoursActive = 24;
+        },
+        {
+            name = "Take 9000 Damage";
+            missionType = #DamageTaken;
+            rewardType = #Chest;
+            minReward = 4;
+            maxReward = 6;
+            total = 9000;
+            hoursActive = 24;
+        },
+        {
+            name = "Use 500 Energy";
+            missionType = #EnergyUsed;
+            rewardType = #Shards;
+            minReward = 128;
+            maxReward = 360;
+            total = 500;
+            hoursActive = 24;
+        },
+        {
+            name = "Deploy 100 NFTs";
+            missionType = #UnitsDeployed;
+            rewardType = #Shards;
+            minReward = 128;
+            maxReward = 300;
+            total = 100;
+            hoursActive = 24;
+        },
+        {
+            name = "Earn 50000 XP";
+            missionType = #XPEarned;
             rewardType = #Chest;
             minReward = 3;
             maxReward = 4;
@@ -75,63 +143,91 @@ module MissionOptions {
             hoursActive = 24;
         },
         {
-            name = "Deploy 100 Units";
-            missionType = #UnitsDeployed;
+            name = "Destroy 100 Enemies";
+            missionType = #Kills;
             rewardType = #Chest;
             minReward = 3;
             maxReward = 4;
             total = 100;
-            hoursActive = 24;
-        },
-        {
-            name = "Spend 15000 Energy";
-            missionType = #EnergyUsed;
-            rewardType = #Chest;
-            minReward = 3;
-            maxReward = 4;
-            total = 15000;
             hoursActive = 24;
         }
     ];
 
     public let weeklyMissions: [Types.MissionTemplate] = [
         {
-            name = "Win 50 Games";
+            name = "Complete 20 Games";
+            missionType = #GamesCompleted;
+            rewardType = #Shards;
+            minReward = 768;  // Adjusted to fit the 20% more/less range
+            maxReward = 1728;  // Adjusted to fit the 20% more/less range
+            total = 25;
+            hoursActive = 168;  // 7 days
+        },
+        {
+            name = "Win 10 Games";
             missionType = #GamesWon;
             rewardType = #Chest;
-            minReward = 5;
-            maxReward = 6;
-            total = 50;
-            hoursActive = 168; // 7 days * 24 hours
+            minReward = 7;  // Chest rewards
+            maxReward = 8;  // Chest rewards
+            total = 10;
+            hoursActive = 168;  // 7 days
         },
         {
-            name = "Deal 250000 Damage";
+            name = "Deal 50000 Damage";
             missionType = #DamageDealt;
-            rewardType = #Chest;
-            minReward = 5;
-            maxReward = 6;
-            total = 250000;
-            hoursActive = 168; // 7 days * 24 hours
+            rewardType = #Shards;
+            minReward = 800;  // Adjusted to fit the 20% more/less range
+            maxReward = 2200;  // Adjusted to fit the 20% more/less range
+            total = 50000;
+            hoursActive = 168;  // 7 days
         },
         {
-            name = "Deploy 500 Units";
-            missionType = #UnitsDeployed;
+            name = "Take 25000 Damage";
+            missionType = #DamageTaken;
             rewardType = #Chest;
-            minReward = 5;
-            maxReward = 6;
-            total = 500;
-            hoursActive = 168; // 7 days * 24 hours
+            minReward = 6;  // Chest rewards
+            maxReward = 8;  // Chest rewards
+            total = 25000;
+            hoursActive = 168;  // 7 days
         },
         {
-            name = "Spend 75000 Energy";
+            name = "Use 2500 Energy";
             missionType = #EnergyUsed;
+            rewardType = #Shards;
+            minReward = 768;  // Adjusted to fit the 20% more/less range
+            maxReward = 1728;  // Adjusted to fit the 20% more/less range
+            total = 2500;
+            hoursActive = 168;  // 7 days
+        },
+        {
+            name = "Deploy 500 NFTs";
+            missionType = #UnitsDeployed;
+            rewardType = #Shards;
+            minReward = 900;  // Adjusted to fit the 20% more/less range
+            maxReward = 2400;  // Adjusted to fit the 20% more/less range
+            total = 500;
+            hoursActive = 168;  // 7 days
+        },
+        {
+            name = "Earn 200000 XP";
+            missionType = #XPEarned;
             rewardType = #Chest;
-            minReward = 5;
-            maxReward = 6;
-            total = 75000;
-            hoursActive = 168; // 7 days * 24 hours
+            minReward = 6;  // Chest rewards
+            maxReward = 8;  // Chest rewards
+            total = 200000;
+            hoursActive = 168;  // 7 days
+        },
+        {
+            name = "Destroy 500 Enemies";
+            missionType = #Kills;
+            rewardType = #Chest;
+            minReward = 6;  // Chest rewards
+            maxReward = 8;  // Chest rewards
+            total = 500;
+            hoursActive = 168;  // 7 days
         }
     ];
+
 
     public let dailyFreeReward: [Types.MissionTemplate] = [
         {
@@ -144,7 +240,7 @@ module MissionOptions {
         hoursActive = 24;
         },
         {
-        name = "Daily Free Flux";
+        name = "Daily Free Shards";
         missionType = #GamesCompleted; // Not tied to gameplay
         rewardType = #Shards;
         minReward = 10;
@@ -153,7 +249,7 @@ module MissionOptions {
         hoursActive = 24;
         },
         {
-        name = "Daily Free Reward";
+        name = "Daily Free Flux";
         missionType = #GamesCompleted; // Not tied to gameplay
         rewardType = #Flux;
         minReward = 4;
