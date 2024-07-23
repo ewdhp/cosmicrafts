@@ -159,7 +159,6 @@ shared actor class Cosmicrafts() {
     };
 
     func addProgressToMissions(user: Principal, missionsProgress: [MissionProgress]): async (Bool, Text) {
-        Debug.print("[addProgressToMissions] Fetching active mission IDs for user: " # Principal.toText(user));
         var userMissions = switch (userProgress.get(user)) {
             case (null) { [] };
             case (?missions) { missions };
@@ -209,7 +208,7 @@ shared actor class Cosmicrafts() {
         let missionOpt = await getMissionProgress(msg.caller, idMission);
         switch (missionOpt) {
             case (null) {
-                return (false, "Mission not found");
+                return (false, "Mission not assigned");
             };
             case (?mission) {
                 if (mission.finished and mission.finish_date <= mission.expiration) {
@@ -364,8 +363,8 @@ shared actor class Cosmicrafts() {
         return Buffer.toArray(activeMissions);
     };
 
-    public shared(msg) func assignNewMissionsToUser(): async () {
-        let user = msg.caller;
+    private func assignNewMissionsToUser(PlayerId: Principal): async () {
+        let user = PlayerId;
         Debug.print("[assignNewMissionsToUser] Assigning new missions to user: " # Principal.toText(user));
 
         var userMissions = switch (userProgress.get(user)) {
@@ -627,7 +626,7 @@ shared actor class Cosmicrafts() {
                 players.put(PlayerId, newPlayer);
 
                 // Assign new missions to the user
-                await assignNewMissionsToUser();
+                await assignNewMissionsToUser(PlayerId);
 
                 return (true, PlayerId);
             };
