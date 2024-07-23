@@ -56,7 +56,7 @@ async def register_user(semaphore, user, username, avatar_id):
                     raise Exception(f"Canister call failed: {output}")
                 
                 logging.info(f"Finished registration for {user}")
-                print(f"Registration successful: Username: {username}, Output: {output}")
+                #print(f"Registration successful: Username: {username}, Output: {output}")
                 break
             except Exception as e:
                 error_message = f"Error registering {user} on attempt {attempt + 1}: {e}"

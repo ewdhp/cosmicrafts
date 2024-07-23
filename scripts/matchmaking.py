@@ -8,7 +8,7 @@ import sys
 import signal
 
 # Set up logging
-#logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def execute_dfx_command(command, log_output=True):
     """Executes a shell command and logs the output."""
@@ -147,11 +147,17 @@ def claim_user_specific_reward(identity_name, mission_id):
     command = f'dfx canister call cosmicrafts claimUserSpecificReward \'({mission_id})\''
     return execute_dfx_command(command)
 
+def create_user_specific_hourly_mission(identity_name, principal):
+    """Creates a user-specific hourly mission for the current identity."""
+    switch_identity(identity_name)
+    command = f'dfx canister call cosmicrafts createUserSpecificHourlyMission \'(principal "{principal}")\''
+    return execute_dfx_command(command)
+
 def handle_mission_progress(identity_name):
     """Handles the mission progress after saving the finished game."""
     progress_result = get_current_mission_progress(identity_name)
     logging.info(f"Mission progress for {identity_name}: {progress_result}")
-####print(f"Mission progress for {identity_name}: {progress_result}")
+    #print(f"Mission progress for {identity_name}: {progress_result}")
 
     # Parse the progress result to check if the mission is finished
     if "record" in progress_result and "finished = true" in progress_result:
@@ -163,9 +169,13 @@ def handle_mission_progress(identity_name):
             print(f"Claim result for mission ID {mission_id} for {identity_name}: {claim_result}")
         else:
             logging.warning(f"Mission ID not found in progress result for {identity_name}")
-    else:
-        print(f"No completed mission to claim for {identity_name}")
-        logging.info(f"No completed mission to claim for {identity_name}")
+
+    # Always create a new user-specific hourly mission
+    principal = get_principal(identity_name)
+    hourly_mission_result = create_user_specific_hourly_mission(identity_name, principal)
+    logging.info(f"Created user-specific hourly mission for {identity_name}: {hourly_mission_result}")
+    print(f"Created user-specific hourly mission for {identity_name}: {hourly_mission_result}")
+
 
 def run_matches(num_matches, loop):
     """Run the specified number of matches."""
@@ -271,7 +281,7 @@ def run_matches(num_matches, loop):
 
             # Display basic stats after all stats are sent
             basic_stats = get_basic_stats(match_id1)
-###### print(f"Basic stats for match ID {match_id1}: {basic_stats}")
+            #print(f"Basic stats for match ID {match_id1}: {basic_stats}")
             logging.info(f"Basic stats for match ID {match_id1}: {basic_stats}")
 
             match_ids.clear()  # Clear match IDs after saving stats
