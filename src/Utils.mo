@@ -11,12 +11,63 @@ import Float "mo:base/Float";
 import Debug "mo:base/Debug";
 import Array "mo:base/Array";
 import Bool "mo:base/Bool";
+import Time "mo:base/Time";
+import Nat64 "mo:base/Nat64";
+import Text "mo:base/Text";
+import Int "mo:base/Int";
 import Types "Types";
 import TypesICRC7 "/icrc7/types";
 import TypesICRC1 "/icrc1/Types";
 
 
 module Utils {
+
+public func blobToHex(b: Blob): Text {
+    let hexChars: [Char] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+    var hex = "";
+    let byteArray = Blob.toArray(b);
+    for (i in Iter.range(0, byteArray.size() - 1)) {
+        let byte = byteArray[i];
+        hex #= Text.fromChar(hexChars[Nat8.toNat(byte >> 4)]) # Text.fromChar(hexChars[Nat8.toNat(byte & 0x0F)]);
+    };
+    return hex;
+};
+
+public func nat64ToHex(value: Nat64): Text {
+    // Convert Nat64 to hexadecimal
+    let hexChars: [Char] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+    var hex = "";
+    var tempValue = value;
+    for (i in Iter.range(0, 15)) { // Nat64 fits into 16 hex chars
+        let nibble = tempValue & 0xF;
+        hex := Text.fromChar(hexChars[Nat64.toNat(nibble)]) # hex;
+        tempValue := tempValue >> 4;
+    };
+    return hex;
+};
+
+public func arrayToHex(array: [Nat8]): Text {
+    let hexChars: [Char] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+    var hex = "";
+    for (i in Iter.range(0, array.size() - 1)) {
+        let byte = array[i];
+        hex #= Text.fromChar(hexChars[Nat8.toNat(byte >> 4)]) # Text.fromChar(hexChars[Nat8.toNat(byte & 0x0F)]);
+    };
+    return hex;
+};
+
+
+    public func generateUUID64() : async Nat {
+        let randomBytes = await Random.blob();
+        var uuid : Nat = 0;
+        let byteArray = Blob.toArray(randomBytes);
+        for (i in Iter.range(0, 7)) {
+            uuid := Nat.add(Nat.bitshiftLeft(uuid, 8), Nat8.toNat(byteArray[i]));
+        };
+        uuid := uuid % 2147483647;
+        return uuid;
+    };
+
     public func natToBytes(n: Nat): [Nat8] {
         var bytes = Buffer.Buffer<Nat8>(0);
         var num = n;
@@ -64,16 +115,7 @@ module Utils {
 
 
 
-    public func generateUUID64() : async Nat {
-        let randomBytes = await Random.blob();
-        var uuid : Nat = 0;
-        let byteArray = Blob.toArray(randomBytes);
-        for (i in Iter.range(0, 7)) {
-            uuid := Nat.add(Nat.bitshiftLeft(uuid, 8), Nat8.toNat(byteArray[i]));
-        };
-        uuid := uuid % 2147483647;
-        return uuid;
-    };
+
 
     public func calculateLevel(xp: Nat) : Nat {
         // Assuming each level requires twice as much XP as the previous one, starting with 100 XP for level 2.
