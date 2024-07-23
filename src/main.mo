@@ -656,7 +656,6 @@ var userMissionIDCounters: HashMap.HashMap<Principal, Nat> = HashMap.fromIter(_u
 
 
 // Function to create a user-specific hourly mission
-// Updated function to create a user-specific hourly mission
 public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text, Nat) {
     var userMissions = switch (userHourlyMissions.get(user)) {
         case (null) { [] };
@@ -720,26 +719,11 @@ public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text,
     // Assign the new mission to the user
     await assignUserSpecificMissionsToUser(user);
 
-    // Update userProgress with initial values for the new mission
-    var newMissionProgress: MissionsUser = {
-        id_mission = newMission.id;
-        total = newMission.total;
-        progress = 0;
-        finished = false;
-        finish_date = 0;
-        start_date = newMission.start_date;
-        expiration = newMission.end_date;
-        missionType = newMission.missionType;
-        reward_type = newMission.reward_type;
-        reward_amount = newMission.reward_amount;
-    };
-    userProgress.put(user, Array.append(userProgressList, [newMissionProgress]));
-
     return (true, "User-specific hourly mission created and assigned.", newMission.id);
 };
 
-
-public shared ({ caller }) func getCurrentMissionProgress() : async ?MissionsUser {
+// Function to get the current mission progress
+public shared ({ caller }) func getCurrentMissionProgress() : async ?Mission {
     var userMissions = switch (userHourlyMissions.get(caller)) {
         case (null) { [] };
         case (?missions) { missions };
@@ -752,21 +736,7 @@ public shared ({ caller }) func getCurrentMissionProgress() : async ?MissionsUse
     // Assuming we are only interested in the latest mission
     let latestMission = userMissions[userMissions.size() - 1];
 
-    // Create a MissionsUser type based on available mission data and add default values for missing fields
-    let missionProgress: MissionsUser = {
-        id_mission = latestMission.id;
-        total = latestMission.total;
-        progress = 0;  // Default value
-        finished = false;  // Default value
-        finish_date = 0;  // Default value
-        start_date = latestMission.start_date;
-        expiration = latestMission.end_date;  // Assuming end_date is used as expiration
-        missionType = latestMission.missionType;
-        reward_type = latestMission.reward_type;
-        reward_amount = latestMission.reward_amount;
-    };
-
-    return ?missionProgress;
+    return ?latestMission;
 };
 
 // Function to assign user-specific missions
@@ -1419,11 +1389,11 @@ public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Te
 
             let _progressMissions = Buffer.toArray(_progressMissionsBuffer);
 
-            Debug.print("[saveFinishedGame]Before addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
+           // Debug.print("[saveFinishedGame]Before addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
 
             let _progressAdded = await addProgressToMissions(msg.caller, _progressMissions);
 
-            Debug.print("[saveFinishedGame]After addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
+           // Debug.print("[saveFinishedGame]After addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
 
             _txt := _progressAdded.1;
 
