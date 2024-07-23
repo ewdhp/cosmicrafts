@@ -644,6 +644,10 @@ shared actor class Cosmicrafts() {
     };
 
 
+
+
+
+
     // New User renewal Mission System
 
 // New stable variables for user-specific missions
@@ -655,74 +659,6 @@ stable var _userMissionIDCounters: [(Principal, Nat)] = [];
 var userMissionIDCounters: HashMap.HashMap<Principal, Nat> = HashMap.fromIter(_userMissionIDCounters.vals(), 0, Principal.equal, Principal.hash);
 
 
-// Function to create a user-specific hourly mission
-public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text, Nat) {
-    var userMissions = switch (userHourlyMissions.get(user)) {
-        case (null) { [] };
-        case (?missions) { missions };
-    };
-
-    var userProgressList = switch (userProgress.get(user)) {
-        case (null) { [] };
-        case (?progress) { progress };
-    };
-
-    // Check the last mission for the user
-    if (userProgressList.size() > 0) {
-        let lastMissionProgress = userProgressList[userProgressList.size() - 1];
-        let currentTime = Nat64.fromNat(Int.abs(Time.now()));
-
-        if (currentTime <= lastMissionProgress.expiration and not lastMissionProgress.finished) {
-            return (false, "Current mission is still active", lastMissionProgress.id_mission);
-        }
-    };
-
-    // Check if the list needs to be shuffled
-    if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
-        await initializeShuffledHourlyMissions();
-    };
-
-    // Select the next mission from the shuffled list
-    let index = shuffledHourlyIndices[currentHourlyIndex];
-    let template = MissionOptions.hourlyMissions[index];
-
-    // Generate a random reward amount using the provided helper function
-    let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
-
-    // Move to the next index
-    currentHourlyIndex += 1;
-
-    // Get the user-specific mission ID counter
-    let missionIDCounter = switch (userMissionIDCounters.get(user)) {
-        case (null) { 0 };
-        case (?counter) { counter };
-    };
-
-    // Create the new mission
-    let now = Nat64.fromNat(Int.abs(Time.now()));
-    let newMission: Mission = {
-        id = missionIDCounter;
-        name = template.name;
-        missionType = template.missionType;
-        reward_type = template.rewardType;
-        reward_amount = rewardAmount;
-        start_date = now;
-        end_date = now + (template.hoursActive * ONE_HOUR);
-        total = template.total;
-    };
-
-    userMissionIDCounters.put(user, missionIDCounter + 1);
-
-    userMissions := Array.append(userMissions, [newMission]);
-    userHourlyMissions.put(user, userMissions);
-
-    // Assign the new mission to the user
-    await assignUserSpecificMissionsToUser(user);
-
-    return (true, "User-specific hourly mission created and assigned.", newMission.id);
-};
-
-// Function to get the current mission progress
 public shared ({ caller }) func getCurrentMissionProgress() : async ?MissionsUser {
     var userMissions = switch (userHourlyMissions.get(caller)) {
         case (null) { [] };
@@ -762,8 +698,7 @@ public shared ({ caller }) func getCurrentMissionProgress() : async ?MissionsUse
     return ?missionProgress;
 };
 
-// Function to assign user-specific missions
-private func assignUserSpecificMissionsToUser(user: Principal): async () {
+func assignUserSpecificMissionsToUser(user: Principal): async () {
     var userMissions = switch (userHourlyMissions.get(user)) {
         case (null) { [] };
         case (?missions) { missions };
@@ -799,6 +734,8 @@ private func assignUserSpecificMissionsToUser(user: Principal): async () {
 
 // Updated `claimUserSpecificReward` function
 public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Text) {
+    Debug.print("Starting claimUserSpecificReward for mission ID: " # Nat.toText(idMission));
+
     let userMissionsOpt = userHourlyMissions.get(msg.caller);
     let missionOpt = switch (userMissionsOpt) {
         case (null) { null };
@@ -809,26 +746,32 @@ public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Te
 
     switch (missionOpt) {
         case (null) {
+            Debug.print("Mission not found for ID: " # Nat.toText(idMission));
             return (false, "User-specific mission not found");
         };
         case (?mission) {
             let currentTime: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
 
-            // Check if the mission has expired
+            // Debug statement
+            Debug.print("Checking if the mission has expired for mission ID: " # Nat.toText(idMission));
             if (currentTime > mission.end_date) {
+                Debug.print("Mission has expired for mission ID: " # Nat.toText(idMission));
                 return (false, "Mission has expired");
             };
 
-            // Check if the mission reward has already been claimed
+            // Debug statement
+            Debug.print("Checking if the mission reward has already been claimed for mission ID: " # Nat.toText(idMission));
             let userClaimedRewards = switch (claimedRewards.get(msg.caller)) {
                 case (null) { [] };
                 case (?rewards) { rewards };
             };
             if (Array.find<Nat>(userClaimedRewards, func(r) { r == idMission }) != null) {
+                Debug.print("Mission reward has already been claimed for mission ID: " # Nat.toText(idMission));
                 return (false, "Mission reward has already been claimed");
             };
 
-            // Check if the mission is finished
+            // Debug statement
+            Debug.print("Checking if the mission is finished for mission ID: " # Nat.toText(idMission));
             let userProgressOpt = userProgress.get(msg.caller);
             let missionProgressOpt = switch (userProgressOpt) {
                 case (null) { null };
@@ -839,22 +782,28 @@ public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Te
 
             switch (missionProgressOpt) {
                 case (null) {
+                    Debug.print("Mission not assigned for mission ID: " # Nat.toText(idMission));
                     return (false, "Mission not assigned");
                 };
                 case (?missionProgress) {
                     if (not missionProgress.finished) {
+                        Debug.print("Mission not finished for mission ID: " # Nat.toText(idMission));
                         return (false, "Mission not finished");
                     };
 
-                    // Check if the finish date is valid (should be before or equal to expiration date)
+                    // Debug statement
+                    Debug.print("Checking if the finish date is valid for mission ID: " # Nat.toText(idMission));
                     if (missionProgress.finish_date > mission.end_date) {
+                        Debug.print("Mission finish date is after the expiration date for mission ID: " # Nat.toText(idMission));
                         return (false, "Mission finish date is after the expiration date");
                     };
 
-                    // If all checks pass, mint the rewards
+                    // Debug statement
+                    Debug.print("Minting the rewards for mission ID: " # Nat.toText(idMission));
                     let (success, message) = await mintRewards(missionProgress, msg.caller);
                     if (success) {
-                        // Remove claimed reward from userProgress and add it to claimedRewards
+                        // Debug statement
+                        Debug.print("Updating user progress and claimed rewards for mission ID: " # Nat.toText(idMission));
                         var userMissions = switch (userProgress.get(msg.caller)) {
                             case (null) { [] };
                             case (?missions) { missions };
@@ -870,14 +819,18 @@ public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Te
                         // Add claimed reward to claimedRewards
                         claimedRewards.put(msg.caller, Array.append(userClaimedRewards, [idMission]));
 
-                        // Create a new user-specific hourly mission for the user
+                        // Debug statement
+                        Debug.print("Creating a new user-specific hourly mission for mission ID: " # Nat.toText(idMission));
                         let (newMissionSuccess, newMissionMessage, newMissionID) = await createUserSpecificHourlyMission(msg.caller);
                         if (newMissionSuccess) {
+                            Debug.print("New mission created with ID: " # Nat.toText(newMissionID));
                             return (true, message # " New user-specific hourly mission created with ID: " # Nat.toText(newMissionID));
                         } else {
+                            Debug.print("Failed to create new mission: " # newMissionMessage);
                             return (true, message # " However, failed to create a new user-specific hourly mission: " # newMissionMessage);
                         }
                     } else {
+                        Debug.print("Failed to mint rewards: " # message);
                         return (success, message);
                     };
                 };
@@ -885,6 +838,93 @@ public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Te
         };
     };
 };
+
+// Function to create a user-specific hourly mission
+public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text, Nat) {
+    Debug.print("Starting createUserSpecificHourlyMission");
+
+    var userMissions = switch (userHourlyMissions.get(user)) {
+        case (null) { [] };
+        case (?missions) { missions };
+    };
+
+    var userProgressList = switch (userProgress.get(user)) {
+        case (null) { [] };
+        case (?progress) { progress };
+    };
+
+    // Debug logging
+    Debug.print("User Missions: " # debug_show(userMissions));
+    Debug.print("User Progress List: " # debug_show(userProgressList));
+
+    // Check the last mission for the user
+    if (userProgressList.size() > 0) {
+        let lastMissionProgress = userProgressList[userProgressList.size() - 1];
+        let currentTime = Nat64.fromNat(Int.abs(Time.now()));
+
+        // Debug logging
+        Debug.print("Last Mission Progress: " # debug_show(lastMissionProgress));
+        Debug.print("Current Time: " # debug_show(currentTime));
+
+        // Expiration check logic
+        if (not lastMissionProgress.finished and currentTime <= lastMissionProgress.expiration) {
+            Debug.print("Current mission is still active: " # debug_show(lastMissionProgress));
+            return (false, "Current mission is still active", lastMissionProgress.id_mission);
+        } else {
+            Debug.print("Current mission is not active or is finished");
+        }
+    };
+
+    // Check if the list needs to be shuffled
+    if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
+        await initializeShuffledHourlyMissions();
+    };
+
+    // Select the next mission from the shuffled list
+    let index = shuffledHourlyIndices[currentHourlyIndex];
+    let template = MissionOptions.hourlyMissions[index];
+
+    // Generate a random reward amount using the provided helper function
+    let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
+
+    // Move to the next index
+    currentHourlyIndex += 1;
+
+    // Get the user-specific mission ID counter
+    let missionIDCounter = switch (userMissionIDCounters.get(user)) {
+        case (null) { 0 };
+        case (?counter) { counter };
+    };
+
+    // Create the new mission
+    let now = Nat64.fromNat(Int.abs(Time.now()));
+    let newMission: Mission = {
+        id = missionIDCounter;
+        name = template.name;
+        missionType = template.missionType;
+        reward_type = template.rewardType;
+        reward_amount = rewardAmount;
+        start_date = now;
+        end_date = now + (template.hoursActive * ONE_HOUR);
+        total = template.total;
+    };
+
+    // Debug logging
+    Debug.print("New Mission: " # debug_show(newMission));
+
+    userMissionIDCounters.put(user, missionIDCounter + 1);
+
+    userMissions := Array.append(userMissions, [newMission]);
+    userHourlyMissions.put(user, userMissions);
+
+    // Assign the new mission to the user
+    await assignUserSpecificMissionsToUser(user);
+
+    Debug.print("Mission created and assigned successfully");
+
+    return (true, "User-specific hourly mission created and assigned.", newMission.id);
+};
+
 
 
 

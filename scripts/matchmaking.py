@@ -151,7 +151,7 @@ def handle_mission_progress(identity_name):
     """Handles the mission progress after saving the finished game."""
     progress_result = get_current_mission_progress(identity_name)
     logging.info(f"Mission progress for {identity_name}: {progress_result}")
-    print(f"Mission progress for {identity_name}: {progress_result}")
+####print(f"Mission progress for {identity_name}: {progress_result}")
 
     # Parse the progress result to check if the mission is finished
     if "record" in progress_result and "finished = true" in progress_result:
@@ -271,7 +271,7 @@ def run_matches(num_matches, loop):
 
             # Display basic stats after all stats are sent
             basic_stats = get_basic_stats(match_id1)
-            print(f"Basic stats for match ID {match_id1}: {basic_stats}")
+###### print(f"Basic stats for match ID {match_id1}: {basic_stats}")
             logging.info(f"Basic stats for match ID {match_id1}: {basic_stats}")
 
             match_ids.clear()  # Clear match IDs after saving stats
