@@ -133,6 +133,10 @@ shared actor class Cosmicrafts() {
     var userProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_userProgress.vals(), 0, Principal.equal, Principal.hash);
     var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
 
+    let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000;
+    let ONE_DAY: Nat64 = 60 * 60 * 24 * 1_000_000_000;
+    let ONE_WEEK: Nat64 = 60 * 60 * 24 * 7 * 1_000_000_000; // 60 secs * 60 minutes * 24 hours * 7
+    
     func createMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hours_active: Nat64): async (Bool, Text, Nat) {
         let id = missionID;
         missionID += 1;
@@ -211,33 +215,52 @@ shared actor class Cosmicrafts() {
                 return (false, "Mission not assigned");
             };
             case (?mission) {
-                if (mission.finished and mission.finish_date <= mission.expiration) {
-                    let (success, message) = await mintRewards(mission, msg.caller);
-                    if (success) {
-                        // Remove claimed reward from userProgress and add it to claimedRewards
-                        var userMissions = switch (userProgress.get(msg.caller)) {
-                            case (null) { [] };
-                            case (?missions) { missions };
-                        };
-                        let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
-                        for (r in userMissions.vals()) {
-                            if (r.id_mission != idMission) {
-                                updatedMissions.add(r);
-                            }
-                        };
-                        userProgress.put(msg.caller, Buffer.toArray(updatedMissions));
+                let currentTime: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
 
-                        // Add claimed reward to claimedRewards
-                        var userClaimedRewards = switch (claimedRewards.get(msg.caller)) {
-                            case (null) { [] };
-                            case (?missions) { missions };
-                        };
-                        claimedRewards.put(msg.caller, Array.append(userClaimedRewards, [idMission]));
-                    };
-                    return (success, message);
-                } else {
-                    return (false, "Mission not finished or expired");
+                // Check if the mission has expired
+                if (currentTime > mission.expiration) {
+                    return (false, "Mission has expired");
                 };
+
+                // Check if the mission reward has already been claimed
+                let userClaimedRewards = switch (claimedRewards.get(msg.caller)) {
+                    case (null) { [] };
+                    case (?rewards) { rewards };
+                };
+                if (Array.find<Nat>(userClaimedRewards, func(r) { r == idMission }) != null) {
+                    return (false, "Mission reward has already been claimed");
+                };
+
+                // Check if the mission is finished
+                if (not mission.finished) {
+                    return (false, "Mission not finished");
+                };
+
+                // Check if the finish date is valid (should be before or equal to expiration date)
+                if (mission.finish_date > mission.expiration) {
+                    return (false, "Mission finish date is after the expiration date");
+                };
+
+                // If all checks pass, mint the rewards
+                let (success, message) = await mintRewards(mission, msg.caller);
+                if (success) {
+                    // Remove claimed reward from userProgress and add it to claimedRewards
+                    var userMissions = switch (userProgress.get(msg.caller)) {
+                        case (null) { [] };
+                        case (?missions) { missions };
+                    };
+                    let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
+                    for (r in userMissions.vals()) {
+                        if (r.id_mission != idMission) {
+                            updatedMissions.add(r);
+                        }
+                    };
+                    userProgress.put(msg.caller, Buffer.toArray(updatedMissions));
+
+                    // Add claimed reward to claimedRewards
+                    claimedRewards.put(msg.caller, Array.append(userClaimedRewards, [idMission]));
+                };
+                return (success, message);
             };
         };
     };
@@ -418,11 +441,29 @@ shared actor class Cosmicrafts() {
         Debug.print("[assignNewMissionsToUser] User missions after update: " # debug_show(userProgress.get(user)));
     };
 
-    // New Concurrent Mission System
+    public shared ({ caller }) func getMissions() : async [MissionsUser] {
+        // Step 1: Assign new missions to the user
+        await assignNewMissionsToUser(caller);
 
-    let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000;
-    let ONE_DAY: Nat64 = 60 * 60 * 24 * 1_000_000_000;
-    let ONE_WEEK: Nat64 = 60 * 60 * 24 * 7 * 1_000_000_000;
+        // Step 2: Search for active missions assigned to the user
+        let activeMissions: [MissionsUser] = await searchActiveMissions(caller);
+
+        // Step 3: Get progress for each active mission
+        let missionsWithProgress = Buffer.Buffer<MissionsUser>(activeMissions.size());
+        for (mission in activeMissions.vals()) {
+            let missionProgress = await getMissionProgress(caller, mission.id_mission);
+            switch (missionProgress) {
+                case (null) {};
+                case (?progress) {
+                    missionsWithProgress.add(progress);
+                };
+            };
+        };
+
+        return Buffer.toArray(missionsWithProgress);
+    };
+
+    // New Concurrent Mission System
 
     var lastHourlyMissionCreationTime: Nat64 = 0;
     var lastDailyMissionCreationTime: Nat64 = 0;
