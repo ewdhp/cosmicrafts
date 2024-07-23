@@ -8,7 +8,7 @@ import sys
 import signal
 
 # Set up logging
-# logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def execute_dfx_command(command, log_output=True):
     """Executes a shell command and logs the output."""
@@ -111,7 +111,6 @@ def parse_match_id(search_result):
     else:
         raise ValueError("Match ID not found in the search result")
 
-
 def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
     """Generates randomized game statistics using Nat values."""
     stats = {
@@ -135,6 +134,38 @@ def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
         "xpEarned": random.randint(1000, 25000)       # Changed to random integer
     }
     return stats
+
+def get_current_mission_progress(identity_name):
+    """Gets the current mission progress for the current identity."""
+    switch_identity(identity_name)
+    command = 'dfx canister call cosmicrafts getCurrentMissionProgress'
+    return execute_dfx_command(command)
+
+def claim_user_specific_reward(identity_name, mission_id):
+    """Claims the user-specific reward for the given mission ID."""
+    switch_identity(identity_name)
+    command = f'dfx canister call cosmicrafts claimUserSpecificReward \'({mission_id})\''
+    return execute_dfx_command(command)
+
+def handle_mission_progress(identity_name):
+    """Handles the mission progress after saving the finished game."""
+    progress_result = get_current_mission_progress(identity_name)
+    logging.info(f"Mission progress for {identity_name}: {progress_result}")
+    print(f"Mission progress for {identity_name}: {progress_result}")
+
+    # Parse the progress result to check if the mission is finished
+    if "record" in progress_result and "finished = true" in progress_result:
+        match = re.search(r'id_mission = (\d+) : nat', progress_result)
+        if match:
+            mission_id = match.group(1)
+            claim_result = claim_user_specific_reward(identity_name, mission_id)
+            logging.info(f"Claim result for mission ID {mission_id} for {identity_name}: {claim_result}")
+            print(f"Claim result for mission ID {mission_id} for {identity_name}: {claim_result}")
+        else:
+            logging.warning(f"Mission ID not found in progress result for {identity_name}")
+    else:
+        print(f"No completed mission to claim for {identity_name}")
+        logging.info(f"No completed mission to claim for {identity_name}")
 
 def run_matches(num_matches, loop):
     """Run the specified number of matches."""
@@ -228,6 +259,10 @@ def run_matches(num_matches, loop):
                     save_finished_game(player, match_id, stats)
                     print(f"Statistics sent for {player} in match {match_id}")
                     logging.info(f"Statistics saved for {player} in match {match_id}")
+
+                    # Handle mission progress and claiming rewards
+                    handle_mission_progress(player)
+
                 except Exception as e:
                     error_message = f"Error saving statistics for {player} in match {match_id}: {e}"
                     logging.error(error_message)

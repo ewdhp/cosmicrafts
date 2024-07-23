@@ -167,7 +167,7 @@ shared actor class Cosmicrafts() {
             case (null) { [] };
             case (?missions) { missions };
         };
-        Debug.print("[addProgressToMissions] User missions: " # debug_show(userMissions));
+        // Debug.print("[addProgressToMissions] User missions: " # debug_show(userMissions));
 
         if (missionsProgress.size() == 0) {
             return (false, "No progress data provided");
@@ -204,7 +204,7 @@ shared actor class Cosmicrafts() {
         };
 
         userProgress.put(user, Buffer.toArray(updatedMissions));
-        Debug.print("[addProgressToMissions] Updated user missions: " # debug_show(userProgress.get(user)));
+       // Debug.print("[addProgressToMissions] Updated user missions: " # debug_show(userProgress.get(user)));
         return (true, "Progress added successfully");
     };
 
@@ -761,7 +761,6 @@ public shared ({ caller }) func getCurrentMissionProgress() : async ?MissionsUse
 
     return ?missionProgress;
 };
-
 
 // Function to assign user-specific missions
 private func assignUserSpecificMissionsToUser(user: Principal): async () {
