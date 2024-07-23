@@ -20,7 +20,7 @@ def execute_dfx_command(command):
 
 def create_identity(identity_name):
     """Creates a new DFX identity with the given name."""
-    command = f"dfx identity new {identity_name}"
+    command = f"dfx identity new {identity_name} --disable-encryption"
     return execute_dfx_command(command)
 
 def main():

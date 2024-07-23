@@ -1,5 +1,4 @@
 import Float "mo:base/Float";
-import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
@@ -79,6 +78,26 @@ shared actor class Cosmicrafts() {
   public type TokenID = Types.TokenID;
 
 
+public func generateULID(): async Text {
+    // Get the current timestamp in UNIX epoch format
+    let timestamp: Nat64 = Nat64.fromIntWrap(Time.now());
+
+    // Generate a random component
+    let randomComponent: Blob = await Random.blob();
+    
+    // Convert the Blob to an array and take the first 5 bytes
+    let randomArray: [Nat8] = Blob.toArray(randomComponent);
+    let randomBlob: [Nat8] = Array.subArray(randomArray, 0, 3);
+
+    // Convert the timestamp and random component to hexadecimal strings
+    let timestampHex: Text = Utils.nat64ToHex(timestamp);
+    let randomHex: Text = Utils.arrayToHex(randomBlob);
+
+    // Combine the timestamp and random component to form the ULID
+    return timestampHex # "-" # randomHex;
+};
+
+
 // Admin Tools
 
     // Define the admin principal
@@ -109,52 +128,8 @@ shared actor class Cosmicrafts() {
         }
     };
 
-    // Utils
-    func _natEqual(a : Nat, b : Nat) : Bool {
-        return a == b;
-    };
-
-    func _natHash(a: Nat): Hash.Hash {
-        return Utils._natHash(a);
-    };
 
 // Missions
-
-
-public func generateULID(): async Text {
-    // Get the current timestamp in UNIX epoch format
-    let timestamp: Nat64 = Nat64.fromIntWrap(Time.now());
-
-    // Generate a random component
-    let randomComponent: Blob = await Random.blob();
-
-    // Convert the Blob to an array and take the first 10 bytes
-    let randomArray: [Nat8] = Blob.toArray(randomComponent);
-    let randomComponent10Bytes: [Nat8] = Array.subArray(randomArray, 0, 10);
-
-    // Convert the timestamp and random component to hexadecimal strings
-    let timestampHex: Text = Utils.nat64ToHex(timestamp);
-    let randomHex: Text = Utils.arrayToHex(randomComponent10Bytes);
-
-    // Combine the timestamp and random component to form the ULID
-    return timestampHex # "-" # randomHex;
-};
-
-public func generateMissionID(): async Text {
-    // Get the current timestamp in UNIX epoch format (seconds)
-    let timestamp: Nat64 = Nat64.fromIntWrap(Int.abs(Time.now()));
-
-    // Generate a small random component
-    let randomComponent: Blob = await Random.blob();
-
-    // Convert the timestamp and random component to hexadecimal strings
-    let timestampHex: Text = Utils.nat64ToHex(timestamp);
-    let randomHex: Text = Utils.blobToHex(randomComponent);
-
-    // Combine the timestamp and random component to form the mission ID
-    return timestampHex # "-" # randomHex;
-};
-
 
     // Stable Variables
     stable var missionID: Nat = 1;
@@ -164,8 +139,8 @@ public func generateMissionID(): async Text {
     stable var _claimedRewards: [(Principal, [Nat])] = [];
 
     // HashMaps
-    var missions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_missions.vals(), 0, _natEqual, _natHash);
-    var activeMissions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_activeMissions.vals(), 0, _natEqual, _natHash);
+    var missions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_missions.vals(), 0, Utils._natEqual, Utils._natHash);
+    var activeMissions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_activeMissions.vals(), 0, Utils._natEqual, Utils._natHash);
     var userProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_userProgress.vals(), 0, Principal.equal, Principal.hash);
     var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
 
@@ -307,7 +282,7 @@ public func generateMissionID(): async Text {
             case (?history) { history };
         };
 
-        if (Utils.contains(claimHistory, mission.id_mission, _natEqual)) {
+        if (Utils.arrayContains(claimHistory, mission.id_mission, Utils._natEqual)) {
             return (false, "Mission already claimed");
         };
 
@@ -414,7 +389,7 @@ public func generateMissionID(): async Text {
 
         let activeMissions = Buffer.Buffer<MissionsUser>(0);
         for (mission in userMissions.vals()) {
-            if (mission.expiration >= now and not Utils.contains(userClaimedRewards, mission.id_mission, _natEqual)) {
+            if (mission.expiration >= now and not Utils.arrayContains(userClaimedRewards, mission.id_mission, Utils._natEqual)) {
                 activeMissions.add(mission);
             }
         };
@@ -443,7 +418,7 @@ public func generateMissionID(): async Text {
 
         // Remove expired or claimed missions
         for (mission in userMissions.vals()) {
-            if (mission.expiration >= now and not Utils.contains(claimedRewardsForUser, mission.id_mission, _natEqual)) {
+            if (mission.expiration >= now and not Utils.arrayContains(claimedRewardsForUser, mission.id_mission, Utils._natEqual)) {
                 buffer.add(mission);
             }
         };
@@ -456,7 +431,7 @@ public func generateMissionID(): async Text {
 
         // Add new active missions to the user
         for ((id, mission) in activeMissions.entries()) {
-            if (not Utils.contains(Buffer.toArray(currentMissionIds), id, _natEqual) and not Utils.contains(claimedRewardsForUser, id, _natEqual)) {
+            if (not Utils.arrayContains(Buffer.toArray(currentMissionIds), id, Utils._natEqual) and not Utils.arrayContains(claimedRewardsForUser, id, Utils._natEqual)) {
                 buffer.add({
                     id_mission = id;
                     reward_amount = mission.reward_amount;
@@ -1176,16 +1151,16 @@ public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Te
   let ANON_PRINCIPAL: Principal = Principal.fromText("2vxsx-fae");
 
   stable var _basicStats: [(MatchID, BasicStats)] = [];
-  var basicStats: HashMap.HashMap<MatchID, BasicStats> = HashMap.fromIter(_basicStats.vals(), 0, _natEqual, _natHash);
+  var basicStats: HashMap.HashMap<MatchID, BasicStats> = HashMap.fromIter(_basicStats.vals(), 0, Utils._natEqual, Utils._natHash);
 
   stable var _playerGamesStats: [(PlayerId, PlayerGamesStats)] = [];
   var playerGamesStats: HashMap.HashMap<PlayerId, PlayerGamesStats> = HashMap.fromIter(_playerGamesStats.vals(), 0, Principal.equal, Principal.hash);
 
   stable var _onValidation: [(MatchID, BasicStats)] = [];
-  var onValidation: HashMap.HashMap<MatchID, BasicStats> = HashMap.fromIter(_onValidation.vals(), 0, _natEqual, _natHash);
+  var onValidation: HashMap.HashMap<MatchID, BasicStats> = HashMap.fromIter(_onValidation.vals(), 0, Utils._natEqual, Utils._natHash);
 
   stable var _countedMatches: [(MatchID, Bool)] = [];
-  var countedMatches: HashMap.HashMap<MatchID, Bool> = HashMap.fromIter(_countedMatches.vals(), 0, _natEqual, _natHash);
+  var countedMatches: HashMap.HashMap<MatchID, Bool> = HashMap.fromIter(_countedMatches.vals(), 0, Utils._natEqual, Utils._natHash);
 
 
   stable var overallStats: OverallStats = {
@@ -1774,16 +1749,16 @@ public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Te
   var inactiveSeconds : Nat64 = 30 * ONE_SECOND;
 
   stable var _searching : [(MatchID, MatchData)] = [];
-  var searching : HashMap.HashMap<MatchID, MatchData> = HashMap.fromIter(_searching.vals(), 0, _natEqual, _natHash);
+  var searching : HashMap.HashMap<MatchID, MatchData> = HashMap.fromIter(_searching.vals(), 0, Utils._natEqual, Utils._natHash);
 
   stable var _playerStatus : [(PlayerId, MMPlayerStatus)] = [];
   var playerStatus : HashMap.HashMap<PlayerId, MMPlayerStatus> = HashMap.fromIter(_playerStatus.vals(), 0, Principal.equal, Principal.hash);
 
   stable var _inProgress : [(MatchID, MatchData)] = [];
-  var inProgress : HashMap.HashMap<MatchID, MatchData> = HashMap.fromIter(_inProgress.vals(), 0, _natEqual, _natHash);
+  var inProgress : HashMap.HashMap<MatchID, MatchData> = HashMap.fromIter(_inProgress.vals(), 0, Utils._natEqual, Utils._natHash);
 
   stable var _finishedGames : [(MatchID, MatchData)] = [];
-  var finishedGames : HashMap.HashMap<MatchID, MatchData> = HashMap.fromIter(_finishedGames.vals(), 0, _natEqual, _natHash);
+  var finishedGames : HashMap.HashMap<MatchID, MatchData> = HashMap.fromIter(_finishedGames.vals(), 0, Utils._natEqual, Utils._natHash);
 
     public shared (msg) func setPlayerActive() : async Bool {
         assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
