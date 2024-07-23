@@ -723,21 +723,45 @@ public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text,
 };
 
 // Function to get the current mission progress
-public shared ({ caller }) func getCurrentMissionProgress() : async ?Mission {
+public shared ({ caller }) func getCurrentMissionProgress() : async ?MissionsUser {
     var userMissions = switch (userHourlyMissions.get(caller)) {
         case (null) { [] };
         case (?missions) { missions };
     };
 
-    if (userMissions.size() == 0) {
+    var userProgressList = switch (userProgress.get(caller)) {
+        case (null) { [] };
+        case (?progress) { progress };
+    };
+
+    if (userMissions.size() == 0 or userProgressList.size() == 0) {
         return null;
     };
 
     // Assuming we are only interested in the latest mission
     let latestMission = userMissions[userMissions.size() - 1];
+    let latestMissionProgress = userProgressList[userProgressList.size() - 1];
 
-    return ?latestMission;
+    if (latestMission.id != latestMissionProgress.id_mission) {
+        return null;
+    };
+
+    let missionProgress: MissionsUser = {
+        id_mission = latestMission.id;
+        total = latestMission.total;
+        progress = latestMissionProgress.progress;
+        finished = latestMissionProgress.finished;
+        finish_date = latestMissionProgress.finish_date;
+        start_date = latestMission.start_date;
+        expiration = latestMission.end_date;
+        missionType = latestMission.missionType;
+        reward_type = latestMission.reward_type;
+        reward_amount = latestMission.reward_amount;
+    };
+
+    return ?missionProgress;
 };
+
 
 // Function to assign user-specific missions
 private func assignUserSpecificMissionsToUser(user: Principal): async () {
