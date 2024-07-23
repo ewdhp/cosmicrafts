@@ -586,6 +586,27 @@ shared actor class Cosmicrafts() {
         return results;
     };
 
+    func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
+        let randomBytes = await Random.blob(); // Generating random bytes
+        let byteArray = Blob.toArray(randomBytes);
+        let randomByte = byteArray[0]; // Use the first byte for randomness
+        let range = maxReward - minReward + 1;
+        let randomValue = Nat8.toNat(randomByte) % range;
+        return minReward + randomValue;
+    };
+
+    func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
+        let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
+        return await createMission(
+            template.name,
+            template.missionType,
+            template.rewardType,
+            rewardAmount,
+            template.total,
+            template.hoursActive
+        );
+    };
+
     func createMissionsPeriodically(): async () {
         let now = Nat64.fromIntWrap(Time.now());
         Debug.print("[createMissionsPeriodically] Current time: " # Nat64.toText(now));
@@ -622,26 +643,258 @@ shared actor class Cosmicrafts() {
         });
     };
 
-    func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
-        let randomBytes = await Random.blob(); // Generating random bytes
-        let byteArray = Blob.toArray(randomBytes);
-        let randomByte = byteArray[0]; // Use the first byte for randomness
-        let range = maxReward - minReward + 1;
-        let randomValue = Nat8.toNat(randomByte) % range;
-        return minReward + randomValue;
+
+    // New User renewal Mission System
+
+// New stable variables for user-specific missions
+stable var _userHourlyMissions: [(Principal, [Mission])] = [];
+var userHourlyMissions: HashMap.HashMap<Principal, [Mission]> = HashMap.fromIter(_userHourlyMissions.vals(), 0, Principal.equal, Principal.hash);
+
+// Stable variable for tracking user-specific mission IDs
+stable var _userMissionIDCounters: [(Principal, Nat)] = [];
+var userMissionIDCounters: HashMap.HashMap<Principal, Nat> = HashMap.fromIter(_userMissionIDCounters.vals(), 0, Principal.equal, Principal.hash);
+
+
+// Function to create a user-specific hourly mission
+// Updated function to create a user-specific hourly mission
+public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text, Nat) {
+    var userMissions = switch (userHourlyMissions.get(user)) {
+        case (null) { [] };
+        case (?missions) { missions };
     };
 
-    func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
-        let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
-        return await createMission(
-            template.name,
-            template.missionType,
-            template.rewardType,
-            rewardAmount,
-            template.total,
-            template.hoursActive
-        );
+    var userProgressList = switch (userProgress.get(user)) {
+        case (null) { [] };
+        case (?progress) { progress };
     };
+
+    // Check the last mission for the user
+    if (userProgressList.size() > 0) {
+        let lastMissionProgress = userProgressList[userProgressList.size() - 1];
+        let currentTime = Nat64.fromNat(Int.abs(Time.now()));
+
+        if (currentTime <= lastMissionProgress.expiration and not lastMissionProgress.finished) {
+            return (false, "Current mission is still active", lastMissionProgress.id_mission);
+        }
+    };
+
+    // Check if the list needs to be shuffled
+    if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
+        await initializeShuffledHourlyMissions();
+    };
+
+    // Select the next mission from the shuffled list
+    let index = shuffledHourlyIndices[currentHourlyIndex];
+    let template = MissionOptions.hourlyMissions[index];
+
+    // Generate a random reward amount using the provided helper function
+    let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
+
+    // Move to the next index
+    currentHourlyIndex += 1;
+
+    // Get the user-specific mission ID counter
+    let missionIDCounter = switch (userMissionIDCounters.get(user)) {
+        case (null) { 0 };
+        case (?counter) { counter };
+    };
+
+    // Create the new mission
+    let now = Nat64.fromNat(Int.abs(Time.now()));
+    let newMission: Mission = {
+        id = missionIDCounter;
+        name = template.name;
+        missionType = template.missionType;
+        reward_type = template.rewardType;
+        reward_amount = rewardAmount;
+        start_date = now;
+        end_date = now + (template.hoursActive * ONE_HOUR);
+        total = template.total;
+    };
+
+    userMissionIDCounters.put(user, missionIDCounter + 1);
+
+    userMissions := Array.append(userMissions, [newMission]);
+    userHourlyMissions.put(user, userMissions);
+
+    // Assign the new mission to the user
+    await assignUserSpecificMissionsToUser(user);
+
+    // Update userProgress with initial values for the new mission
+    var newMissionProgress: MissionsUser = {
+        id_mission = newMission.id;
+        total = newMission.total;
+        progress = 0;
+        finished = false;
+        finish_date = 0;
+        start_date = newMission.start_date;
+        expiration = newMission.end_date;
+        missionType = newMission.missionType;
+        reward_type = newMission.reward_type;
+        reward_amount = newMission.reward_amount;
+    };
+    userProgress.put(user, Array.append(userProgressList, [newMissionProgress]));
+
+    return (true, "User-specific hourly mission created and assigned.", newMission.id);
+};
+
+
+public shared ({ caller }) func getCurrentMissionProgress() : async ?MissionsUser {
+    var userMissions = switch (userHourlyMissions.get(caller)) {
+        case (null) { [] };
+        case (?missions) { missions };
+    };
+
+    if (userMissions.size() == 0) {
+        return null;
+    };
+
+    // Assuming we are only interested in the latest mission
+    let latestMission = userMissions[userMissions.size() - 1];
+
+    // Create a MissionsUser type based on available mission data and add default values for missing fields
+    let missionProgress: MissionsUser = {
+        id_mission = latestMission.id;
+        total = latestMission.total;
+        progress = 0;  // Default value
+        finished = false;  // Default value
+        finish_date = 0;  // Default value
+        start_date = latestMission.start_date;
+        expiration = latestMission.end_date;  // Assuming end_date is used as expiration
+        missionType = latestMission.missionType;
+        reward_type = latestMission.reward_type;
+        reward_amount = latestMission.reward_amount;
+    };
+
+    return ?missionProgress;
+};
+
+// Function to assign user-specific missions
+private func assignUserSpecificMissionsToUser(user: Principal): async () {
+    var userMissions = switch (userHourlyMissions.get(user)) {
+        case (null) { [] };
+        case (?missions) { missions };
+    };
+
+    var userProgressList = switch (userProgress.get(user)) {
+        case (null) { [] };
+        case (?progress) { progress };
+    };
+
+    let now = Nat64.fromNat(Int.abs(Time.now()));
+    let buffer = Buffer.Buffer<Types.MissionsUser>(userProgressList.size());
+
+    for (mission in userMissions.vals()) {
+        if (mission.end_date >= now) {
+            buffer.add({
+                id_mission = mission.id;
+                reward_amount = mission.reward_amount;
+                start_date = mission.start_date;
+                progress = 0;  // Initially, the progress is 0 for a new mission
+                finish_date = 0;  // Initially, the finish date is 0 for a new mission
+                expiration = mission.end_date;
+                missionType = mission.missionType;
+                finished = false;  // Initially, the mission is not finished
+                reward_type = mission.reward_type;
+                total = mission.total;
+            });
+        }
+    };
+
+    userProgress.put(user, Buffer.toArray(buffer));
+};
+
+// Updated `claimUserSpecificReward` function
+public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Text) {
+    let userMissionsOpt = userHourlyMissions.get(msg.caller);
+    let missionOpt = switch (userMissionsOpt) {
+        case (null) { null };
+        case (?missions) {
+            Array.find<Mission>(missions, func(mission) { mission.id == idMission });
+        };
+    };
+
+    switch (missionOpt) {
+        case (null) {
+            return (false, "User-specific mission not found");
+        };
+        case (?mission) {
+            let currentTime: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+
+            // Check if the mission has expired
+            if (currentTime > mission.end_date) {
+                return (false, "Mission has expired");
+            };
+
+            // Check if the mission reward has already been claimed
+            let userClaimedRewards = switch (claimedRewards.get(msg.caller)) {
+                case (null) { [] };
+                case (?rewards) { rewards };
+            };
+            if (Array.find<Nat>(userClaimedRewards, func(r) { r == idMission }) != null) {
+                return (false, "Mission reward has already been claimed");
+            };
+
+            // Check if the mission is finished
+            let userProgressOpt = userProgress.get(msg.caller);
+            let missionProgressOpt = switch (userProgressOpt) {
+                case (null) { null };
+                case (?progressList) {
+                    Array.find<MissionsUser>(progressList, func(progress) { progress.id_mission == idMission });
+                };
+            };
+
+            switch (missionProgressOpt) {
+                case (null) {
+                    return (false, "Mission not assigned");
+                };
+                case (?missionProgress) {
+                    if (not missionProgress.finished) {
+                        return (false, "Mission not finished");
+                    };
+
+                    // Check if the finish date is valid (should be before or equal to expiration date)
+                    if (missionProgress.finish_date > mission.end_date) {
+                        return (false, "Mission finish date is after the expiration date");
+                    };
+
+                    // If all checks pass, mint the rewards
+                    let (success, message) = await mintRewards(missionProgress, msg.caller);
+                    if (success) {
+                        // Remove claimed reward from userProgress and add it to claimedRewards
+                        var userMissions = switch (userProgress.get(msg.caller)) {
+                            case (null) { [] };
+                            case (?missions) { missions };
+                        };
+                        let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
+                        for (r in userMissions.vals()) {
+                            if (r.id_mission != idMission) {
+                                updatedMissions.add(r);
+                            }
+                        };
+                        userProgress.put(msg.caller, Buffer.toArray(updatedMissions));
+
+                        // Add claimed reward to claimedRewards
+                        claimedRewards.put(msg.caller, Array.append(userClaimedRewards, [idMission]));
+
+                        // Create a new user-specific hourly mission for the user
+                        let (newMissionSuccess, newMissionMessage, newMissionID) = await createUserSpecificHourlyMission(msg.caller);
+                        if (newMissionSuccess) {
+                            return (true, message # " New user-specific hourly mission created with ID: " # Nat.toText(newMissionID));
+                        } else {
+                            return (true, message # " However, failed to create a new user-specific hourly mission: " # newMissionMessage);
+                        }
+                    } else {
+                        return (success, message);
+                    };
+                };
+            };
+        };
+    };
+};
+
+
+
 
 // Players
 
@@ -649,7 +902,7 @@ shared actor class Cosmicrafts() {
     var players: HashMap.HashMap<PlayerId, Player> = HashMap.fromIter(_players.vals(), 0, Principal.equal, Principal.hash);
 
     // Function to register a new player
-    public shared ({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID) : async (Bool, PlayerId) {
+    public shared ({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID) : async (Bool, PlayerId, Bool, Text, Nat) {
         let PlayerId = caller;
         switch (players.get(PlayerId)) {
             case (null) {
@@ -669,10 +922,13 @@ shared actor class Cosmicrafts() {
                 // Assign new missions to the user
                 await assignNewMissionsToUser(PlayerId);
 
-                return (true, PlayerId);
+                // Create a user-specific hourly mission and capture the result
+                let (missionSuccess, missionMessage, missionID) = await createUserSpecificHourlyMission(PlayerId);
+
+                return (true, PlayerId, missionSuccess, missionMessage, missionID);
             };
             case (?_) {
-                return (false, PlayerId); // User already exists
+                return (false, PlayerId, false, "User already exists", 0); // User already exists
             };
         };
     };
