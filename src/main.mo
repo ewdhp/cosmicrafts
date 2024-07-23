@@ -28,7 +28,7 @@ shared actor class Cosmicrafts() {
 
   stable var _cosmicraftsPrincipal : Principal = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai");
 
-  // Types
+// Types
   public type PlayerId = Types.PlayerId;
   public type Username = Types.Username;
   public type AvatarID = Types.AvatarID;
@@ -78,24 +78,7 @@ shared actor class Cosmicrafts() {
   public type TokenID = Types.TokenID;
 
 
-public func generateULID(): async Text {
-    // Get the current timestamp in UNIX epoch format
-    let timestamp: Nat64 = Nat64.fromIntWrap(Time.now());
 
-    // Generate a random component
-    let randomComponent: Blob = await Random.blob();
-    
-    // Convert the Blob to an array and take the first 5 bytes
-    let randomArray: [Nat8] = Blob.toArray(randomComponent);
-    let randomBlob: [Nat8] = Array.subArray(randomArray, 0, 3);
-
-    // Convert the timestamp and random component to hexadecimal strings
-    let timestampHex: Text = Utils.nat64ToHex(timestamp);
-    let randomHex: Text = Utils.arrayToHex(randomBlob);
-
-    // Combine the timestamp and random component to form the ULID
-    return timestampHex # "-" # randomHex;
-};
 
 
 // Admin Tools
@@ -129,10 +112,10 @@ public func generateULID(): async Text {
     };
 
 
+
 // Missions
 
     // Stable Variables
-    stable var missionID: Nat = 1;
     stable var _missions: [(Nat, Mission)] = [];
     stable var _activeMissions: [(Nat, Mission)] = [];
     stable var _userProgress: [(Principal, [MissionsUser])] = [];
@@ -149,8 +132,7 @@ public func generateULID(): async Text {
     let ONE_WEEK: Nat64 = 60 * 60 * 24 * 7 * 1_000_000_000; // 60 secs * 60 minutes * 24 hours * 7
     
     func createMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hours_active: Nat64): async (Bool, Text, Nat) {
-        let id = missionID;
-        missionID += 1;
+        let id: Nat = await Utils.generateUUID64();
         let now = Nat64.fromIntWrap(Time.now());
         let hoursActive = ONE_HOUR * hours_active;
         let endDate = now + hoursActive;

@@ -22,6 +22,24 @@ import TypesICRC1 "/icrc1/Types";
 
 module Utils {
 
+    public func generateULID(): async Text {
+        // Get the current timestamp in UNIX epoch format
+        let timestamp: Nat64 = Nat64.fromIntWrap(Time.now());
+
+        // Generate a random component
+        let randomComponent: Blob = await Random.blob();
+        
+        // Convert the Blob to an array and take the first 5 bytes
+        let randomArray: [Nat8] = Blob.toArray(randomComponent);
+        let randomBlob: [Nat8] = Array.subArray(randomArray, 0, 3);
+
+        // Convert the timestamp and random component to hexadecimal strings
+        let timestampHex: Text = Utils.nat64ToHex(timestamp);
+        let randomHex: Text = Utils.arrayToHex(randomBlob);
+
+        // Combine the timestamp and random component to form the ULID
+        return timestampHex # "-" # randomHex;
+    };
 
     public func get2BytesBlob() : async Blob {
     let fullBlob = await Random.blob();
