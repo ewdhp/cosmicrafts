@@ -11,7 +11,6 @@ import Float "mo:base/Float";
 import Debug "mo:base/Debug";
 import Array "mo:base/Array";
 import Bool "mo:base/Bool";
-import Time "mo:base/Time";
 import Nat64 "mo:base/Nat64";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
