@@ -1,4 +1,4 @@
-//Types 
+//Imports
     import Float "mo:base/Float";
     import HashMap "mo:base/HashMap";
     import Int "mo:base/Int";
@@ -26,9 +26,6 @@
     import MissionOptions "MissionOptions";
 
 shared actor class Cosmicrafts() {
-
-  stable var _cosmicraftsPrincipal : Principal = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai");
-
 // Types
   public type PlayerId = Types.PlayerId;
   public type Username = Types.Username;
@@ -84,16 +81,19 @@ shared actor class Cosmicrafts() {
 
 // Admin Tools
 
-    // Define the admin principal
+
+    // add mint mintChest function ICRC TransactionLogs
+
+    stable var _cosmicraftsPrincipal : Principal = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai");
     let ADMIN_PRINCIPAL = Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae");
 
     // Define an enum for the different functions
     public type AdminFunction = {
         #CreateMission : (Text, MissionType, RewardType, Nat, Nat, Nat64);
         #CreateMissionsPeriodically : ();
+        #MintChest : (Principal, Nat);
     };
 
-    // Define a public admin function to call private functions
     public shared({ caller }) func adminManagement(funcToCall: AdminFunction) : async (Bool, Text) {
         if (caller == ADMIN_PRINCIPAL) {
             Debug.print("Admin function called by admin.");
@@ -106,12 +106,15 @@ shared actor class Cosmicrafts() {
                     await createMissionsPeriodically();
                     return (true, "Missions created.");
                 };
+                case (#MintChest(PlayerId, rarity)) {
+                    let (success, message) = await mintChest(PlayerId, rarity);
+                    return (success, message);
+                };
             }
         } else {
             return (false, "Access denied: Only admin can call this function.");
         }
     };
-
 
 
 // Missions
@@ -120,8 +123,6 @@ shared actor class Cosmicrafts() {
     let ONE_DAY: Nat64 = 60 * 60 * 24 * 1_000_000_000;
     let ONE_WEEK: Nat64 = 60 * 60 * 24 * 7 * 1_000_000_000; // 60 secs * 60 minutes * 24 hours * 7
 
-
-// New Concurrent Mission System
     var lastDailyMissionCreationTime: Nat64 = 0;
     var lastWeeklyMissionCreationTime: Nat64 = 0;
 
@@ -222,15 +223,6 @@ shared actor class Cosmicrafts() {
         return results;
     };
 
-    func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
-        let randomBytes = await Random.blob(); // Generating random bytes
-        let byteArray = Blob.toArray(randomBytes);
-        let randomByte = byteArray[0]; // Use the first byte for randomness
-        let range = maxReward - minReward + 1;
-        let randomValue = Nat8.toNat(randomByte) % range;
-        return minReward + randomValue;
-    };
-
     func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
         let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
         return await createGeneralMission(
@@ -269,8 +261,16 @@ shared actor class Cosmicrafts() {
         });
     };
 
-//----
+    func getRandomReward(minReward: Nat, maxReward: Nat): async Nat {
+        let randomBytes = await Random.blob(); // Generating random bytes
+        let byteArray = Blob.toArray(randomBytes);
+        let randomByte = byteArray[0]; // Use the first byte for randomness
+        let range = maxReward - minReward + 1;
+        let randomValue = Nat8.toNat(randomByte) % range;
+        return minReward + randomValue;
+    };
 
+//----
 // General Missions
     stable var generalMissionIDCounter: Nat = 1;
     stable var _generalUserProgress: [(Principal, [MissionsUser])] = [];
@@ -312,54 +312,53 @@ shared actor class Cosmicrafts() {
     };
 
     // Function to update progress for general missions
-public func updateGeneralMissionProgress(user: Principal, missionsProgress: [MissionProgress]): async (Bool, Text) {
-    Debug.print("[updateGeneralMissionProgress] Updating general mission progress for user: " # Principal.toText(user));
-    Debug.print("[updateGeneralMissionProgress] Missions progress: " # debug_show(missionsProgress));
+    public func updateGeneralMissionProgress(user: Principal, missionsProgress: [MissionProgress]): async (Bool, Text) {
+        Debug.print("[updateGeneralMissionProgress] Updating general mission progress for user: " # Principal.toText(user));
+        Debug.print("[updateGeneralMissionProgress] Missions progress: " # debug_show(missionsProgress));
 
-    var userMissions: [MissionsUser] = switch (generalUserProgress.get(user)) {
-        case (null) { [] };
-        case (?missions) { missions };
-    };
+        var userMissions: [MissionsUser] = switch (generalUserProgress.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
 
-    Debug.print("[updateGeneralMissionProgress] User's current missions: " # debug_show(userMissions));
+        Debug.print("[updateGeneralMissionProgress] User's current missions: " # debug_show(userMissions));
 
-    let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-    let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
 
-    for (mission in userMissions.vals()) {
-        Debug.print("[updateGeneralMissionProgress] Processing mission: " # debug_show(mission));
-        if (mission.finished) {
-            updatedMissions.add(mission);
-        } else {
-            var updatedMission = mission;
-            for (progress in missionsProgress.vals()) {
-                if (mission.missionType == progress.missionType) {
-                    let updatedProgress = mission.progress + progress.progress;
-                    Debug.print("[updateGeneralMissionProgress] Updated progress for missionType " # debug_show(mission.missionType) # ": " # debug_show(updatedProgress));
-                    if (updatedProgress >= mission.total) {
-                        updatedMission := {
-                            mission with
-                            progress = updatedProgress;
-                            finished = true;
-                            finish_date = now;
-                        };
-                    } else {
-                        updatedMission := {
-                            mission with
-                            progress = updatedProgress;
+        for (mission in userMissions.vals()) {
+            Debug.print("[updateGeneralMissionProgress] Processing mission: " # debug_show(mission));
+            if (mission.finished) {
+                updatedMissions.add(mission);
+            } else {
+                var updatedMission = mission;
+                for (progress in missionsProgress.vals()) {
+                    if (mission.missionType == progress.missionType) {
+                        let updatedProgress = mission.progress + progress.progress;
+                        Debug.print("[updateGeneralMissionProgress] Updated progress for missionType " # debug_show(mission.missionType) # ": " # debug_show(updatedProgress));
+                        if (updatedProgress >= mission.total) {
+                            updatedMission := {
+                                mission with
+                                progress = updatedProgress;
+                                finished = true;
+                                finish_date = now;
+                            };
+                        } else {
+                            updatedMission := {
+                                mission with
+                                progress = updatedProgress;
+                            };
                         };
                     };
                 };
+                updatedMissions.add(updatedMission);
             };
-            updatedMissions.add(updatedMission);
         };
+
+        generalUserProgress.put(user, Buffer.toArray(updatedMissions));
+        Debug.print("[updateGeneralMissionProgress] Updated user missions: " # debug_show(generalUserProgress.get(user)));
+        return (true, "Progress added successfully to general missions");
     };
-
-    generalUserProgress.put(user, Buffer.toArray(updatedMissions));
-    Debug.print("[updateGeneralMissionProgress] Updated user missions: " # debug_show(generalUserProgress.get(user)));
-    return (true, "Progress added successfully to general missions");
-};
-
 
     // Function to assign new general missions to a user
     public func assignGeneralMissions(user: Principal): async () {
@@ -556,6 +555,7 @@ public func updateGeneralMissionProgress(user: Principal, missionsProgress: [Mis
                 let mintResult = await chests.mint(mintArgs);
                 switch (mintResult) {
                     case (#Ok(_transactionID)) {
+                        await updateMintedChests(caller, uuid);
                         claimHistory := Array.append(claimHistory, [mission.id_mission]);
                         claimedRewards.put(caller, claimHistory);
                         return (true, "Chest minted and reward claimed. UUID: " # Nat.toText(uuid) # ", Rarity: " # Nat.toText(mission.reward_amount));
@@ -575,6 +575,7 @@ public func updateGeneralMissionProgress(user: Principal, missionsProgress: [Mis
                 let mintResult = await flux.mint(mintArgs);
                 switch (mintResult) {
                     case (#Ok(_transactionID)) {
+                        await updateMintedFlux(caller, mission.reward_amount);
                         claimHistory := Array.append(claimHistory, [mission.id_mission]);
                         claimedRewards.put(caller, claimHistory);
                         return (true, "Flux minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
@@ -594,6 +595,7 @@ public func updateGeneralMissionProgress(user: Principal, missionsProgress: [Mis
                 let mintResult = await shards.mint(mintArgs);
                 switch (mintResult) {
                     case (#Ok(_transactionID)) {
+                        await updateMintedShards(caller, mission.reward_amount);
                         claimHistory := Array.append(claimHistory, [mission.id_mission]);
                         claimedRewards.put(caller, claimHistory);
                         return (true, "Shards minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
@@ -606,9 +608,7 @@ public func updateGeneralMissionProgress(user: Principal, missionsProgress: [Mis
         };
     };
 
-
 //--
-
 // User-Specific Missions
     stable var _userMissionProgress: [(Principal, [MissionsUser])] = [];
     stable var _userMissions: [(Principal, [Mission])] = [];
@@ -623,7 +623,7 @@ public func updateGeneralMissionProgress(user: Principal, missionsProgress: [Mis
 
     // Function to create a new user-specific mission
     public func createUserMission(user: PlayerId): async (Bool, Text, Nat) {
-        Debug.print("Starting createUserMission");
+        Debug.print("[createUserMission] Start creating mission for user: " # Principal.toText(user));
 
         var userMissionsList: [Mission] = switch (userMissions.get(user)) {
             case (null) { [] };
@@ -635,44 +635,34 @@ public func updateGeneralMissionProgress(user: Principal, missionsProgress: [Mis
             case (?progress) { progress };
         };
 
-        // Debug logging
-        Debug.print("User Missions: " # debug_show(userMissionsList));
-        Debug.print("User Progress List: " # debug_show(userSpecificProgressList));
+        Debug.print("[createUserMission] User Missions: " # debug_show(userMissionsList));
+        Debug.print("[createUserMission] User Progress List: " # debug_show(userSpecificProgressList));
 
-        // Check the last mission for the user
         if (userSpecificProgressList.size() > 0) {
             let lastMissionProgress = userSpecificProgressList[userSpecificProgressList.size() - 1];
             let currentTime = Nat64.fromNat(Int.abs(Time.now()));
 
-            // Debug logging
-            Debug.print("Last Mission Progress: " # debug_show(lastMissionProgress));
-            Debug.print("Current Time: " # debug_show(currentTime));
+            Debug.print("[createUserMission] Last Mission Progress: " # debug_show(lastMissionProgress));
+            Debug.print("[createUserMission] Current Time: " # debug_show(currentTime));
 
-            // Expiration check logic
             if (not lastMissionProgress.finished and currentTime <= lastMissionProgress.expiration) {
-                Debug.print("Current mission is still active: " # debug_show(lastMissionProgress));
+                Debug.print("[createUserMission] Current mission is still active: " # debug_show(lastMissionProgress));
                 return (false, "Current mission is still active", lastMissionProgress.id_mission);
             } else {
-                Debug.print("Current mission is not active or is finished");
+                Debug.print("[createUserMission] Current mission is not active or is finished");
             }
         };
 
-        // Check if the list needs to be shuffled
         if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
             await initializeShuffledHourlyMissions();
         };
 
-        // Select the next mission from the shuffled list
         let index = shuffledHourlyIndices[currentHourlyIndex];
         let template = MissionOptions.hourlyMissions[index];
-
-        // Generate a random reward amount using the provided helper function
         let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
 
-        // Move to the next index
         currentHourlyIndex += 1;
 
-        // Retrieve the user's mission ID counter
         let missionIDCounter = switch (userMissionCounters.get(user)) {
             case (null) { 0 };
             case (?counter) { counter };
@@ -690,113 +680,108 @@ public func updateGeneralMissionProgress(user: Principal, missionsProgress: [Mis
             total = template.total;
         };
 
-        // Debug logging
-        Debug.print("New Mission: " # debug_show(newMission));
+        Debug.print("[createUserMission] New Mission: " # debug_show(newMission));
 
         userMissionCounters.put(user, missionIDCounter + 1);
-
         userMissionsList := Array.append(userMissionsList, [newMission]);
         userMissions.put(user, userMissionsList);
 
-        // Assign the new mission to the user
         await assignUserMissions(user);
 
-        Debug.print("Mission created and assigned successfully");
+        Debug.print("[createUserMission] Mission created and assigned successfully");
 
         return (true, "User-specific mission created and assigned.", newMission.id);
     };
 
     // Function to update progress for user-specific missions
-public shared func updateUserMissions(user: Principal, playerStats: {
-    secRemaining: Nat;
-    energyGenerated: Nat;
-    damageDealt: Nat;
-    damageTaken: Nat;
-    energyUsed: Nat;
-    deploys: Nat;
-    faction: Nat;
-    gameMode: Nat;
-    xpEarned: Nat;
-    kills: Nat;
-    wonGame: Bool;
-}): async (Bool, Text) {
+    public shared func updateUserMissions(user: Principal, playerStats: {
+        secRemaining: Nat;
+        energyGenerated: Nat;
+        damageDealt: Nat;
+        damageTaken: Nat;
+        energyUsed: Nat;
+        deploys: Nat;
+        faction: Nat;
+        gameMode: Nat;
+        xpEarned: Nat;
+        kills: Nat;
+        wonGame: Bool;
+        }): async (Bool, Text) {
 
-    Debug.print("[updateUserMissions] Updating user-specific mission progress for user: " # Principal.toText(user));
-    Debug.print("[updateUserMissions] Player stats: " # debug_show(playerStats));
+            Debug.print("[updateUserMissions] Updating user-specific mission progress for user: " # Principal.toText(user));
+            Debug.print("[updateUserMissions] Player stats: " # debug_show(playerStats));
 
-    var userSpecificProgressList = switch (userMissionProgress.get(user)) {
-        case (null) { [] };
-        case (?progress) { progress };
-    };
+            var userSpecificProgressList = switch (userMissionProgress.get(user)) {
+                case (null) { [] };
+                case (?progress) { progress };
+            };
 
-    Debug.print("[updateUserMissions] User's current missions: " # debug_show(userSpecificProgressList));
+            Debug.print("[updateUserMissions] User's current missions: " # debug_show(userSpecificProgressList));
 
-    let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-    let updatedMissions = Buffer.Buffer<MissionsUser>(userSpecificProgressList.size());
+            let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+            let updatedMissions = Buffer.Buffer<MissionsUser>(userSpecificProgressList.size());
 
-    for (mission in userSpecificProgressList.vals()) {
-        Debug.print("[updateUserMissions] Processing mission: " # debug_show(mission));
-        if (mission.finished) {
-            updatedMissions.add(mission);
-        } else {
-            var updatedMission = mission;
+            for (mission in userSpecificProgressList.vals()) {
+                Debug.print("[updateUserMissions] Processing mission: " # debug_show(mission));
+                if (mission.finished) {
+                    updatedMissions.add(mission);
+                } else {
+                    var updatedMission = mission;
 
-            switch (mission.missionType) {
-                case (#GamesCompleted) {
-                    updatedMission := { mission with progress = mission.progress + 1 };
-                };
-                case (#GamesWon) {
-                    if (playerStats.secRemaining > 0) {
-                        updatedMission := { mission with progress = mission.progress + 1 };
+                    switch (mission.missionType) {
+                        case (#GamesCompleted) {
+                            updatedMission := { mission with progress = mission.progress + 1 };
+                        };
+                        case (#GamesWon) {
+                            if (playerStats.secRemaining > 0) {
+                                updatedMission := { mission with progress = mission.progress + 1 };
+                            };
+                        };
+                        case (#DamageDealt) {
+                            updatedMission := { mission with progress = mission.progress + playerStats.damageDealt };
+                        };
+                        case (#DamageTaken) {
+                            updatedMission := { mission with progress = mission.progress + playerStats.damageTaken };
+                        };
+                        case (#EnergyUsed) {
+                            updatedMission := { mission with progress = mission.progress + playerStats.energyUsed };
+                        };
+                        case (#UnitsDeployed) {
+                            updatedMission := { mission with progress = mission.progress + playerStats.deploys };
+                        };
+                        case (#FactionPlayed) {
+                            updatedMission := { mission with progress = mission.progress + playerStats.faction };
+                        };
+                        case (#GameModePlayed) {
+                            updatedMission := { mission with progress = mission.progress + playerStats.gameMode };
+                        };
+                        case (#XPEarned) {
+                            updatedMission := { mission with progress = mission.progress + playerStats.xpEarned };
+                        };
+                        case (#Kills) {
+                            updatedMission := { mission with progress = mission.progress + playerStats.kills };
+                        };
                     };
-                };
-                case (#DamageDealt) {
-                    updatedMission := { mission with progress = mission.progress + playerStats.damageDealt };
-                };
-                case (#DamageTaken) {
-                    updatedMission := { mission with progress = mission.progress + playerStats.damageTaken };
-                };
-                case (#EnergyUsed) {
-                    updatedMission := { mission with progress = mission.progress + playerStats.energyUsed };
-                };
-                case (#UnitsDeployed) {
-                    updatedMission := { mission with progress = mission.progress + playerStats.deploys };
-                };
-                case (#FactionPlayed) {
-                    updatedMission := { mission with progress = mission.progress + playerStats.faction };
-                };
-                case (#GameModePlayed) {
-                    updatedMission := { mission with progress = mission.progress + playerStats.gameMode };
-                };
-                case (#XPEarned) {
-                    updatedMission := { mission with progress = mission.progress + playerStats.xpEarned };
-                };
-                case (#Kills) {
-                    updatedMission := { mission with progress = mission.progress + playerStats.kills };
+
+                    Debug.print("[updateUserMissions] Updated mission progress: " # debug_show(updatedMission.progress));
+
+                    if (updatedMission.progress >= updatedMission.total) {
+                        updatedMission := {
+                            updatedMission with
+                            progress = updatedMission.total;
+                            finished = true;
+                            finish_date = now;
+                        };
+                    };
+
+                    updatedMissions.add(updatedMission);
                 };
             };
 
-            Debug.print("[updateUserMissions] Updated mission progress: " # debug_show(updatedMission.progress));
-
-            if (updatedMission.progress >= updatedMission.total) {
-                updatedMission := {
-                    updatedMission with
-                    progress = updatedMission.total;
-                    finished = true;
-                    finish_date = now;
-                };
-            };
-
-            updatedMissions.add(updatedMission);
-        };
+            userMissionProgress.put(user, Buffer.toArray(updatedMissions));
+            Debug.print("[updateUserMissions] Updated user missions: " # debug_show(userMissionProgress.get(user)));
+            return (true, "Progress updated successfully in user-specific missions");
     };
-
-    userMissionProgress.put(user, Buffer.toArray(updatedMissions));
-    Debug.print("[updateUserMissions] Updated user missions: " # debug_show(userMissionProgress.get(user)));
-    return (true, "Progress updated successfully in user-specific missions");
-};
-
-
 
     // Function to assign new user-specific missions to a user
     func assignUserMissions(user: PlayerId): async () {
@@ -995,6 +980,7 @@ public shared func updateUserMissions(user: Principal, playerStats: {
                 let mintResult = await chests.mint(mintArgs);
                 switch (mintResult) {
                     case (#Ok(_transactionID)) {
+                        await updateMintedChests(caller, uuid);
                         claimHistory := Array.append(claimHistory, [mission.id_mission]);
                         userClaimedRewards.put(caller, claimHistory);
                         return (true, "Chest minted and reward claimed. UUID: " # Nat.toText(uuid) # ", Rarity: " # Nat.toText(mission.reward_amount));
@@ -1014,6 +1000,7 @@ public shared func updateUserMissions(user: Principal, playerStats: {
                 let mintResult = await flux.mint(mintArgs);
                 switch (mintResult) {
                     case (#Ok(_transactionID)) {
+                        await updateMintedFlux(caller, mission.reward_amount);
                         claimHistory := Array.append(claimHistory, [mission.id_mission]);
                         userClaimedRewards.put(caller, claimHistory);
                         return (true, "Flux minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
@@ -1033,6 +1020,7 @@ public shared func updateUserMissions(user: Principal, playerStats: {
                 let mintResult = await shards.mint(mintArgs);
                 switch (mintResult) {
                     case (#Ok(_transactionID)) {
+                        await updateMintedShards(caller, mission.reward_amount);
                         claimHistory := Array.append(claimHistory, [mission.id_mission]);
                         userClaimedRewards.put(caller, claimHistory);
                         return (true, "Shards minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
@@ -1045,242 +1033,235 @@ public shared func updateUserMissions(user: Principal, playerStats: {
         };
     };
 
-
+//--
 // Progress Manager
 
-public shared func updateProgressManager(user: Principal, playerStats: {
-    secRemaining: Nat;
-    energyGenerated: Nat;
-    damageDealt: Nat;
-    damageTaken: Nat;
-    energyUsed: Nat;
-    deploys: Nat;
-    faction: Nat;
-    gameMode: Nat;
-    xpEarned: Nat;
-    kills: Nat;
-    wonGame: Bool;
-    }): async (Bool, Text) {
+    public shared func updateProgressManager(user: Principal, playerStats: {
+        secRemaining: Nat;
+        energyGenerated: Nat;
+        damageDealt: Nat;
+        damageTaken: Nat;
+        energyUsed: Nat;
+        deploys: Nat;
+        faction: Nat;
+        gameMode: Nat;
+        xpEarned: Nat;
+        kills: Nat;
+        wonGame: Bool;
+        }): async (Bool, Text) {
 
-        var generalProgress: [MissionProgress] = [
-            { missionType = #GamesCompleted; progress = 1; },
-            { missionType = #DamageDealt; progress = playerStats.damageDealt },
-            { missionType = #DamageTaken; progress = playerStats.damageTaken },
-            { missionType = #EnergyUsed; progress = playerStats.energyUsed },
-            { missionType = #UnitsDeployed; progress = playerStats.deploys },
-            { missionType = #FactionPlayed; progress = playerStats.faction },
-            { missionType = #GameModePlayed; progress = playerStats.gameMode },
-            { missionType = #XPEarned; progress = playerStats.xpEarned },
-            { missionType = #Kills; progress = playerStats.kills }
-        ];
+            var generalProgress: [MissionProgress] = [
+                { missionType = #GamesCompleted; progress = 1; },
+                { missionType = #DamageDealt; progress = playerStats.damageDealt },
+                { missionType = #DamageTaken; progress = playerStats.damageTaken },
+                { missionType = #EnergyUsed; progress = playerStats.energyUsed },
+                { missionType = #UnitsDeployed; progress = playerStats.deploys },
+                { missionType = #FactionPlayed; progress = playerStats.faction },
+                { missionType = #GameModePlayed; progress = playerStats.gameMode },
+                { missionType = #XPEarned; progress = playerStats.xpEarned },
+                { missionType = #Kills; progress = playerStats.kills }
+            ];
 
-        if (playerStats.wonGame) {
-            generalProgress := Array.append(generalProgress, [{ missionType = #GamesWon; progress = 1 }]);
-        };
+            if (playerStats.wonGame) {
+                generalProgress := Array.append(generalProgress, [{ missionType = #GamesWon; progress = 1 }]);
+            };
 
-        Debug.print("[updateProgressManager] Updating general mission progress...");
-        Debug.print("[updateProgressManager] General progress: " # debug_show(generalProgress));
-        let (result1, message1) = await updateGeneralMissionProgress(user, generalProgress);
-        Debug.print("[updateProgressManager] General mission progress update result: " # debug_show(result1) # ", message: " # message1);
+            Debug.print("[updateProgressManager] Updating general mission progress...");
+            Debug.print("[updateProgressManager] General progress: " # debug_show(generalProgress));
+            let (result1, message1) = await updateGeneralMissionProgress(user, generalProgress);
+            Debug.print("[updateProgressManager] General mission progress update result: " # debug_show(result1) # ", message: " # message1);
 
-        Debug.print("[updateProgressManager] Updating user-specific mission progress...");
-        Debug.print("[updateProgressManager] Player stats: " # debug_show(playerStats));
-        let (result2, message2) = await updateUserMissions(user, playerStats);
-        Debug.print("[updateProgressManager] User-specific mission progress update result: " # debug_show(result2) # ", message: " # message2);
+            Debug.print("[updateProgressManager] Updating user-specific mission progress...");
+            Debug.print("[updateProgressManager] Player stats: " # debug_show(playerStats));
+            let (result2, message2) = await updateUserMissions(user, playerStats);
+            Debug.print("[updateProgressManager] User-specific mission progress update result: " # debug_show(result2) # ", message: " # message2);
 
-        let success = result1 and result2;
-        let message = message1 # " | " # message2;
+            let success = result1 and result2;
+            let message = message1 # " | " # message2;
 
-        return (success, message);
-};
-
-
-public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
-    secRemaining: Nat;
-    energyGenerated: Nat;
-    damageDealt: Nat;
-    wonGame: Bool;
-    botMode: Nat;
-    deploys: Nat;
-    damageTaken: Nat;
-    damageCritic: Nat;
-    damageEvaded: Nat;
-    energyChargeRate: Nat;
-    faction: Nat;
-    energyUsed: Nat;
-    gameMode: Nat;
-    energyWasted: Nat;
-    xpEarned: Nat;
-    characterID: Nat;
-    botDifficulty: Nat;
-    kills: Nat;
-    }): async (Bool, Text) {
-    var _txt: Text = "";
-
-    let playerStats = {
-        secRemaining = _playerStats.secRemaining;
-        energyGenerated = _playerStats.energyGenerated;
-        damageDealt = _playerStats.damageDealt;
-        wonGame = _playerStats.wonGame;
-        playerId = msg.caller;
-        botMode = _playerStats.botMode;
-        deploys = _playerStats.deploys;
-        damageTaken = _playerStats.damageTaken;
-        damageCritic = _playerStats.damageCritic;
-        damageEvaded = _playerStats.damageEvaded;
-        energyChargeRate = _playerStats.energyChargeRate;
-        faction = _playerStats.faction;
-        energyUsed = _playerStats.energyUsed;
-        gameMode = _playerStats.gameMode;
-        energyWasted = _playerStats.energyWasted;
-        xpEarned = _playerStats.xpEarned;
-        characterID = _playerStats.characterID;
-        botDifficulty = _playerStats.botDifficulty;
-        kills = _playerStats.kills;
+            return (success, message);
     };
 
-    Debug.print("[saveFinishedGame] Player stats: " # debug_show(playerStats));
 
-    let isExistingMatch = switch (basicStats.get(matchID)) {
-        case (null) { false };
-        case (?_) { true };
-    };
+    public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
+        secRemaining: Nat;
+        energyGenerated: Nat;
+        damageDealt: Nat;
+        wonGame: Bool;
+        botMode: Nat;
+        deploys: Nat;
+        damageTaken: Nat;
+        damageCritic: Nat;
+        damageEvaded: Nat;
+        energyChargeRate: Nat;
+        faction: Nat;
+        energyUsed: Nat;
+        gameMode: Nat;
+        energyWasted: Nat;
+        xpEarned: Nat;
+        characterID: Nat;
+        botDifficulty: Nat;
+        kills: Nat;
+        }): async (Bool, Text) {
+        var _txt: Text = "";
 
-    let endingGame: (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
-    let isPartOfMatch = await isCallerPartOfMatch(matchID, msg.caller);
-    if (not isPartOfMatch) {
-        return (false, "You are not part of this match.");
-    };
-
-    if (isExistingMatch) {
-        switch (basicStats.get(matchID)) {
-            case (null) {
-                return (false, "Unexpected error: Match not found");
-            };
-            case (?_bs) {
-                for (ps in _bs.playerStats.vals()) {
-                    if (ps.playerId == msg.caller) {
-                        return (false, "You have already submitted stats for this match.");
-                    };
-                };
-            };
-        };
-    };
-
-    if (not isExistingMatch) {
-        let newBasicStats: BasicStats = {
-            playerStats = [playerStats];
-        };
-        basicStats.put(matchID, newBasicStats);
-
-        let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
-        if (not _gameValid) {
-            onValidation.put(matchID, newBasicStats);
-            return (false, validationMsg);
-        };
-
-        let _winner = if (playerStats.wonGame) 1 else 0;
-        let _looser = if (not playerStats.wonGame) 1 else 0;
-        let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-
-        Debug.print("[saveFinishedGame] Calling updateProgressManager...");
-        let (success, message) = await updateProgressManager(msg.caller, playerStats);
-        Debug.print("[saveFinishedGame] updateProgressManager result: " # debug_show(success) # ", message: " # message);
-
-        if (not success) {
-            return (false, "Failed to update progress: " # message);
+        let playerStats = {
+            secRemaining = _playerStats.secRemaining;
+            energyGenerated = _playerStats.energyGenerated;
+            damageDealt = _playerStats.damageDealt;
+            wonGame = _playerStats.wonGame;
+            playerId = msg.caller;
+            botMode = _playerStats.botMode;
+            deploys = _playerStats.deploys;
+            damageTaken = _playerStats.damageTaken;
+            damageCritic = _playerStats.damageCritic;
+            damageEvaded = _playerStats.damageEvaded;
+            energyChargeRate = _playerStats.energyChargeRate;
+            faction = _playerStats.faction;
+            energyUsed = _playerStats.energyUsed;
+            gameMode = _playerStats.gameMode;
+            energyWasted = _playerStats.energyWasted;
+            xpEarned = _playerStats.xpEarned;
+            characterID = _playerStats.characterID;
+            botDifficulty = _playerStats.botDifficulty;
+            kills = _playerStats.kills;
         };
 
-        updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
-        updateOverallStats(matchID, playerStats);
+        Debug.print("[saveFinishedGame] Player stats: " # debug_show(playerStats));
 
-        let playerOpt = players.get(msg.caller);
-        switch (playerOpt) {
-            case (?player) {
-                let updatedPlayer: Player = {
-                    id = player.id;
-                    username = player.username;
-                    avatar = player.avatar;
-                    description = player.description;
-                    registrationDate = player.registrationDate;
-                    level = Utils.calculateLevel(playerStats.xpEarned);
-                    elo = player.elo;
-                    friends = player.friends;
-                };
-                players.put(msg.caller, updatedPlayer);
-            };
-            case (null) {};
+        let isExistingMatch = switch (basicStats.get(matchID)) {
+            case (null) { false };
+            case (?_) { true };
         };
 
-        return (true, "Game saved: " # message);
-    } else {
-        switch (basicStats.get(matchID)) {
-            case (null) {
-                return (false, "Unexpected error: Match not found");
-            };
-            case (?_bs) {
-                let updatedPlayerStatsBuffer = Buffer.Buffer<PlayerStats>(_bs.playerStats.size() + 1);
-                for (ps in _bs.playerStats.vals()) {
-                    updatedPlayerStatsBuffer.add(ps);
+        let endingGame: (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
+        let isPartOfMatch = await isCallerPartOfMatch(matchID, msg.caller);
+        if (not isPartOfMatch) {
+            return (false, "You are not part of this match.");
+        };
+
+        if (isExistingMatch) {
+            switch (basicStats.get(matchID)) {
+                case (null) {
+                    return (false, "Unexpected error: Match not found");
                 };
-                updatedPlayerStatsBuffer.add(playerStats);
-                let updatedPlayerStats = Buffer.toArray(updatedPlayerStatsBuffer);
-                let updatedBasicStats: BasicStats = { playerStats = updatedPlayerStats };
-                basicStats.put(matchID, updatedBasicStats);
-
-                let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
-                if (not _gameValid) {
-                    onValidation.put(matchID, updatedBasicStats);
-                    return (false, validationMsg);
-                };
-
-                let _winner = if (playerStats.wonGame) 1 else 0;
-                let _looser = if (not playerStats.wonGame) 1 else 0;
-                let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-
-                Debug.print("[saveFinishedGame] Calling updateProgressManager...");
-                let (success, message) = await updateProgressManager(msg.caller, playerStats);
-                Debug.print("[saveFinishedGame] updateProgressManager result: " # debug_show(success) # ", message: " # message);
-
-                if (not success) {
-                    return (false, "Failed to update progress: " # message);
-                };
-
-                updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
-                updateOverallStats(matchID, playerStats);
-
-                let playerOpt = players.get(msg.caller);
-                switch (playerOpt) {
-                    case (?player) {
-                        let updatedPlayer: Player = {
-                            id = player.id;
-                            username = player.username;
-                            avatar = player.avatar;
-                            description = player.description;
-                            registrationDate = player.registrationDate;
-                            level = Utils.calculateLevel(playerStats.xpEarned);
-                            elo = player.elo;
-                            friends = player.friends;
+                case (?_bs) {
+                    for (ps in _bs.playerStats.vals()) {
+                        if (ps.playerId == msg.caller) {
+                            return (false, "You have already submitted stats for this match.");
                         };
-                        players.put(msg.caller, updatedPlayer);
                     };
-                    case (null) {};
                 };
+            };
+        };
 
-                return (true, _txt # " - Game saved: " # message);
+        if (not isExistingMatch) {
+            let newBasicStats: BasicStats = {
+                playerStats = [playerStats];
+            };
+            basicStats.put(matchID, newBasicStats);
+
+            let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
+            if (not _gameValid) {
+                onValidation.put(matchID, newBasicStats);
+                return (false, validationMsg);
+            };
+
+            let _winner = if (playerStats.wonGame) 1 else 0;
+            let _looser = if (not playerStats.wonGame) 1 else 0;
+            let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
+
+            Debug.print("[saveFinishedGame] Calling updateProgressManager...");
+            let (success, message) = await updateProgressManager(msg.caller, playerStats);
+            Debug.print("[saveFinishedGame] updateProgressManager result: " # debug_show(success) # ", message: " # message);
+
+            if (not success) {
+                return (false, "Failed to update progress: " # message);
+            };
+
+            updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
+            updateOverallStats(matchID, playerStats);
+
+            let playerOpt = players.get(msg.caller);
+            switch (playerOpt) {
+                case (?player) {
+                    let updatedPlayer: Player = {
+                        id = player.id;
+                        username = player.username;
+                        avatar = player.avatar;
+                        description = player.description;
+                        registrationDate = player.registrationDate;
+                        level = Utils.calculateLevel(playerStats.xpEarned);
+                        elo = player.elo;
+                        friends = player.friends;
+                    };
+                    players.put(msg.caller, updatedPlayer);
+                };
+                case (null) {};
+            };
+
+            return (true, "Game saved: " # message);
+        } else {
+            switch (basicStats.get(matchID)) {
+                case (null) {
+                    return (false, "Unexpected error: Match not found");
+                };
+                case (?_bs) {
+                    let updatedPlayerStatsBuffer = Buffer.Buffer<PlayerStats>(_bs.playerStats.size() + 1);
+                    for (ps in _bs.playerStats.vals()) {
+                        updatedPlayerStatsBuffer.add(ps);
+                    };
+                    updatedPlayerStatsBuffer.add(playerStats);
+                    let updatedPlayerStats = Buffer.toArray(updatedPlayerStatsBuffer);
+                    let updatedBasicStats: BasicStats = { playerStats = updatedPlayerStats };
+                    basicStats.put(matchID, updatedBasicStats);
+
+                    let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
+                    if (not _gameValid) {
+                        onValidation.put(matchID, updatedBasicStats);
+                        return (false, validationMsg);
+                    };
+
+                    let _winner = if (playerStats.wonGame) 1 else 0;
+                    let _looser = if (not playerStats.wonGame) 1 else 0;
+                    let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
+
+                    Debug.print("[saveFinishedGame] Calling updateProgressManager...");
+                    let (success, message) = await updateProgressManager(msg.caller, playerStats);
+                    Debug.print("[saveFinishedGame] updateProgressManager result: " # debug_show(success) # ", message: " # message);
+
+                    if (not success) {
+                        return (false, "Failed to update progress: " # message);
+                    };
+
+                    updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
+                    updateOverallStats(matchID, playerStats);
+
+                    let playerOpt = players.get(msg.caller);
+                    switch (playerOpt) {
+                        case (?player) {
+                            let updatedPlayer: Player = {
+                                id = player.id;
+                                username = player.username;
+                                avatar = player.avatar;
+                                description = player.description;
+                                registrationDate = player.registrationDate;
+                                level = Utils.calculateLevel(playerStats.xpEarned);
+                                elo = player.elo;
+                                friends = player.friends;
+                            };
+                            players.put(msg.caller, updatedPlayer);
+                        };
+                        case (null) {};
+                    };
+
+                    return (true, _txt # " - Game saved: " # message);
+                };
             };
         };
     };
-};
-
-
-
-
-
-
 
 //----
-
 // Players
 
     stable var _players: [(PlayerId, Player)] = [];
@@ -1307,10 +1288,7 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
                 // Assign new missions to the user
                 await assignGeneralMissions(PlayerId);
 
-                // Create a user-specific hourly mission and capture the result
-                let (missionSuccess, missionMessage, missionID) = await createUserMission(PlayerId);
-
-                return (true, PlayerId, missionSuccess, missionMessage, missionID);
+                return (true, PlayerId, true, "User registered and general missions assigned.", 0);
             };
             case (?_) {
                 return (false, PlayerId, false, "User already exists", 0); // User already exists
@@ -2543,6 +2521,7 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
         let units = Utils.initDeck();
 
         var _deck = Buffer.Buffer<TypesICRC7.MintArgs>(8);
+        var uuids = Buffer.Buffer<TokenID>(8);
 
         for (i in Iter.range(0, 7)) {
             let (name, damage, hp, rarity) = units[i];
@@ -2553,11 +2532,16 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
                 metadata = Utils.getBaseMetadataWithAttributes(rarity, i + 1, name, damage, hp);
             };
             _deck.add(_mintArgs);
+            uuids.add(uuid); // Collect the UUIDs
         };
 
         let mintResult = await gameNFTs.mintDeck(Buffer.toArray(_deck));
         switch (mintResult) {
             case (#Ok(_transactionID)) {
+                // Update the minted NFTs for the caller
+                for (uuid in uuids.vals()) {
+                    await updateMintedGameNFTs(caller, uuid);
+                };
                 return (true, "Deck minted. # NFTs: " # Nat.toText(_transactionID));
             };
             case (#Err(_e)) {
@@ -2581,6 +2565,7 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
             };
         };
     };
+
 
     public shared(msg) func upgradeNFT(nftID: TokenID) : async (Bool, Text) {
         // Initiate metadata retrieval in the background
@@ -2683,16 +2668,17 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
     };
 
     // Chests
-    public shared({ caller }) func mintChest(rarity: Nat) : async (Bool, Text) {
+    private func mintChest(PlayerId: Principal, rarity: Nat) : async (Bool, Text) {
         let uuid = await Utils.generateUUID64();
         let _mintArgs: TypesICRC7.MintArgs = {
-            to = { owner = caller; subaccount = null };
+            to = { owner = PlayerId; subaccount = null };
             token_id = uuid;
             metadata = Utils.getChestMetadata(rarity);
         };
         let mintResult = await chests.mint(_mintArgs);
         switch (mintResult) {
             case (#Ok(_transactionID)) {
+                await updateMintedChests(PlayerId, uuid);
                 return (true, "NFT minted. Transaction ID: " # Nat.toText(_transactionID));
             };
             case (#Err(_e)) {
@@ -2780,13 +2766,19 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
 
                 // Handle shards minting result
                 let shardsResult = switch (shardsMinted) {
-                    case (#Ok(_tid)) "{\"token\":\"Shards\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(shardsAmount) # "}";
+                    case (#Ok(_tid)) {
+                        await updateMintedShards(caller, shardsAmount);
+                        "{\"token\":\"Shards\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(shardsAmount) # "}";
+                    };
                     case (#Err(_e)) Utils.handleMintError("Shards", _e);
                 };
 
                 // Handle flux minting result
                 let fluxResult = switch (fluxMinted) {
-                    case (#Ok(_tid)) "{\"token\":\"Flux\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(fluxAmount) # "}";
+                    case (#Ok(_tid)) {
+                        await updateMintedFlux(caller, fluxAmount);
+                        "{\"token\":\"Flux\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(fluxAmount) # "}";
+                    };
                     case (#Err(_e)) Utils.handleMintError("Flux", _e);
                 };
 
@@ -2799,5 +2791,182 @@ public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
 
         return (true, _tokensResults);
     };
+//---
+//Logging
+
+    // Types
+        public type MintedShards = {
+            quantity: Nat;
+        };
+
+        public type MintedFlux = {
+            quantity: Nat;
+        };
+
+        public type MintedChest = {
+            tokenIDs: [TokenID];
+            quantity: Nat;
+        };
+
+        public type MintedGameNFT = {
+            tokenIDs: [TokenID];
+            quantity: Nat;
+        };
+
+        type LogEntry = {
+            itemType: ItemType;
+            user: Principal;
+            amount: ?Nat;
+            tokenID: ?TokenID;
+            timestamp: Nat64;
+        };
+
+        type ItemType = {
+            #Shards;
+            #GameNFTs;
+            #Chest;
+            #Flux;
+        };
+
+
+    // Stable variables for storing minted token information
+        stable var mintedShards: [(Principal, MintedShards)] = [];
+        stable var mintedFlux: [(Principal, MintedFlux)] = [];
+        stable var mintedChests: [(Principal, MintedChest)] = [];
+        stable var mintedGameNFTs: [(Principal, MintedGameNFT)] = [];
+        stable var transactionLogs: [LogEntry] = [];
+
+
+    // HashMaps for minted token information
+        var mintedShardsMap: HashMap.HashMap<Principal, MintedShards> = HashMap.HashMap<Principal, MintedShards>(10, Principal.equal, Principal.hash);
+        var mintedFluxMap: HashMap.HashMap<Principal, MintedFlux> = HashMap.HashMap<Principal, MintedFlux>(10, Principal.equal, Principal.hash);
+        var mintedChestsMap: HashMap.HashMap<Principal, MintedChest> = HashMap.HashMap<Principal, MintedChest>(10, Principal.equal, Principal.hash);
+        var mintedGameNFTsMap: HashMap.HashMap<Principal, MintedGameNFT> = HashMap.HashMap<Principal, MintedGameNFT>(10, Principal.equal, Principal.hash);
+
+    
+    //Functions
+        // Function to update stable variables
+        func updateStableVariables() {
+            mintedShards := Iter.toArray(mintedShardsMap.entries());
+            mintedFlux := Iter.toArray(mintedFluxMap.entries());
+            mintedChests := Iter.toArray(mintedChestsMap.entries());
+            mintedGameNFTs := Iter.toArray(mintedGameNFTsMap.entries());
+        };
+
+        // Function to update minted shards
+        func updateMintedShards(user: Principal, amount: Nat): async () {
+            let current = switch (mintedShardsMap.get(user)) {
+                case (null) { { quantity = 0 } };
+                case (?shards) { shards };
+            };
+            let updated = { quantity = current.quantity + amount };
+            mintedShardsMap.put(user, updated);
+            let timestamp: Nat64 = Nat64.fromIntWrap(Time.now());
+            logTransaction(#Shards, user, amount, timestamp);
+            updateStableVariables();
+        };
+
+        // Function to update minted flux
+        func updateMintedFlux(user: Principal, amount: Nat): async () {
+            let current = switch (mintedFluxMap.get(user)) {
+                case (null) { { quantity = 0 } };
+                case (?flux) { flux };
+            };
+            let updated = { quantity = current.quantity + amount };
+            mintedFluxMap.put(user, updated);
+            let timestamp: Nat64 = Nat64.fromIntWrap(Time.now());
+            logTransaction(#Flux, user, amount, timestamp);
+            updateStableVariables();
+        };
+
+        // Function to update minted chests
+        func updateMintedChests(user: Principal, tokenID: TokenID): async () {
+            let current = switch (mintedChestsMap.get(user)) {
+                case (null) { { tokenIDs = []; quantity = 0 } };
+                case (?chests) { chests };
+            };
+            let updated = { tokenIDs = Array.append(current.tokenIDs, [tokenID]); quantity = current.quantity + 1 };
+            mintedChestsMap.put(user, updated);
+            let timestamp: Nat64 = Nat64.fromIntWrap(Time.now());
+            logTransactionWithTokenID(#Chest, user, tokenID, timestamp);
+            updateStableVariables();
+        };
+
+        // Function to update minted gameNFTs
+        func updateMintedGameNFTs(user: Principal, tokenID: TokenID): async () {
+            let current = switch (mintedGameNFTsMap.get(user)) {
+                case (null) { { tokenIDs = []; quantity = 0 } };
+                case (?nfts) { nfts };
+            };
+            let updated = { tokenIDs = Array.append(current.tokenIDs, [tokenID]); quantity = current.quantity + 1 };
+            mintedGameNFTsMap.put(user, updated);
+            let timestamp: Nat64 = Nat64.fromIntWrap(Time.now());
+            logTransactionWithTokenID(#GameNFTs, user, tokenID, timestamp);
+            updateStableVariables();
+        };
+
+        // Function to add a log entry
+        func addLogEntry(itemType: ItemType, user: Principal, amount: ?Nat, tokenID: ?TokenID, timestamp: Nat64) {
+            let logEntry: LogEntry = {
+                itemType = itemType;
+                user = user;
+                amount = amount;
+                tokenID = tokenID;
+                timestamp = timestamp;
+            };
+            transactionLogs := Array.append(transactionLogs, [logEntry]);
+        };
+
+        // Function to log transactions with amount
+        func logTransaction(itemType: ItemType, user: Principal, amount: Nat, timestamp: Nat64) {
+            addLogEntry(itemType, user, ?amount, null, timestamp);
+        };
+
+        // Function to log transactions with tokenID
+        func logTransactionWithTokenID(itemType: ItemType, user: Principal, tokenID: TokenID, timestamp: Nat64) {
+            addLogEntry(itemType, user, null, ?tokenID, timestamp);
+        };
+
+        // Function to retrieve logs for a specific user and item type
+        public query func getTransactionLogs(user: Principal, itemType: ItemType): async [LogEntry] {
+            return Array.filter<LogEntry>(transactionLogs, func(log: LogEntry): Bool {
+                log.user == user and log.itemType == itemType
+            });
+        };
+
+        public query func getMintedInfo(user: Principal): async {
+            shards: Nat;
+            flux: Nat;
+            chests: { quantity: Nat; tokenIDs: [TokenID] };
+            gameNFTs: { quantity: Nat; tokenIDs: [TokenID] };
+            } {
+            let shards = switch (mintedShardsMap.get(user)) {
+                case (null) 0;
+                case (?shardsData) shardsData.quantity;
+            };
+            
+            let flux = switch (mintedFluxMap.get(user)) {
+                case (null) 0;
+                case (?fluxData) fluxData.quantity;
+            };
+            
+            let chests = switch (mintedChestsMap.get(user)) {
+                case (null) ({ quantity = 0; tokenIDs = [] });
+                case (?chestsData) chestsData;
+            };
+            
+            let gameNFTs = switch (mintedGameNFTsMap.get(user)) {
+                case (null) ({ quantity = 0; tokenIDs = [] });
+                case (?gameNFTsData) gameNFTsData;
+            };
+            
+            return {
+                shards = shards;
+                flux = flux;
+                chests = chests;
+                gameNFTs = gameNFTs;
+            };
+        };
+
 
 };
