@@ -55,6 +55,7 @@ module Types {
     gameMode: Nat;
     botMode: Nat;
     botDifficulty: Nat;
+   // level: Nat;
   };
 
   public type BasicStats = {

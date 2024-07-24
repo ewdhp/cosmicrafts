@@ -116,12 +116,12 @@ module MissionOptions {
             hoursActive = 24;
         },
         {
-            name = "Use 500 Energy";
+            name = "Use 300 Energy";
             missionType = #EnergyUsed;
             rewardType = #Shards;
             minReward = 128;
             maxReward = 360;
-            total = 500;
+            total = 300;
             hoursActive = 24;
         },
         {
@@ -143,12 +143,12 @@ module MissionOptions {
             hoursActive = 24;
         },
         {
-            name = "Destroy 100 Enemies";
+            name = "Destroy 50 Enemies";
             missionType = #Kills;
             rewardType = #Chest;
             minReward = 3;
             maxReward = 4;
-            total = 100;
+            total = 50;
             hoursActive = 24;
         }
     ];
@@ -191,21 +191,21 @@ module MissionOptions {
             hoursActive = 168;  // 7 days
         },
         {
-            name = "Use 2500 Energy";
+            name = "Use 1000 Energy";
             missionType = #EnergyUsed;
             rewardType = #Shards;
             minReward = 768;  // Adjusted to fit the 20% more/less range
             maxReward = 1728;  // Adjusted to fit the 20% more/less range
-            total = 2500;
+            total = 1000;
             hoursActive = 168;  // 7 days
         },
         {
-            name = "Deploy 500 NFTs";
+            name = "Deploy 250 NFTs";
             missionType = #UnitsDeployed;
             rewardType = #Shards;
             minReward = 900;  // Adjusted to fit the 20% more/less range
             maxReward = 2400;  // Adjusted to fit the 20% more/less range
-            total = 500;
+            total = 250;
             hoursActive = 168;  // 7 days
         },
         {
@@ -218,12 +218,12 @@ module MissionOptions {
             hoursActive = 168;  // 7 days
         },
         {
-            name = "Destroy 500 Enemies";
+            name = "Destroy 200 Enemies";
             missionType = #Kills;
             rewardType = #Chest;
             minReward = 6;  // Chest rewards
             maxReward = 8;  // Chest rewards
-            total = 500;
+            total = 200;
             hoursActive = 168;  // 7 days
         }
     ];

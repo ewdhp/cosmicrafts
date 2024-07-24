@@ -8,7 +8,7 @@ import sys
 import signal
 
 # Set up logging
-logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+#logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def execute_dfx_command(command, log_output=True):
     """Executes a shell command and logs the output."""
@@ -124,7 +124,7 @@ def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
         "deploys": random.randint(10, 225),           # Changed to random integer
         "energyChargeRate": random.randint(33, 200),  # Changed to random integer
         "energyGenerated": shared_energy_generated,   # Already Nat
-        "energyUsed": random.randint(33, 200),        # Changed to random integer
+        "energyUsed": random.randint(55, 200),        # Changed to random integer
         "energyWasted": random.randint(33, 200),      # Changed to random integer
         "faction": random.randint(0, 2),
         "gameMode": random.randint(1, 2),
@@ -138,19 +138,18 @@ def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
 def get_current_mission_progress(identity_name):
     """Gets the current mission progress for the current identity."""
     switch_identity(identity_name)
-    command = 'dfx canister call cosmicrafts getCurrentMissionProgress'
+    command = 'dfx canister call cosmicrafts getUserMissions'
     return execute_dfx_command(command)
 
 def claim_user_specific_reward(identity_name, mission_id):
     """Claims the user-specific reward for the given mission ID."""
     switch_identity(identity_name)
-    command = f'dfx canister call cosmicrafts claimUserSpecificReward \'({mission_id})\''
+    command = f'dfx canister call cosmicrafts claimUserReward \'({mission_id})\''
     return execute_dfx_command(command)
 
-def create_user_specific_hourly_mission(identity_name, principal):
-    """Creates a user-specific hourly mission for the current identity."""
-    switch_identity(identity_name)
-    command = f'dfx canister call cosmicrafts createUserSpecificHourlyMission \'(principal "{principal}")\''
+def create_user_specific_hourly_mission(principal):
+    """Creates a user-specific hourly mission for the given principal."""
+    command = f'dfx canister call cosmicrafts getUserMissions \'(principal "{principal}")\''
     return execute_dfx_command(command)
 
 def handle_mission_progress(identity_name):
@@ -158,6 +157,14 @@ def handle_mission_progress(identity_name):
     progress_result = get_current_mission_progress(identity_name)
     logging.info(f"Mission progress for {identity_name}: {progress_result}")
     #print(f"Mission progress for {identity_name}: {progress_result}")
+
+    # Check if the mission progress result is null
+    if progress_result == "(null)":
+        principal = get_principal(identity_name)
+        create_result = create_user_specific_hourly_mission(principal)
+        logging.info(f"Create result for {identity_name}: {create_result}")
+        print(f"Create result for {identity_name}: {create_result}")
+        return
 
     # Parse the progress result to check if the mission is finished
     if "record" in progress_result and "finished = true" in progress_result:
@@ -169,13 +176,9 @@ def handle_mission_progress(identity_name):
             print(f"Claim result for mission ID {mission_id} for {identity_name}: {claim_result}")
         else:
             logging.warning(f"Mission ID not found in progress result for {identity_name}")
-
-    # Always create a new user-specific hourly mission
-    principal = get_principal(identity_name)
-    hourly_mission_result = create_user_specific_hourly_mission(identity_name, principal)
-    logging.info(f"Created user-specific hourly mission for {identity_name}: {hourly_mission_result}")
-    print(f"Created user-specific hourly mission for {identity_name}: {hourly_mission_result}")
-
+    else:
+        print(f"No completed mission to claim for {identity_name}")
+        logging.info(f"No completed mission to claim for {identity_name}")
 
 def run_matches(num_matches, loop):
     """Run the specified number of matches."""
@@ -267,7 +270,7 @@ def run_matches(num_matches, loop):
 
                 try:
                     save_finished_game(player, match_id, stats)
-                    print(f"Statistics sent for {player} in match {match_id}")
+                    #print(f"Statistics sent for {player} in match {match_id}")
                     logging.info(f"Statistics saved for {player} in match {match_id}")
 
                     # Handle mission progress and claiming rewards

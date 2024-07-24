@@ -1,28 +1,29 @@
-import Float "mo:base/Float";
-import HashMap "mo:base/HashMap";
-import Int "mo:base/Int";
-import Iter "mo:base/Iter";
-import Nat "mo:base/Nat";
-import Nat64 "mo:base/Nat64";
-import Principal "mo:base/Principal";
-import Time "mo:base/Time";
-import Buffer "mo:base/Buffer";
-import Array "mo:base/Array";
-import Result "mo:base/Result";
-import Debug "mo:base/Debug";
-import Text "mo:base/Text";
-import Random "mo:base/Random";
-import Nat8 "mo:base/Nat8";
-import Timer "mo:base/Timer";
-import Blob "mo:base/Blob";
-import Bool "mo:base/Bool";
+//Types 
+    import Float "mo:base/Float";
+    import HashMap "mo:base/HashMap";
+    import Int "mo:base/Int";
+    import Iter "mo:base/Iter";
+    import Nat "mo:base/Nat";
+    import Nat64 "mo:base/Nat64";
+    import Principal "mo:base/Principal";
+    import Time "mo:base/Time";
+    import Buffer "mo:base/Buffer";
+    import Array "mo:base/Array";
+    import Result "mo:base/Result";
+    import Debug "mo:base/Debug";
+    import Text "mo:base/Text";
+    import Random "mo:base/Random";
+    import Nat8 "mo:base/Nat8";
+    import Timer "mo:base/Timer";
+    import Blob "mo:base/Blob";
+    import Bool "mo:base/Bool";
 
-import Types "Types";
-import Utils "Utils";
-import TypesICRC7 "/icrc7/types";
-import TypesICRC1 "/icrc1/Types";
-import Validator "Validator";
-import MissionOptions "MissionOptions";
+    import Types "Types";
+    import Utils "Utils";
+    import TypesICRC7 "/icrc7/types";
+    import TypesICRC1 "/icrc1/Types";
+    import Validator "Validator";
+    import MissionOptions "MissionOptions";
 
 shared actor class Cosmicrafts() {
 
@@ -98,7 +99,7 @@ shared actor class Cosmicrafts() {
             Debug.print("Admin function called by admin.");
             switch (funcToCall) {
                 case (#CreateMission(name, missionType, rewardType, rewardAmount, total, hours_active)) {
-                    let (success, message, id) = await createMission(name, missionType, rewardType, rewardAmount, total, hours_active);
+                    let (success, message, id) = await createGeneralMission(name, missionType, rewardType, rewardAmount, total, hours_active);
                     return (success, message # " Mission ID: " # Nat.toText(id));
                 };
                 case (#CreateMissionsPeriodically()) {
@@ -115,350 +116,12 @@ shared actor class Cosmicrafts() {
 
 // Missions
 
-    // Stable Variables
-    stable var _missions: [(Nat, Mission)] = [];
-    stable var _activeMissions: [(Nat, Mission)] = [];
-    stable var _userProgress: [(Principal, [MissionsUser])] = [];
-    stable var _claimedRewards: [(Principal, [Nat])] = [];
-
-    // HashMaps
-    var missions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_missions.vals(), 0, Utils._natEqual, Utils._natHash);
-    var activeMissions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_activeMissions.vals(), 0, Utils._natEqual, Utils._natHash);
-    var userProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_userProgress.vals(), 0, Principal.equal, Principal.hash);
-    var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
-
     let ONE_HOUR: Nat64 = 60 * 60 * 1_000_000_000;
     let ONE_DAY: Nat64 = 60 * 60 * 24 * 1_000_000_000;
     let ONE_WEEK: Nat64 = 60 * 60 * 24 * 7 * 1_000_000_000; // 60 secs * 60 minutes * 24 hours * 7
-    
-    func createMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hours_active: Nat64): async (Bool, Text, Nat) {
-        let id: Nat = await Utils.generateUUID64();
-        let now = Nat64.fromIntWrap(Time.now());
-        let hoursActive = ONE_HOUR * hours_active;
-        let endDate = now + hoursActive;
 
-        let newMission = {
-            id = id;
-            name = name;
-            missionType = missionType;
-            reward_type = rewardType;
-            reward_amount = rewardAmount;
-            start_date = now;
-            end_date = endDate;
-            total = total;
-        };
 
-        missions.put(id, newMission);
-        activeMissions.put(id, newMission);
-        Debug.print("[createMission] Mission created with ID: " # Nat.toText(id) # ", End Date: " # Nat64.toText(endDate) # ", Start Date: " # Nat64.toText(now));
-
-        return (true, "Mission created successfully", id);
-    };
-
-    func addProgressToMissions(user: Principal, missionsProgress: [MissionProgress]): async (Bool, Text) {
-        var userMissions = switch (userProgress.get(user)) {
-            case (null) { [] };
-            case (?missions) { missions };
-        };
-        // Debug.print("[addProgressToMissions] User missions: " # debug_show(userMissions));
-
-        if (missionsProgress.size() == 0) {
-            return (false, "No progress data provided");
-        };
-
-        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-        let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
-
-        for (mission in userMissions.vals()) {
-            if (mission.finished) {
-                updatedMissions.add(mission);
-            } else {
-                var updatedMission = mission;
-                for (progress in missionsProgress.vals()) {
-                    if (mission.missionType == progress.missionType) {
-                        let updatedProgress = mission.progress + progress.progress;
-                        if (updatedProgress >= mission.total) {
-                            updatedMission := {
-                                mission with
-                                progress = updatedProgress;
-                                finished = true;
-                                finish_date = now;
-                            };
-                        } else {
-                            updatedMission := {
-                                mission with
-                                progress = updatedProgress;
-                            };
-                        };
-                    };
-                };
-                updatedMissions.add(updatedMission);
-            };
-        };
-
-        userProgress.put(user, Buffer.toArray(updatedMissions));
-       // Debug.print("[addProgressToMissions] Updated user missions: " # debug_show(userProgress.get(user)));
-        return (true, "Progress added successfully");
-    };
-
-    public shared(msg) func claimReward(idMission: Nat): async (Bool, Text) {
-        let missionOpt = await getMissionProgress(msg.caller, idMission);
-        switch (missionOpt) {
-            case (null) {
-                return (false, "Mission not assigned");
-            };
-            case (?mission) {
-                let currentTime: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-
-                // Check if the mission has expired
-                if (currentTime > mission.expiration) {
-                    return (false, "Mission has expired");
-                };
-
-                // Check if the mission reward has already been claimed
-                let userClaimedRewards = switch (claimedRewards.get(msg.caller)) {
-                    case (null) { [] };
-                    case (?rewards) { rewards };
-                };
-                if (Array.find<Nat>(userClaimedRewards, func(r) { r == idMission }) != null) {
-                    return (false, "Mission reward has already been claimed");
-                };
-
-                // Check if the mission is finished
-                if (not mission.finished) {
-                    return (false, "Mission not finished");
-                };
-
-                // Check if the finish date is valid (should be before or equal to expiration date)
-                if (mission.finish_date > mission.expiration) {
-                    return (false, "Mission finish date is after the expiration date");
-                };
-
-                // If all checks pass, mint the rewards
-                let (success, message) = await mintRewards(mission, msg.caller);
-                if (success) {
-                    // Remove claimed reward from userProgress and add it to claimedRewards
-                    var userMissions = switch (userProgress.get(msg.caller)) {
-                        case (null) { [] };
-                        case (?missions) { missions };
-                    };
-                    let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
-                    for (r in userMissions.vals()) {
-                        if (r.id_mission != idMission) {
-                            updatedMissions.add(r);
-                        }
-                    };
-                    userProgress.put(msg.caller, Buffer.toArray(updatedMissions));
-
-                    // Add claimed reward to claimedRewards
-                    claimedRewards.put(msg.caller, Array.append(userClaimedRewards, [idMission]));
-                };
-                return (success, message);
-            };
-        };
-    };
-
-    func mintRewards(mission: MissionsUser, caller: Principal): async (Bool, Text) {
-        var claimHistory = switch (claimedRewards.get(caller)) {
-            case (null) { [] };
-            case (?history) { history };
-        };
-
-        if (Utils.arrayContains(claimHistory, mission.id_mission, Utils._natEqual)) {
-            return (false, "Mission already claimed");
-        };
-
-        switch (mission.reward_type) {
-            case (#Chest) {
-                let uuid = await Utils.generateUUID64();
-                let mintArgs: TypesICRC7.MintArgs = {
-                    to = { owner = caller; subaccount = null };
-                    token_id = uuid;
-                    metadata = Utils.getChestMetadata(mission.reward_amount);
-                };
-                let mintResult = await chests.mint(mintArgs);
-                switch (mintResult) {
-                    case (#Ok(_transactionID)) {
-                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
-                        claimedRewards.put(caller, claimHistory);
-                        return (true, "Chest minted and reward claimed. UUID: " # Nat.toText(uuid) # ", Rarity: " # Nat.toText(mission.reward_amount));
-                    };
-                    case (#Err(_error)) {
-                        return (false, "Minting chest failed");
-                    };
-                };
-            };
-            case (#Flux) {
-                let mintArgs: TypesICRC1.Mint = {
-                    to = { owner = caller; subaccount = null };
-                    amount = mission.reward_amount;
-                    memo = null;
-                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-                };
-                let mintResult = await flux.mint(mintArgs);
-                switch (mintResult) {
-                    case (#Ok(_transactionID)) {
-                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
-                        claimedRewards.put(caller, claimHistory);
-                        return (true, "Flux minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
-                    };
-                    case (#Err(_error)) {
-                        return (false, "Minting flux failed");
-                    };
-                };
-            };
-            case (#Shards) {
-                let mintArgs: TypesICRC1.Mint = {
-                    to = { owner = caller; subaccount = null };
-                    amount = mission.reward_amount;
-                    memo = null;
-                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-                };
-                let mintResult = await shards.mint(mintArgs);
-                switch (mintResult) {
-                    case (#Ok(_transactionID)) {
-                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
-                        claimedRewards.put(caller, claimHistory);
-                        return (true, "Shards minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
-                    };
-                    case (#Err(_error)) {
-                        return (false, "Minting shards failed");
-                    };
-                };
-            };
-        };
-    };
-
-    public query func getAllActiveMissions(): async [Mission] {
-        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-        let active = Buffer.Buffer<Mission>(activeMissions.size());
-        for (mission in activeMissions.vals()) {
-            if (mission.start_date <= now and mission.end_date > now) {
-                active.add(mission);
-                Debug.print("Active mission with ID: " # Nat.toText(mission.id) # " is within the active period.");
-            } else {
-                Debug.print("Mission with ID: " # Nat.toText(mission.id) # " is not within the active period.");
-            };
-        };
-        return Buffer.toArray(active);
-    };
-
-    public query func getMissionProgress(user: Principal, missionID: Nat): async ?MissionsUser {
-        let userMissions = switch (userProgress.get(user)) {
-            case (null) return null;
-            case (?missions) missions;
-        };
-
-        for (mission in userMissions.vals()) {
-            if (mission.id_mission == missionID) {
-                return ?mission;
-            };
-        };
-        return null;
-    };
-
-    public query func searchActiveMissions(user: Principal): async [MissionsUser] {
-        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-        var userMissions = switch (userProgress.get(user)) {
-            case (null) { [] };
-            case (?missions) { missions };
-        };
-
-        var userClaimedRewards = switch (claimedRewards.get(user)) {
-            case (null) { [] };
-            case (?missions) { missions };
-        };
-
-        let activeMissions = Buffer.Buffer<MissionsUser>(0);
-        for (mission in userMissions.vals()) {
-            if (mission.expiration >= now and not Utils.arrayContains(userClaimedRewards, mission.id_mission, Utils._natEqual)) {
-                activeMissions.add(mission);
-            }
-        };
-
-        return Buffer.toArray(activeMissions);
-    };
-
-    private func assignNewMissionsToUser(PlayerId: Principal): async () {
-        let user = PlayerId;
-        Debug.print("[assignNewMissionsToUser] Assigning new missions to user: " # Principal.toText(user));
-
-        var userMissions = switch (userProgress.get(user)) {
-            case (null) { [] };
-            case (?missions) { missions };
-        };
-
-        Debug.print("[assignNewMissionsToUser] User missions before update: " # debug_show(userMissions));
-
-        var claimedRewardsForUser = switch (claimedRewards.get(user)) {
-            case (null) { [] };
-            case (?claimed) { claimed };
-        };
-
-        let now = Nat64.fromNat(Int.abs(Time.now()));
-        let buffer = Buffer.Buffer<Types.MissionsUser>(0);
-
-        // Remove expired or claimed missions
-        for (mission in userMissions.vals()) {
-            if (mission.expiration >= now and not Utils.arrayContains(claimedRewardsForUser, mission.id_mission, Utils._natEqual)) {
-                buffer.add(mission);
-            }
-        };
-
-        // Collect IDs of current missions to avoid duplication
-        let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
-        for (mission in buffer.vals()) {
-            currentMissionIds.add(mission.id_mission);
-        };
-
-        // Add new active missions to the user
-        for ((id, mission) in activeMissions.entries()) {
-            if (not Utils.arrayContains(Buffer.toArray(currentMissionIds), id, Utils._natEqual) and not Utils.arrayContains(claimedRewardsForUser, id, Utils._natEqual)) {
-                buffer.add({
-                    id_mission = id;
-                    reward_amount = mission.reward_amount;
-                    start_date = mission.start_date;
-                    progress = mission.total; // set progress to total for missions with total=0
-                    finish_date = if (mission.total == 0) now else 0;
-                    expiration = mission.end_date;
-                    missionType = mission.missionType;
-                    finished = mission.total == 0; // Mark as finished if total is 0
-                    reward_type = mission.reward_type;
-                    total = mission.total;
-                });
-            }
-        };
-
-        userProgress.put(user, Buffer.toArray(buffer));
-
-        Debug.print("[assignNewMissionsToUser] User missions after update: " # debug_show(userProgress.get(user)));
-    };
-
-    public shared ({ caller }) func getMissions() : async [MissionsUser] {
-        // Step 1: Assign new missions to the user
-        await assignNewMissionsToUser(caller);
-
-        // Step 2: Search for active missions assigned to the user
-        let activeMissions: [MissionsUser] = await searchActiveMissions(caller);
-
-        // Step 3: Get progress for each active mission
-        let missionsWithProgress = Buffer.Buffer<MissionsUser>(activeMissions.size());
-        for (mission in activeMissions.vals()) {
-            let missionProgress = await getMissionProgress(caller, mission.id_mission);
-            switch (missionProgress) {
-                case (null) {};
-                case (?progress) {
-                    missionsWithProgress.add(progress);
-                };
-            };
-        };
-
-        return Buffer.toArray(missionsWithProgress);
-    };
-
-    // New Concurrent Mission System
-
-    var lastHourlyMissionCreationTime: Nat64 = 0;
+// New Concurrent Mission System
     var lastDailyMissionCreationTime: Nat64 = 0;
     var lastWeeklyMissionCreationTime: Nat64 = 0;
 
@@ -497,26 +160,6 @@ shared actor class Cosmicrafts() {
         let indices: [Nat] = Array.tabulate(MissionOptions.dailyFreeReward.size(), func(i: Nat): Nat { i });
         shuffledDailyFreeRewardIndices := await Utils.shuffleArray(indices);
         currentDailyFreeRewardIndex := 0;
-    };
-
-    public func createHourlyMissions(): async [(Bool, Text, Nat)] {
-        var results: [(Bool, Text, Nat)] = [];
-
-        // Check if the list needs to be shuffled
-        if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
-            await initializeShuffledHourlyMissions();
-        };
-
-        // Select the next mission from the shuffled list
-        let index = shuffledHourlyIndices[currentHourlyIndex];
-        let template = MissionOptions.hourlyMissions[index];
-        let result = await createSingleConcurrentMission(template);
-        results := Array.append(results, [result]);
-
-        // Move to the next index
-        currentHourlyIndex += 1;
-
-        return results;
     };
 
     public func createDailyMissions(): async [(Bool, Text, Nat)] {
@@ -590,7 +233,7 @@ shared actor class Cosmicrafts() {
 
     func createSingleConcurrentMission(template: Types.MissionTemplate): async (Bool, Text, Nat) {
         let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
-        return await createMission(
+        return await createGeneralMission(
             template.name,
             template.missionType,
             template.rewardType,
@@ -604,17 +247,8 @@ shared actor class Cosmicrafts() {
         let now = Nat64.fromIntWrap(Time.now());
         Debug.print("[createMissionsPeriodically] Current time: " # Nat64.toText(now));
 
-        // Create and assign hourly missions
-        if (now - lastHourlyMissionCreationTime >= ONE_HOUR) {
-            Debug.print("[createMissionsPeriodically] Time to create and assign hourly missions.");
-            let hourlyResults = await createHourlyMissions();
-            await Utils.logMissionResults(hourlyResults, "Hourly");
-            lastHourlyMissionCreationTime := now;
-        };
-
         // Create and assign daily missions
         if (now - lastDailyMissionCreationTime >= ONE_DAY) {
-            Debug.print("[createMissionsPeriodically] Time to create and assign daily missions.");
             let dailyResults = await createDailyMissions();
             await Utils.logMissionResults(dailyResults, "Daily");
             let dailyFreeResults = await createDailyFreeRewardMissions();
@@ -624,7 +258,6 @@ shared actor class Cosmicrafts() {
 
         // Create and assign weekly missions
         if (now - lastWeeklyMissionCreationTime >= ONE_WEEK) {
-            Debug.print("[createMissionsPeriodically] Time to create and assign weekly missions.");
             let weeklyResults = await createWeeklyMissions();
             await Utils.logMissionResults(weeklyResults, "Weekly");
             lastWeeklyMissionCreationTime := now;
@@ -636,285 +269,1017 @@ shared actor class Cosmicrafts() {
         });
     };
 
+//----
 
-    // New User renewal Mission System
+// General Missions
+    stable var generalMissionIDCounter: Nat = 1;
+    stable var _generalUserProgress: [(Principal, [MissionsUser])] = [];
+    stable var _missions: [(Nat, Mission)] = [];
+    stable var _activeMissions: [(Nat, Mission)] = [];
+    stable var _claimedRewards: [(Principal, [Nat])] = [];
 
-// New stable variables for user-specific missions
-stable var _userHourlyMissions: [(Principal, [Mission])] = [];
-var userHourlyMissions: HashMap.HashMap<Principal, [Mission]> = HashMap.fromIter(_userHourlyMissions.vals(), 0, Principal.equal, Principal.hash);
+    // HashMaps for General Missions
+    var missions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_missions.vals(), 0, Utils._natEqual, Utils._natHash);
+    var activeMissions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_activeMissions.vals(), 0, Utils._natEqual, Utils._natHash);
+    var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
+    var generalUserProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_generalUserProgress.vals(), 0, Principal.equal, Principal.hash);
 
-// Stable variable for tracking user-specific mission IDs
-stable var _userMissionIDCounters: [(Principal, Nat)] = [];
-var userMissionIDCounters: HashMap.HashMap<Principal, Nat> = HashMap.fromIter(_userMissionIDCounters.vals(), 0, Principal.equal, Principal.hash);
+    // Function to create a new general mission
+    public func createGeneralMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hoursActive: Nat64): async (Bool, Text, Nat) {
+        let id = generalMissionIDCounter;
+        generalMissionIDCounter += 1;
 
+        let now = Nat64.fromIntWrap(Time.now());
+        let duration = ONE_HOUR * hoursActive;
+        let endDate = now + duration;
 
+        let newMission: Mission = {
+            id = id;
+            name = name;
+            missionType = missionType;
+            reward_type = rewardType;
+            reward_amount = rewardAmount;
+            start_date = now;
+            end_date = endDate;
+            total = total;
+        };
 
-// Function to get the current mission progress
-public shared ({ caller }) func getCurrentMissionProgress() : async ?MissionsUser {
-    var userMissions = switch (userHourlyMissions.get(caller)) {
+        missions.put(id, newMission);
+        activeMissions.put(id, newMission);
+        Debug.print("[createGeneralMission] Mission created with ID: " # Nat.toText(id) # ", End Date: " # Nat64.toText(endDate) # ", Start Date: " # Nat64.toText(now));
+
+        return (true, "Mission created successfully", id);
+    };
+
+    // Function to update progress for general missions
+public func updateGeneralMissionProgress(user: Principal, missionsProgress: [MissionProgress]): async (Bool, Text) {
+    Debug.print("[updateGeneralMissionProgress] Updating general mission progress for user: " # Principal.toText(user));
+    Debug.print("[updateGeneralMissionProgress] Missions progress: " # debug_show(missionsProgress));
+
+    var userMissions: [MissionsUser] = switch (generalUserProgress.get(user)) {
         case (null) { [] };
         case (?missions) { missions };
     };
 
-    var userProgressList = switch (userProgress.get(caller)) {
-        case (null) { [] };
-        case (?progress) { progress };
-    };
+    Debug.print("[updateGeneralMissionProgress] User's current missions: " # debug_show(userMissions));
 
-    if (userMissions.size() == 0 or userProgressList.size() == 0) {
-        return null;
-    };
-
-    // Assuming we are only interested in the latest mission
-    let latestMission = userMissions[userMissions.size() - 1];
-    let latestMissionProgress = userProgressList[userProgressList.size() - 1];
-
-    if (latestMission.id != latestMissionProgress.id_mission) {
-        return null;
-    };
-
-    let missionProgress: MissionsUser = {
-        id_mission = latestMission.id;
-        total = latestMission.total;
-        progress = latestMissionProgress.progress;
-        finished = latestMissionProgress.finished;
-        finish_date = latestMissionProgress.finish_date;
-        start_date = latestMission.start_date;
-        expiration = latestMission.end_date;
-        missionType = latestMission.missionType;
-        reward_type = latestMission.reward_type;
-        reward_amount = latestMission.reward_amount;
-    };
-
-    return ?missionProgress;
-};
-
-// Function to assign user-specific missions
-private func assignUserSpecificMissionsToUser(user: Principal): async () {
-    var userMissions = switch (userHourlyMissions.get(user)) {
-        case (null) { [] };
-        case (?missions) { missions };
-    };
-
-    var userProgressList = switch (userProgress.get(user)) {
-        case (null) { [] };
-        case (?progress) { progress };
-    };
-
-    let now = Nat64.fromNat(Int.abs(Time.now()));
-    let buffer = Buffer.Buffer<Types.MissionsUser>(userProgressList.size());
+    let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+    let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
 
     for (mission in userMissions.vals()) {
-        if (mission.end_date >= now) {
-            buffer.add({
-                id_mission = mission.id;
-                reward_amount = mission.reward_amount;
-                start_date = mission.start_date;
-                progress = 0;  // Initially, the progress is 0 for a new mission
-                finish_date = 0;  // Initially, the finish date is 0 for a new mission
-                expiration = mission.end_date;
-                missionType = mission.missionType;
-                finished = false;  // Initially, the mission is not finished
-                reward_type = mission.reward_type;
-                total = mission.total;
-            });
-        }
-    };
-
-    userProgress.put(user, Buffer.toArray(buffer));
-};
-
-public shared(msg) func claimUserSpecificReward(idMission: Nat): async (Bool, Text) {
-    Debug.print("Starting claimUserSpecificReward for mission ID: " # Nat.toText(idMission));
-
-    let userMissionsOpt = userHourlyMissions.get(msg.caller);
-    let missionOpt = switch (userMissionsOpt) {
-        case (null) { null };
-        case (?missions) {
-            Array.find<Mission>(missions, func(mission) { mission.id == idMission });
-        };
-    };
-
-    switch (missionOpt) {
-        case (null) {
-            Debug.print("Mission not found for ID: " # Nat.toText(idMission));
-            return (false, "User-specific mission not found");
-        };
-        case (?mission) {
-            let currentTime: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-
-            // Debug statement
-            Debug.print("Checking if the mission has expired for mission ID: " # Nat.toText(idMission));
-            if (currentTime > mission.end_date) {
-                Debug.print("Mission has expired for mission ID: " # Nat.toText(idMission));
-                return (false, "Mission has expired");
-            };
-
-            // Debug statement
-            Debug.print("Checking if the mission reward has already been claimed for mission ID: " # Nat.toText(idMission));
-            let userClaimedRewards = switch (claimedRewards.get(msg.caller)) {
-                case (null) { [] };
-                case (?rewards) { rewards };
-            };
-            if (Array.find<Nat>(userClaimedRewards, func(r) { r == idMission }) != null) {
-                Debug.print("Mission reward has already been claimed for mission ID: " # Nat.toText(idMission));
-                return (false, "Mission reward has already been claimed");
-            };
-
-            // Debug statement
-            Debug.print("Checking if the mission is finished for mission ID: " # Nat.toText(idMission));
-            let userProgressOpt = userProgress.get(msg.caller);
-            let missionProgressOpt = switch (userProgressOpt) {
-                case (null) { null };
-                case (?progressList) {
-                    Array.find<MissionsUser>(progressList, func(progress) { progress.id_mission == idMission });
-                };
-            };
-
-            switch (missionProgressOpt) {
-                case (null) {
-                    Debug.print("Mission not assigned for mission ID: " # Nat.toText(idMission));
-                    return (false, "Mission not assigned");
-                };
-                case (?missionProgress) {
-                    if (not missionProgress.finished) {
-                        Debug.print("Mission not finished for mission ID: " # Nat.toText(idMission));
-                        return (false, "Mission not finished");
-                    };
-
-                    // Debug statement
-                    Debug.print("Checking if the finish date is valid for mission ID: " # Nat.toText(idMission));
-                    if (missionProgress.finish_date > mission.end_date) {
-                        Debug.print("Mission finish date is after the expiration date for mission ID: " # Nat.toText(idMission));
-                        return (false, "Mission finish date is after the expiration date");
-                    };
-
-                    // Debug statement
-                    Debug.print("Minting the rewards for mission ID: " # Nat.toText(idMission));
-                    let (success, message) = await mintRewards(missionProgress, msg.caller);
-                    if (success) {
-                        // Debug statement
-                        Debug.print("Updating user progress and claimed rewards for mission ID: " # Nat.toText(idMission));
-                        var userMissions = switch (userProgress.get(msg.caller)) {
-                            case (null) { [] };
-                            case (?missions) { missions };
+        Debug.print("[updateGeneralMissionProgress] Processing mission: " # debug_show(mission));
+        if (mission.finished) {
+            updatedMissions.add(mission);
+        } else {
+            var updatedMission = mission;
+            for (progress in missionsProgress.vals()) {
+                if (mission.missionType == progress.missionType) {
+                    let updatedProgress = mission.progress + progress.progress;
+                    Debug.print("[updateGeneralMissionProgress] Updated progress for missionType " # debug_show(mission.missionType) # ": " # debug_show(updatedProgress));
+                    if (updatedProgress >= mission.total) {
+                        updatedMission := {
+                            mission with
+                            progress = updatedProgress;
+                            finished = true;
+                            finish_date = now;
                         };
-                        let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
-                        for (r in userMissions.vals()) {
-                            if (r.id_mission != idMission) {
-                                updatedMissions.add(r);
-                            }
-                        };
-                        userProgress.put(msg.caller, Buffer.toArray(updatedMissions));
-
-                        // Add claimed reward to claimedRewards
-                        claimedRewards.put(msg.caller, Array.append(userClaimedRewards, [idMission]));
-
-                        // Debug statement
-                        Debug.print("Creating a new user-specific hourly mission for mission ID: " # Nat.toText(idMission));
-                        let (newMissionSuccess, newMissionMessage, newMissionID) = await createUserSpecificHourlyMission(msg.caller);
-                        if (newMissionSuccess) {
-                            Debug.print("New mission created with ID: " # Nat.toText(newMissionID));
-                            return (true, message # " New user-specific hourly mission created with ID: " # Nat.toText(newMissionID));
-                        } else {
-                            Debug.print("Failed to create new mission: " # newMissionMessage);
-                            return (true, message # " However, failed to create a new user-specific hourly mission: " # newMissionMessage);
-                        }
                     } else {
-                        Debug.print("Failed to mint rewards: " # message);
-                        return (success, message);
+                        updatedMission := {
+                            mission with
+                            progress = updatedProgress;
+                        };
+                    };
+                };
+            };
+            updatedMissions.add(updatedMission);
+        };
+    };
+
+    generalUserProgress.put(user, Buffer.toArray(updatedMissions));
+    Debug.print("[updateGeneralMissionProgress] Updated user missions: " # debug_show(generalUserProgress.get(user)));
+    return (true, "Progress added successfully to general missions");
+};
+
+
+    // Function to assign new general missions to a user
+    public func assignGeneralMissions(user: Principal): async () {
+        Debug.print("[assignGeneralMissions] Assigning new general missions to user: " # Principal.toText(user));
+
+        var userMissions: [MissionsUser] = switch (generalUserProgress.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+
+        Debug.print("[assignGeneralMissions] User missions before update: " # debug_show(userMissions));
+
+        var claimedRewardsForUser: [Nat] = switch (claimedRewards.get(user)) {
+            case (null) { [] };
+            case (?claimed) { claimed };
+        };
+
+        let now = Nat64.fromNat(Int.abs(Time.now()));
+        let buffer = Buffer.Buffer<MissionsUser>(0);
+
+        // Remove expired or claimed missions
+        for (mission in userMissions.vals()) {
+            if (mission.expiration >= now and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id_mission, Utils._natEqual)) {
+                buffer.add(mission);
+            }
+        };
+
+        // Collect IDs of current missions to avoid duplication
+        let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
+        for (mission in buffer.vals()) {
+            currentMissionIds.add(mission.id_mission);
+        };
+
+        // Add new active missions to the user
+        for ((id, mission) in activeMissions.entries()) {
+            if (not Utils.arrayContains<Nat>(Buffer.toArray(currentMissionIds), id, Utils._natEqual) and not Utils.arrayContains<Nat>(claimedRewardsForUser, id, Utils._natEqual)) {
+                buffer.add({
+                    id_mission = id;
+                    reward_amount = mission.reward_amount;
+                    start_date = mission.start_date;
+                    progress = 0; // Initialize with 0 progress
+                    finish_date = 0; // Initialize finish date to 0
+                    expiration = mission.end_date;
+                    missionType = mission.missionType;
+                    finished = false;
+                    reward_type = mission.reward_type;
+                    total = mission.total;
+                });
+            }
+        };
+
+        generalUserProgress.put(user, Buffer.toArray(buffer));
+
+        Debug.print("[assignGeneralMissions] User missions after update: " # debug_show(generalUserProgress.get(user)));
+    };
+
+    // Function to get general missions for a user
+    public shared ({ caller }) func getGeneralMissions(): async [MissionsUser] {
+        // Step 1: Assign new general missions to the user
+        await assignGeneralMissions(caller);
+
+        // Step 2: Search for active general missions assigned to the user
+        let activeMissions: [MissionsUser] = await searchActiveGeneralMissions(caller);
+
+        // Step 3: Get progress for each active general mission
+        let missionsWithProgress = Buffer.Buffer<MissionsUser>(activeMissions.size());
+        for (mission in activeMissions.vals()) {
+            let missionProgress = await getGeneralMissionProgress(caller, mission.id_mission);
+            switch (missionProgress) {
+                case (null) {};
+                case (?progress) {
+                    missionsWithProgress.add(progress);
+                };
+            };
+        };
+
+        return Buffer.toArray(missionsWithProgress);
+    };
+
+    // Function to search for active general missions for a user
+    public query func searchActiveGeneralMissions(user: Principal): async [MissionsUser] {
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        var userMissions: [MissionsUser] = switch (generalUserProgress.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+
+        var claimedRewardsForUser: [Nat] = switch (claimedRewards.get(user)) {
+            case (null) { [] };
+            case (?claimed) { claimed };
+        };
+
+        let activeMissions = Buffer.Buffer<MissionsUser>(0);
+        for (mission in userMissions.vals()) {
+            if (mission.expiration >= now and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id_mission, Utils._natEqual)) {
+                activeMissions.add(mission);
+            }
+        };
+
+        return Buffer.toArray(activeMissions);
+    };
+
+    // Function to get the progress of a specific general mission for a user
+    public query func getGeneralMissionProgress(user: Principal, missionID: Nat): async ?MissionsUser {
+        let userMissions: [MissionsUser] = switch (generalUserProgress.get(user)) {
+            case (null) return null;
+            case (?missions) missions;
+        };
+
+        for (mission in userMissions.vals()) {
+            if (mission.id_mission == missionID) {
+                return ?mission;
+            };
+        };
+        return null;
+    };
+
+    // Function to claim a reward for a general mission
+    public shared(msg) func claimGeneralReward(idMission: Nat): async (Bool, Text) {
+        let missionOpt = await getGeneralMissionProgress(msg.caller, idMission);
+        switch (missionOpt) {
+            case (null) {
+                return (false, "Mission not assigned");
+            };
+            case (?mission) {
+                let currentTime: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+
+                // Check if the mission has expired
+                if (currentTime > mission.expiration) {
+                    return (false, "Mission has expired");
+                };
+
+                // Check if the mission reward has already been claimed
+                let claimedRewardsForUser = switch (claimedRewards.get(msg.caller)) {
+                    case (null) { [] };
+                    case (?rewards) { rewards };
+                };
+                if (Array.find<Nat>(claimedRewardsForUser, func(r) { r == idMission }) != null) {
+                    return (false, "Mission reward has already been claimed");
+                };
+
+                // Check if the mission is finished
+                if (not mission.finished) {
+                    return (false, "Mission not finished");
+                };
+
+                // Check if the finish date is valid (should be before or equal to expiration date)
+                if (mission.finish_date > mission.expiration) {
+                    return (false, "Mission finish date is after the expiration date");
+                };
+
+                // If all checks pass, mint the rewards
+                let (success, message) = await mintGeneralRewards(mission, msg.caller);
+                if (success) {
+                    // Remove claimed reward from userProgress and add it to claimedRewards
+                    var userMissions: [MissionsUser] = switch (generalUserProgress.get(msg.caller)) {
+                        case (null) { [] };
+                        case (?missions) { missions };
+                    };
+                    let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
+                    for (r in userMissions.vals()) {
+                        if (r.id_mission != idMission) {
+                            updatedMissions.add(r);
+                        }
+                    };
+                    generalUserProgress.put(msg.caller, Buffer.toArray(updatedMissions));
+
+                    // Add claimed reward to claimedRewards
+                    claimedRewards.put(msg.caller, Array.append(claimedRewardsForUser, [idMission]));
+                };
+                return (success, message);
+            };
+        };
+    };
+
+    func mintGeneralRewards(mission: MissionsUser, caller: Principal): async (Bool, Text) {
+        var claimHistory = switch (claimedRewards.get(caller)) {
+            case (null) { [] };
+            case (?history) { history };
+        };
+
+        if (Utils.arrayContains(claimHistory, mission.id_mission, Utils._natEqual)) {
+            return (false, "Mission already claimed");
+        };
+
+        switch (mission.reward_type) {
+            case (#Chest) {
+                let uuid = await Utils.generateUUID64();
+                let mintArgs: TypesICRC7.MintArgs = {
+                    to = { owner = caller; subaccount = null };
+                    token_id = uuid;
+                    metadata = Utils.getChestMetadata(mission.reward_amount);
+                };
+                let mintResult = await chests.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
+                        claimedRewards.put(caller, claimHistory);
+                        return (true, "Chest minted and reward claimed. UUID: " # Nat.toText(uuid) # ", Rarity: " # Nat.toText(mission.reward_amount));
+                    };
+                    case (#Err(_error)) {
+                        return (false, "Minting chest failed");
+                    };
+                };
+            };
+            case (#Flux) {
+                let mintArgs: TypesICRC1.Mint = {
+                    to = { owner = caller; subaccount = null };
+                    amount = mission.reward_amount;
+                    memo = null;
+                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+                };
+                let mintResult = await flux.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
+                        claimedRewards.put(caller, claimHistory);
+                        return (true, "Flux minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
+                    };
+                    case (#Err(_error)) {
+                        return (false, "Minting flux failed");
+                    };
+                };
+            };
+            case (#Shards) {
+                let mintArgs: TypesICRC1.Mint = {
+                    to = { owner = caller; subaccount = null };
+                    amount = mission.reward_amount;
+                    memo = null;
+                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+                };
+                let mintResult = await shards.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
+                        claimedRewards.put(caller, claimHistory);
+                        return (true, "Shards minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
+                    };
+                    case (#Err(_error)) {
+                        return (false, "Minting shards failed");
                     };
                 };
             };
         };
     };
-};
 
-public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text, Nat) {
-    Debug.print("Starting createUserSpecificHourlyMission");
 
-    var userMissions = switch (userHourlyMissions.get(user)) {
-        case (null) { [] };
-        case (?missions) { missions };
+//--
+
+// User-Specific Missions
+    stable var _userMissionProgress: [(Principal, [MissionsUser])] = [];
+    stable var _userMissions: [(Principal, [Mission])] = [];
+    stable var _userMissionCounters: [(Principal, Nat)] = [];
+    stable var _userClaimedRewards: [(Principal, [Nat])] = [];
+
+    // HashMaps for User-Specific Missions
+    var userMissionProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_userMissionProgress.vals(), 0, Principal.equal, Principal.hash);
+    var userMissions: HashMap.HashMap<Principal, [Mission]> = HashMap.fromIter(_userMissions.vals(), 0, Principal.equal, Principal.hash);
+    var userMissionCounters: HashMap.HashMap<Principal, Nat> = HashMap.fromIter(_userMissionCounters.vals(), 0, Principal.equal, Principal.hash);
+    var userClaimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_userClaimedRewards.vals(), 0, Principal.equal, Principal.hash);
+
+    // Function to create a new user-specific mission
+    public func createUserMission(user: PlayerId): async (Bool, Text, Nat) {
+        Debug.print("Starting createUserMission");
+
+        var userMissionsList: [Mission] = switch (userMissions.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+
+        var userSpecificProgressList: [MissionsUser] = switch (userMissionProgress.get(user)) {
+            case (null) { [] };
+            case (?progress) { progress };
+        };
+
+        // Debug logging
+        Debug.print("User Missions: " # debug_show(userMissionsList));
+        Debug.print("User Progress List: " # debug_show(userSpecificProgressList));
+
+        // Check the last mission for the user
+        if (userSpecificProgressList.size() > 0) {
+            let lastMissionProgress = userSpecificProgressList[userSpecificProgressList.size() - 1];
+            let currentTime = Nat64.fromNat(Int.abs(Time.now()));
+
+            // Debug logging
+            Debug.print("Last Mission Progress: " # debug_show(lastMissionProgress));
+            Debug.print("Current Time: " # debug_show(currentTime));
+
+            // Expiration check logic
+            if (not lastMissionProgress.finished and currentTime <= lastMissionProgress.expiration) {
+                Debug.print("Current mission is still active: " # debug_show(lastMissionProgress));
+                return (false, "Current mission is still active", lastMissionProgress.id_mission);
+            } else {
+                Debug.print("Current mission is not active or is finished");
+            }
+        };
+
+        // Check if the list needs to be shuffled
+        if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
+            await initializeShuffledHourlyMissions();
+        };
+
+        // Select the next mission from the shuffled list
+        let index = shuffledHourlyIndices[currentHourlyIndex];
+        let template = MissionOptions.hourlyMissions[index];
+
+        // Generate a random reward amount using the provided helper function
+        let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
+
+        // Move to the next index
+        currentHourlyIndex += 1;
+
+        // Retrieve the user's mission ID counter
+        let missionIDCounter = switch (userMissionCounters.get(user)) {
+            case (null) { 0 };
+            case (?counter) { counter };
+        };
+
+        let now = Nat64.fromNat(Int.abs(Time.now()));
+        let newMission: Mission = {
+            id = missionIDCounter;
+            name = template.name;
+            missionType = template.missionType;
+            reward_type = template.rewardType;
+            reward_amount = rewardAmount;
+            start_date = now;
+            end_date = now + (template.hoursActive * ONE_HOUR);
+            total = template.total;
+        };
+
+        // Debug logging
+        Debug.print("New Mission: " # debug_show(newMission));
+
+        userMissionCounters.put(user, missionIDCounter + 1);
+
+        userMissionsList := Array.append(userMissionsList, [newMission]);
+        userMissions.put(user, userMissionsList);
+
+        // Assign the new mission to the user
+        await assignUserMissions(user);
+
+        Debug.print("Mission created and assigned successfully");
+
+        return (true, "User-specific mission created and assigned.", newMission.id);
     };
 
-    var userProgressList = switch (userProgress.get(user)) {
+    // Function to update progress for user-specific missions
+public shared func updateUserMissions(user: Principal, playerStats: {
+    secRemaining: Nat;
+    energyGenerated: Nat;
+    damageDealt: Nat;
+    damageTaken: Nat;
+    energyUsed: Nat;
+    deploys: Nat;
+    faction: Nat;
+    gameMode: Nat;
+    xpEarned: Nat;
+    kills: Nat;
+    wonGame: Bool;
+}): async (Bool, Text) {
+
+    Debug.print("[updateUserMissions] Updating user-specific mission progress for user: " # Principal.toText(user));
+    Debug.print("[updateUserMissions] Player stats: " # debug_show(playerStats));
+
+    var userSpecificProgressList = switch (userMissionProgress.get(user)) {
         case (null) { [] };
         case (?progress) { progress };
     };
 
-    // Debug logging
-    Debug.print("User Missions: " # debug_show(userMissions));
-    Debug.print("User Progress List: " # debug_show(userProgressList));
+    Debug.print("[updateUserMissions] User's current missions: " # debug_show(userSpecificProgressList));
 
-    // Check the last mission for the user
-    if (userProgressList.size() > 0) {
-        let lastMissionProgress = userProgressList[userProgressList.size() - 1];
-        let currentTime = Nat64.fromNat(Int.abs(Time.now()));
+    let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+    let updatedMissions = Buffer.Buffer<MissionsUser>(userSpecificProgressList.size());
 
-        // Debug logging
-        Debug.print("Last Mission Progress: " # debug_show(lastMissionProgress));
-        Debug.print("Current Time: " # debug_show(currentTime));
-
-        // Expiration check logic
-        if (not lastMissionProgress.finished and currentTime <= lastMissionProgress.expiration) {
-            Debug.print("Current mission is still active: " # debug_show(lastMissionProgress));
-            return (false, "Current mission is still active", lastMissionProgress.id_mission);
+    for (mission in userSpecificProgressList.vals()) {
+        Debug.print("[updateUserMissions] Processing mission: " # debug_show(mission));
+        if (mission.finished) {
+            updatedMissions.add(mission);
         } else {
-            Debug.print("Current mission is not active or is finished");
-        }
+            var updatedMission = mission;
+
+            switch (mission.missionType) {
+                case (#GamesCompleted) {
+                    updatedMission := { mission with progress = mission.progress + 1 };
+                };
+                case (#GamesWon) {
+                    if (playerStats.secRemaining > 0) {
+                        updatedMission := { mission with progress = mission.progress + 1 };
+                    };
+                };
+                case (#DamageDealt) {
+                    updatedMission := { mission with progress = mission.progress + playerStats.damageDealt };
+                };
+                case (#DamageTaken) {
+                    updatedMission := { mission with progress = mission.progress + playerStats.damageTaken };
+                };
+                case (#EnergyUsed) {
+                    updatedMission := { mission with progress = mission.progress + playerStats.energyUsed };
+                };
+                case (#UnitsDeployed) {
+                    updatedMission := { mission with progress = mission.progress + playerStats.deploys };
+                };
+                case (#FactionPlayed) {
+                    updatedMission := { mission with progress = mission.progress + playerStats.faction };
+                };
+                case (#GameModePlayed) {
+                    updatedMission := { mission with progress = mission.progress + playerStats.gameMode };
+                };
+                case (#XPEarned) {
+                    updatedMission := { mission with progress = mission.progress + playerStats.xpEarned };
+                };
+                case (#Kills) {
+                    updatedMission := { mission with progress = mission.progress + playerStats.kills };
+                };
+            };
+
+            Debug.print("[updateUserMissions] Updated mission progress: " # debug_show(updatedMission.progress));
+
+            if (updatedMission.progress >= updatedMission.total) {
+                updatedMission := {
+                    updatedMission with
+                    progress = updatedMission.total;
+                    finished = true;
+                    finish_date = now;
+                };
+            };
+
+            updatedMissions.add(updatedMission);
+        };
     };
 
-    // Check if the list needs to be shuffled
-    if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
-        await initializeShuffledHourlyMissions();
-    };
-
-    // Select the next mission from the shuffled list
-    let index = shuffledHourlyIndices[currentHourlyIndex];
-    let template = MissionOptions.hourlyMissions[index];
-
-    // Generate a random reward amount using the provided helper function
-    let rewardAmount = await getRandomReward(template.minReward, template.maxReward);
-
-    // Move to the next index
-    currentHourlyIndex += 1;
-
-    // Get the user-specific mission ID counter
-    let missionIDCounter = switch (userMissionIDCounters.get(user)) {
-        case (null) { 0 };
-        case (?counter) { counter };
-    };
-
-    // Create the new mission
-    let now = Nat64.fromNat(Int.abs(Time.now()));
-    let newMission: Mission = {
-        id = missionIDCounter;
-        name = template.name;
-        missionType = template.missionType;
-        reward_type = template.rewardType;
-        reward_amount = rewardAmount;
-        start_date = now;
-        end_date = now + (template.hoursActive * ONE_HOUR);
-        total = template.total;
-    };
-
-    // Debug logging
-    Debug.print("New Mission: " # debug_show(newMission));
-
-    userMissionIDCounters.put(user, missionIDCounter + 1);
-
-    userMissions := Array.append(userMissions, [newMission]);
-    userHourlyMissions.put(user, userMissions);
-
-    // Assign the new mission to the user
-    await assignUserSpecificMissionsToUser(user);
-
-    Debug.print("Mission created and assigned successfully");
-
-    return (true, "User-specific hourly mission created and assigned.", newMission.id);
+    userMissionProgress.put(user, Buffer.toArray(updatedMissions));
+    Debug.print("[updateUserMissions] Updated user missions: " # debug_show(userMissionProgress.get(user)));
+    return (true, "Progress updated successfully in user-specific missions");
 };
 
+
+
+    // Function to assign new user-specific missions to a user
+    func assignUserMissions(user: PlayerId): async () {
+        Debug.print("[assignUserMissions] Assigning new user-specific missions to user: " # Principal.toText(user));
+
+        var userSpecificProgressList: [MissionsUser] = switch (userMissionProgress.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+
+        Debug.print("[assignUserMissions] User missions before update: " # debug_show(userSpecificProgressList));
+
+        var claimedRewardsForUser: [Nat] = switch (userClaimedRewards.get(user)) {
+            case (null) { [] };
+            case (?claimed) { claimed };
+        };
+
+        let now = Nat64.fromNat(Int.abs(Time.now()));
+        let buffer = Buffer.Buffer<MissionsUser>(0);
+
+        // Remove expired or claimed missions
+        for (mission in userSpecificProgressList.vals()) {
+            if (mission.expiration >= now and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id_mission, Utils._natEqual)) {
+                buffer.add(mission);
+            }
+        };
+
+        // Collect IDs of current missions to avoid duplication
+        let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
+        for (mission in buffer.vals()) {
+            currentMissionIds.add(mission.id_mission);
+        };
+
+        // Add new active missions to the user
+        for ((_, missions) in userMissions.entries()) {
+            for (mission in missions.vals()) {
+                if (not Utils.arrayContains<Nat>(Buffer.toArray(currentMissionIds), mission.id, Utils._natEqual) and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id, Utils._natEqual)) {
+                    buffer.add({
+                        id_mission = mission.id;
+                        reward_amount = mission.reward_amount;
+                        start_date = mission.start_date;
+                        progress = 0; // Initialize with 0 progress
+                        finish_date = 0; // Initialize finish date to 0
+                        expiration = mission.end_date;
+                        missionType = mission.missionType;
+                        finished = false;
+                        reward_type = mission.reward_type;
+                        total = mission.total;
+                    });
+                }
+            }
+        };
+
+        userMissionProgress.put(user, Buffer.toArray(buffer));
+
+        Debug.print("[assignUserMissions] User missions after update: " # debug_show(userMissionProgress.get(user)));
+    };
+
+    // Function to get user-specific missions for a user
+    public shared ({ caller }) func getUserMissions(): async [MissionsUser] {
+        // Step 1: Assign new user-specific missions to the user
+        await assignUserMissions(caller);
+
+        // Step 2: Search for active user-specific missions assigned to the user
+        let activeMissions: [MissionsUser] = await searchActiveUserMissions(caller);
+
+        // Step 3: Get progress for each active user-specific mission
+        let missionsWithProgress = Buffer.Buffer<MissionsUser>(activeMissions.size());
+        for (mission in activeMissions.vals()) {
+            let missionProgress = await getUserMissionProgress(caller, mission.id_mission);
+            switch (missionProgress) {
+                case (null) {};
+                case (?progress) {
+                    missionsWithProgress.add(progress);
+                };
+            };
+        };
+
+        return Buffer.toArray(missionsWithProgress);
+    };
+
+    // Function to search for active user-specific missions
+    public query func searchActiveUserMissions(user: PlayerId): async [MissionsUser] {
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        var userMissions = switch (userMissionProgress.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+
+        var claimedRewardsForUser = switch (userClaimedRewards.get(user)) {
+            case (null) { [] };
+            case (?claimed) { claimed };
+        };
+
+        let activeMissions = Buffer.Buffer<MissionsUser>(0);
+        for (mission in userMissions.vals()) {
+            if (mission.expiration >= now and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id_mission, Utils._natEqual)) {
+                activeMissions.add(mission);
+            }
+        };
+
+        return Buffer.toArray(activeMissions);
+    };
+
+    // Function to get the progress of a user-specific mission
+    public query func getUserMissionProgress(user: PlayerId, missionID: Nat): async ?MissionsUser {
+        let userMissions = switch (userMissionProgress.get(user)) {
+            case (null) return null;
+            case (?missions) missions;
+        };
+
+        for (mission in userMissions.vals()) {
+            if (mission.id_mission == missionID) {
+                return ?mission;
+            };
+        };
+        return null;
+    };
+
+    // Function to claim reward for a user-specific mission
+    public shared(msg) func claimUserReward(idMission: Nat): async (Bool, Text) {
+        let missionOpt = await getUserMissionProgress(msg.caller, idMission);
+        switch (missionOpt) {
+            case (null) {
+                return (false, "Mission not assigned");
+            };
+            case (?mission) {
+                let currentTime: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+
+                // Check if the mission has expired
+                if (currentTime > mission.expiration) {
+                    return (false, "Mission has expired");
+                };
+
+                // Check if the mission reward has already been claimed
+                let claimedRewardsForUser = switch (userClaimedRewards.get(msg.caller)) {
+                    case (null) { [] };
+                    case (?rewards) { rewards };
+                };
+                if (Array.find<Nat>(claimedRewardsForUser, func(r) { r == idMission }) != null) {
+                    return (false, "Mission reward has already been claimed");
+                };
+
+                // Check if the mission is finished
+                if (not mission.finished) {
+                    return (false, "Mission not finished");
+                };
+
+                // Check if the finish date is valid (should be before or equal to expiration date)
+                if (mission.finish_date > mission.expiration) {
+                    return (false, "Mission finish date is after the expiration date");
+                };
+
+                // If all checks pass, mint the rewards
+                let (success, message) = await mintUserRewards(mission, msg.caller);
+                if (success) {
+                    // Remove claimed reward from userProgress and add it to claimedRewards
+                    var userMissions = switch (userMissionProgress.get(msg.caller)) {
+                        case (null) { [] };
+                        case (?missions) { missions };
+                    };
+                    let updatedMissions = Buffer.Buffer<MissionsUser>(userMissions.size());
+                    for (r in userMissions.vals()) {
+                        if (r.id_mission != idMission) {
+                            updatedMissions.add(r);
+                        }
+                    };
+                    userMissionProgress.put(msg.caller, Buffer.toArray(updatedMissions));
+
+                    // Add claimed reward to userClaimedRewards
+                    userClaimedRewards.put(msg.caller, Array.append(claimedRewardsForUser, [idMission]));
+                };
+                return (success, message);
+            };
+        };
+    };
+
+    func mintUserRewards(mission: MissionsUser, caller: Principal): async (Bool, Text) {
+        var claimHistory = switch (userClaimedRewards.get(caller)) {
+            case (null) { [] };
+            case (?history) { history };
+        };
+
+        if (Utils.arrayContains(claimHistory, mission.id_mission, Utils._natEqual)) {
+            return (false, "Mission already claimed");
+        };
+
+        switch (mission.reward_type) {
+            case (#Chest) {
+                let uuid = await Utils.generateUUID64();
+                let mintArgs: TypesICRC7.MintArgs = {
+                    to = { owner = caller; subaccount = null };
+                    token_id = uuid;
+                    metadata = Utils.getChestMetadata(mission.reward_amount);
+                };
+                let mintResult = await chests.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
+                        userClaimedRewards.put(caller, claimHistory);
+                        return (true, "Chest minted and reward claimed. UUID: " # Nat.toText(uuid) # ", Rarity: " # Nat.toText(mission.reward_amount));
+                    };
+                    case (#Err(_error)) {
+                        return (false, "Minting chest failed");
+                    };
+                };
+            };
+            case (#Flux) {
+                let mintArgs: TypesICRC1.Mint = {
+                    to = { owner = caller; subaccount = null };
+                    amount = mission.reward_amount;
+                    memo = null;
+                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+                };
+                let mintResult = await flux.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
+                        userClaimedRewards.put(caller, claimHistory);
+                        return (true, "Flux minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
+                    };
+                    case (#Err(_error)) {
+                        return (false, "Minting flux failed");
+                    };
+                };
+            };
+            case (#Shards) {
+                let mintArgs: TypesICRC1.Mint = {
+                    to = { owner = caller; subaccount = null };
+                    amount = mission.reward_amount;
+                    memo = null;
+                    created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+                };
+                let mintResult = await shards.mint(mintArgs);
+                switch (mintResult) {
+                    case (#Ok(_transactionID)) {
+                        claimHistory := Array.append(claimHistory, [mission.id_mission]);
+                        userClaimedRewards.put(caller, claimHistory);
+                        return (true, "Shards minted and reward claimed. Quantity: " # Nat.toText(mission.reward_amount));
+                    };
+                    case (#Err(_error)) {
+                        return (false, "Minting shards failed");
+                    };
+                };
+            };
+        };
+    };
+
+
+// Progress Manager
+
+public shared func updateProgressManager(user: Principal, playerStats: {
+    secRemaining: Nat;
+    energyGenerated: Nat;
+    damageDealt: Nat;
+    damageTaken: Nat;
+    energyUsed: Nat;
+    deploys: Nat;
+    faction: Nat;
+    gameMode: Nat;
+    xpEarned: Nat;
+    kills: Nat;
+    wonGame: Bool;
+    }): async (Bool, Text) {
+
+        var generalProgress: [MissionProgress] = [
+            { missionType = #GamesCompleted; progress = 1; },
+            { missionType = #DamageDealt; progress = playerStats.damageDealt },
+            { missionType = #DamageTaken; progress = playerStats.damageTaken },
+            { missionType = #EnergyUsed; progress = playerStats.energyUsed },
+            { missionType = #UnitsDeployed; progress = playerStats.deploys },
+            { missionType = #FactionPlayed; progress = playerStats.faction },
+            { missionType = #GameModePlayed; progress = playerStats.gameMode },
+            { missionType = #XPEarned; progress = playerStats.xpEarned },
+            { missionType = #Kills; progress = playerStats.kills }
+        ];
+
+        if (playerStats.wonGame) {
+            generalProgress := Array.append(generalProgress, [{ missionType = #GamesWon; progress = 1 }]);
+        };
+
+        Debug.print("[updateProgressManager] Updating general mission progress...");
+        Debug.print("[updateProgressManager] General progress: " # debug_show(generalProgress));
+        let (result1, message1) = await updateGeneralMissionProgress(user, generalProgress);
+        Debug.print("[updateProgressManager] General mission progress update result: " # debug_show(result1) # ", message: " # message1);
+
+        Debug.print("[updateProgressManager] Updating user-specific mission progress...");
+        Debug.print("[updateProgressManager] Player stats: " # debug_show(playerStats));
+        let (result2, message2) = await updateUserMissions(user, playerStats);
+        Debug.print("[updateProgressManager] User-specific mission progress update result: " # debug_show(result2) # ", message: " # message2);
+
+        let success = result1 and result2;
+        let message = message1 # " | " # message2;
+
+        return (success, message);
+};
+
+
+public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
+    secRemaining: Nat;
+    energyGenerated: Nat;
+    damageDealt: Nat;
+    wonGame: Bool;
+    botMode: Nat;
+    deploys: Nat;
+    damageTaken: Nat;
+    damageCritic: Nat;
+    damageEvaded: Nat;
+    energyChargeRate: Nat;
+    faction: Nat;
+    energyUsed: Nat;
+    gameMode: Nat;
+    energyWasted: Nat;
+    xpEarned: Nat;
+    characterID: Nat;
+    botDifficulty: Nat;
+    kills: Nat;
+    }): async (Bool, Text) {
+    var _txt: Text = "";
+
+    let playerStats = {
+        secRemaining = _playerStats.secRemaining;
+        energyGenerated = _playerStats.energyGenerated;
+        damageDealt = _playerStats.damageDealt;
+        wonGame = _playerStats.wonGame;
+        playerId = msg.caller;
+        botMode = _playerStats.botMode;
+        deploys = _playerStats.deploys;
+        damageTaken = _playerStats.damageTaken;
+        damageCritic = _playerStats.damageCritic;
+        damageEvaded = _playerStats.damageEvaded;
+        energyChargeRate = _playerStats.energyChargeRate;
+        faction = _playerStats.faction;
+        energyUsed = _playerStats.energyUsed;
+        gameMode = _playerStats.gameMode;
+        energyWasted = _playerStats.energyWasted;
+        xpEarned = _playerStats.xpEarned;
+        characterID = _playerStats.characterID;
+        botDifficulty = _playerStats.botDifficulty;
+        kills = _playerStats.kills;
+    };
+
+    Debug.print("[saveFinishedGame] Player stats: " # debug_show(playerStats));
+
+    let isExistingMatch = switch (basicStats.get(matchID)) {
+        case (null) { false };
+        case (?_) { true };
+    };
+
+    let endingGame: (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
+    let isPartOfMatch = await isCallerPartOfMatch(matchID, msg.caller);
+    if (not isPartOfMatch) {
+        return (false, "You are not part of this match.");
+    };
+
+    if (isExistingMatch) {
+        switch (basicStats.get(matchID)) {
+            case (null) {
+                return (false, "Unexpected error: Match not found");
+            };
+            case (?_bs) {
+                for (ps in _bs.playerStats.vals()) {
+                    if (ps.playerId == msg.caller) {
+                        return (false, "You have already submitted stats for this match.");
+                    };
+                };
+            };
+        };
+    };
+
+    if (not isExistingMatch) {
+        let newBasicStats: BasicStats = {
+            playerStats = [playerStats];
+        };
+        basicStats.put(matchID, newBasicStats);
+
+        let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
+        if (not _gameValid) {
+            onValidation.put(matchID, newBasicStats);
+            return (false, validationMsg);
+        };
+
+        let _winner = if (playerStats.wonGame) 1 else 0;
+        let _looser = if (not playerStats.wonGame) 1 else 0;
+        let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
+
+        Debug.print("[saveFinishedGame] Calling updateProgressManager...");
+        let (success, message) = await updateProgressManager(msg.caller, playerStats);
+        Debug.print("[saveFinishedGame] updateProgressManager result: " # debug_show(success) # ", message: " # message);
+
+        if (not success) {
+            return (false, "Failed to update progress: " # message);
+        };
+
+        updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
+        updateOverallStats(matchID, playerStats);
+
+        let playerOpt = players.get(msg.caller);
+        switch (playerOpt) {
+            case (?player) {
+                let updatedPlayer: Player = {
+                    id = player.id;
+                    username = player.username;
+                    avatar = player.avatar;
+                    description = player.description;
+                    registrationDate = player.registrationDate;
+                    level = Utils.calculateLevel(playerStats.xpEarned);
+                    elo = player.elo;
+                    friends = player.friends;
+                };
+                players.put(msg.caller, updatedPlayer);
+            };
+            case (null) {};
+        };
+
+        return (true, "Game saved: " # message);
+    } else {
+        switch (basicStats.get(matchID)) {
+            case (null) {
+                return (false, "Unexpected error: Match not found");
+            };
+            case (?_bs) {
+                let updatedPlayerStatsBuffer = Buffer.Buffer<PlayerStats>(_bs.playerStats.size() + 1);
+                for (ps in _bs.playerStats.vals()) {
+                    updatedPlayerStatsBuffer.add(ps);
+                };
+                updatedPlayerStatsBuffer.add(playerStats);
+                let updatedPlayerStats = Buffer.toArray(updatedPlayerStatsBuffer);
+                let updatedBasicStats: BasicStats = { playerStats = updatedPlayerStats };
+                basicStats.put(matchID, updatedBasicStats);
+
+                let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
+                if (not _gameValid) {
+                    onValidation.put(matchID, updatedBasicStats);
+                    return (false, validationMsg);
+                };
+
+                let _winner = if (playerStats.wonGame) 1 else 0;
+                let _looser = if (not playerStats.wonGame) 1 else 0;
+                let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
+
+                Debug.print("[saveFinishedGame] Calling updateProgressManager...");
+                let (success, message) = await updateProgressManager(msg.caller, playerStats);
+                Debug.print("[saveFinishedGame] updateProgressManager result: " # debug_show(success) # ", message: " # message);
+
+                if (not success) {
+                    return (false, "Failed to update progress: " # message);
+                };
+
+                updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
+                updateOverallStats(matchID, playerStats);
+
+                let playerOpt = players.get(msg.caller);
+                switch (playerOpt) {
+                    case (?player) {
+                        let updatedPlayer: Player = {
+                            id = player.id;
+                            username = player.username;
+                            avatar = player.avatar;
+                            description = player.description;
+                            registrationDate = player.registrationDate;
+                            level = Utils.calculateLevel(playerStats.xpEarned);
+                            elo = player.elo;
+                            friends = player.friends;
+                        };
+                        players.put(msg.caller, updatedPlayer);
+                    };
+                    case (null) {};
+                };
+
+                return (true, _txt # " - Game saved: " # message);
+            };
+        };
+    };
+};
+
+
+
+
+
+
+
+//----
 
 // Players
 
@@ -940,10 +1305,10 @@ public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text,
                 players.put(PlayerId, newPlayer);
 
                 // Assign new missions to the user
-                await assignNewMissionsToUser(PlayerId);
+                await assignGeneralMissions(PlayerId);
 
                 // Create a user-specific hourly mission and capture the result
-                let (missionSuccess, missionMessage, missionID) = await createUserSpecificHourlyMission(PlayerId);
+                let (missionSuccess, missionMessage, missionID) = await createUserMission(PlayerId);
 
                 return (true, PlayerId, missionSuccess, missionMessage, missionID);
             };
@@ -1326,231 +1691,6 @@ public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text,
         };
     };
 
-    // Function to update player stats after a match
-    public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
-        secRemaining: Nat;
-        energyGenerated: Nat;
-        damageDealt: Nat;
-        wonGame: Bool;
-        botMode: Nat;
-        deploys: Nat;
-        damageTaken: Nat;
-        damageCritic: Nat;
-        damageEvaded: Nat;
-        energyChargeRate: Nat;
-        faction: Nat;
-        energyUsed: Nat;
-        gameMode: Nat;
-        energyWasted: Nat;
-        xpEarned: Nat;
-        characterID: Nat;
-        botDifficulty: Nat;
-        kills: Nat;
-        }) : async (Bool, Text) {
-        var _txt: Text = "";
-
-        // Create a new PlayerStats record with playerId set to msg.caller
-        let playerStats = {
-            secRemaining = _playerStats.secRemaining;
-            energyGenerated = _playerStats.energyGenerated;
-            damageDealt = _playerStats.damageDealt;
-            wonGame = _playerStats.wonGame;
-            playerId = msg.caller;  // Set the playerId to the caller's principal
-            botMode = _playerStats.botMode;
-            deploys = _playerStats.deploys;
-            damageTaken = _playerStats.damageTaken;
-            damageCritic = _playerStats.damageCritic;
-            damageEvaded = _playerStats.damageEvaded;
-            energyChargeRate = _playerStats.energyChargeRate;
-            faction = _playerStats.faction;
-            energyUsed = _playerStats.energyUsed;
-            gameMode = _playerStats.gameMode;
-            energyWasted = _playerStats.energyWasted;
-            xpEarned = _playerStats.xpEarned;
-            characterID = _playerStats.characterID;
-            botDifficulty = _playerStats.botDifficulty;
-            kills = _playerStats.kills;
-        };
-
-        // Check if the match exists in basicStats
-        let isExistingMatch = switch (basicStats.get(matchID)) {
-            case (null) { false };
-            case (?_) { true };
-        };
-
-        // Set the game as over
-        let endingGame: (Bool, Bool, ?Principal) = await setGameOver(msg.caller);
-
-        // Validate if the caller is part of the match
-        let isPartOfMatch = await isCallerPartOfMatch(matchID, msg.caller);
-        if (not isPartOfMatch) {
-            return (false, "You are not part of this match.");
-        };
-
-        if (isExistingMatch) {
-            // Check if the principal has already submitted stats
-            switch (basicStats.get(matchID)) {
-                case (null) {
-                    return (false, "Unexpected error: Match not found");
-                };
-                case (?_bs) {
-                    for (ps in _bs.playerStats.vals()) {
-                        if (ps.playerId == msg.caller) {
-                            return (false, "You have already submitted stats for this match.");
-                        };
-                    };
-                };
-            };
-        };
-
-        if (not isExistingMatch) {
-            // Save the basic stats for a new match
-            let newBasicStats: BasicStats = {
-                playerStats = [playerStats];
-            };
-            basicStats.put(matchID, newBasicStats);
-
-            // Validate the game
-            let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
-            if (not _gameValid) {
-                onValidation.put(matchID, newBasicStats);
-                return (false, validationMsg);
-            };
-
-            // Update player stats
-            let _winner = if (playerStats.wonGame) 1 else 0;
-            let _looser = if (not playerStats.wonGame) 1 else 0;
-            let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-            let _progressMissionsBuffer = Buffer.Buffer<MissionProgress>(1);
-            _progressMissionsBuffer.add({ missionType = #GamesCompleted; progress = 1; });
-            if (playerStats.wonGame) {
-                _progressMissionsBuffer.add({ missionType = #GamesWon; progress = 1; });
-            };
-            
-            // Add progress for all mission types
-            _progressMissionsBuffer.add({ missionType = #DamageDealt; progress = playerStats.damageDealt });
-            _progressMissionsBuffer.add({ missionType = #DamageTaken; progress = playerStats.damageTaken });
-            _progressMissionsBuffer.add({ missionType = #EnergyUsed; progress = playerStats.energyUsed });
-            _progressMissionsBuffer.add({ missionType = #UnitsDeployed; progress = playerStats.deploys });
-            _progressMissionsBuffer.add({ missionType = #FactionPlayed; progress = playerStats.faction });
-            _progressMissionsBuffer.add({ missionType = #GameModePlayed; progress = playerStats.gameMode });
-            _progressMissionsBuffer.add({ missionType = #XPEarned; progress = playerStats.xpEarned });
-            _progressMissionsBuffer.add({ missionType = #Kills; progress = playerStats.kills });
-
-            let _progressMissions = Buffer.toArray(_progressMissionsBuffer);
-
-           // Debug.print("[saveFinishedGame]Before addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
-
-            let _progressAdded = await addProgressToMissions(msg.caller, _progressMissions);
-
-           // Debug.print("[saveFinishedGame]After addProgressToMissions: " # debug_show(userProgress.get(msg.caller)));
-
-            _txt := _progressAdded.1;
-
-            // Update or create player game stats
-            updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
-
-            // Update overall stats
-            updateOverallStats(matchID, playerStats);
-
-            // Update player level
-            let playerOpt = players.get(msg.caller);
-            switch (playerOpt) {
-                case (?player) {
-                    let updatedPlayer: Player = {
-                        id = player.id;
-                        username = player.username;
-                        avatar = player.avatar;
-                        description = player.description;
-                        registrationDate = player.registrationDate;
-                        level = Utils.calculateLevel(playerStats.xpEarned);
-                        elo = player.elo;
-                        friends = player.friends;
-                    };
-                    players.put(msg.caller, updatedPlayer);
-                };
-                case (null) {};
-            };
-
-            return (true, "Game saved");
-        } else {
-            // If the match was already saved, add the new player's stats
-            switch (basicStats.get(matchID)) {
-                case (null) {
-                    return (false, "Unexpected error: Match not found");
-                };
-                case (?_bs) {
-                    let updatedPlayerStatsBuffer = Buffer.Buffer<PlayerStats>(_bs.playerStats.size() + 1);
-                    for (ps in _bs.playerStats.vals()) {
-                        updatedPlayerStatsBuffer.add(ps);
-                    };
-                    updatedPlayerStatsBuffer.add(playerStats);
-                    let updatedPlayerStats = Buffer.toArray(updatedPlayerStatsBuffer);
-                    let updatedBasicStats: BasicStats = { playerStats = updatedPlayerStats };
-                    basicStats.put(matchID, updatedBasicStats);
-
-                    // Validate the game
-                    let (_gameValid, validationMsg) = Validator.validateGame(300 - playerStats.secRemaining, playerStats.xpEarned);
-                    if (not _gameValid) {
-                        onValidation.put(matchID, updatedBasicStats);
-                        return (false, validationMsg);
-                    };
-
-                    // Update player stats
-                    let _winner = if (playerStats.wonGame) 1 else 0;
-                    let _looser = if (not playerStats.wonGame) 1 else 0;
-                    let _elo: Bool = await updatePlayerELO(msg.caller, _winner, endingGame.2);
-                    let _progressMissionsBuffer = Buffer.Buffer<MissionProgress>(1);
-                    _progressMissionsBuffer.add({ missionType = #GamesCompleted; progress = 1; });
-                    if (playerStats.wonGame) {
-                        _progressMissionsBuffer.add({ missionType = #GamesWon; progress = 1; });
-                    };
-
-                    // Add progress for all mission types
-                    _progressMissionsBuffer.add({ missionType = #DamageDealt; progress = playerStats.damageDealt });
-                    _progressMissionsBuffer.add({ missionType = #DamageTaken; progress = playerStats.damageTaken });
-                    _progressMissionsBuffer.add({ missionType = #EnergyUsed; progress = playerStats.energyUsed });
-                    _progressMissionsBuffer.add({ missionType = #UnitsDeployed; progress = playerStats.deploys });
-                    _progressMissionsBuffer.add({ missionType = #FactionPlayed; progress = playerStats.faction });
-                    _progressMissionsBuffer.add({ missionType = #GameModePlayed; progress = playerStats.gameMode });
-                    _progressMissionsBuffer.add({ missionType = #XPEarned; progress = playerStats.xpEarned });
-                    _progressMissionsBuffer.add({ missionType = #Kills; progress = playerStats.kills });
-
-                    let _progressMissions = Buffer.toArray(_progressMissionsBuffer);
-                    let _progressAdded = await addProgressToMissions(msg.caller, _progressMissions);
-                    _txt := _progressAdded.1;
-
-                    // Update or create player game stats
-                    updatePlayerGameStats(msg.caller, playerStats, _winner, _looser);
-
-                    // Update overall stats
-                    updateOverallStats(matchID, playerStats);
-
-                    // Update player level
-                    let playerOpt = players.get(msg.caller);
-                    switch (playerOpt) {
-                        case (?player) {
-                            let updatedPlayer: Player = {
-                                id = player.id;
-                                username = player.username;
-                                avatar = player.avatar;
-                                description = player.description;
-                                registrationDate = player.registrationDate;
-                                level = Utils.calculateLevel(playerStats.xpEarned);
-                                elo = player.elo;
-                                friends = player.friends;
-                            };
-                            players.put(msg.caller, updatedPlayer);
-                        };
-                        case (null) {};
-                    };
-
-                    return (true, _txt # " - Game saved");
-                };
-            };
-        };
-    };
-
     // Helper function to check if the caller is part of the match
     func isCallerPartOfMatch(matchID: MatchID, caller: Principal) : async Bool {
         let matchParticipants = await getMatchParticipants(matchID);
@@ -1756,7 +1896,6 @@ public func createUserSpecificHourlyMission(user: Principal): async (Bool, Text,
         };
         overallStats := _os;
     };
-
 
 // MatchMaking
 
