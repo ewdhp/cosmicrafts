@@ -84,6 +84,8 @@ shared actor class Cosmicrafts() {
 
     // add mint mintChest function ICRC TransactionLogs
 
+    // mint deck should only be called once per PID
+
     stable var _cosmicraftsPrincipal : Principal = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai");
     let ADMIN_PRINCIPAL = Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae");
 
@@ -163,7 +165,7 @@ shared actor class Cosmicrafts() {
         currentDailyFreeRewardIndex := 0;
     };
 
-    public func createDailyMissions(): async [(Bool, Text, Nat)] {
+    func createDailyMissions(): async [(Bool, Text, Nat)] {
         var results: [(Bool, Text, Nat)] = [];
 
         // Check if the list needs to be shuffled
@@ -183,7 +185,7 @@ shared actor class Cosmicrafts() {
         return results;
     };
 
-    public func createWeeklyMissions(): async [(Bool, Text, Nat)] {
+    func createWeeklyMissions(): async [(Bool, Text, Nat)] {
         var results: [(Bool, Text, Nat)] = [];
 
         // Check if the list needs to be shuffled
@@ -203,7 +205,7 @@ shared actor class Cosmicrafts() {
         return results;
     };
 
-    public func createDailyFreeRewardMissions(): async [(Bool, Text, Nat)] {
+    func createDailyFreeRewardMissions(): async [(Bool, Text, Nat)] {
         var results: [(Bool, Text, Nat)] = [];
 
         // Check if the list needs to be shuffled
@@ -285,7 +287,7 @@ shared actor class Cosmicrafts() {
     var generalUserProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_generalUserProgress.vals(), 0, Principal.equal, Principal.hash);
 
     // Function to create a new general mission
-    public func createGeneralMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hoursActive: Nat64): async (Bool, Text, Nat) {
+    func createGeneralMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hoursActive: Nat64): async (Bool, Text, Nat) {
         let id = generalMissionIDCounter;
         generalMissionIDCounter += 1;
 
@@ -312,7 +314,7 @@ shared actor class Cosmicrafts() {
     };
 
     // Function to update progress for general missions
-    public func updateGeneralMissionProgress(user: Principal, missionsProgress: [MissionProgress]): async (Bool, Text) {
+    func updateGeneralMissionProgress(user: Principal, missionsProgress: [MissionProgress]): async (Bool, Text) {
         Debug.print("[updateGeneralMissionProgress] Updating general mission progress for user: " # Principal.toText(user));
         Debug.print("[updateGeneralMissionProgress] Missions progress: " # debug_show(missionsProgress));
 
@@ -361,7 +363,7 @@ shared actor class Cosmicrafts() {
     };
 
     // Function to assign new general missions to a user
-    public func assignGeneralMissions(user: Principal): async () {
+    func assignGeneralMissions(user: Principal): async () {
         Debug.print("[assignGeneralMissions] Assigning new general missions to user: " # Principal.toText(user));
 
         var userMissions: [MissionsUser] = switch (generalUserProgress.get(user)) {
@@ -694,7 +696,7 @@ shared actor class Cosmicrafts() {
     };
 
     // Function to update progress for user-specific missions
-    public shared func updateUserMissions(user: Principal, playerStats: {
+    private func updateUserMissions(user: Principal, playerStats: {
         secRemaining: Nat;
         energyGenerated: Nat;
         damageDealt: Nat;
@@ -1034,6 +1036,9 @@ shared actor class Cosmicrafts() {
     };
 
 //--
+// Achievements
+
+
 // Progress Manager
 
     public shared func updateProgressManager(user: Principal, playerStats: {
@@ -1066,16 +1071,8 @@ shared actor class Cosmicrafts() {
                 generalProgress := Array.append(generalProgress, [{ missionType = #GamesWon; progress = 1 }]);
             };
 
-            Debug.print("[updateProgressManager] Updating general mission progress...");
-            Debug.print("[updateProgressManager] General progress: " # debug_show(generalProgress));
             let (result1, message1) = await updateGeneralMissionProgress(user, generalProgress);
-            Debug.print("[updateProgressManager] General mission progress update result: " # debug_show(result1) # ", message: " # message1);
-
-            Debug.print("[updateProgressManager] Updating user-specific mission progress...");
-            Debug.print("[updateProgressManager] Player stats: " # debug_show(playerStats));
             let (result2, message2) = await updateUserMissions(user, playerStats);
-            Debug.print("[updateProgressManager] User-specific mission progress update result: " # debug_show(result2) # ", message: " # message2);
-
             let success = result1 and result2;
             let message = message1 # " | " # message2;
 
@@ -1476,16 +1473,6 @@ shared actor class Cosmicrafts() {
         };
     };
 
-    public query func getPlayerElo(player : Principal) : async Float {
-        return switch (players.get(player)) {
-        case (null) {
-            1200;
-        };
-        case (?player) {
-            player.elo;
-        };
-        };
-    };
 
     // Self query to get user profile
     public shared (msg) func getMyProfile() : async ?Player {
@@ -1892,6 +1879,18 @@ shared actor class Cosmicrafts() {
 
   stable var _finishedGames : [(MatchID, MatchData)] = [];
   var finishedGames : HashMap.HashMap<MatchID, MatchData> = HashMap.fromIter(_finishedGames.vals(), 0, Utils._natEqual, Utils._natHash);
+
+    // Function for matchmaking to get player ELO
+    public query func getPlayerElo(player : Principal) : async Float {
+        return switch (players.get(player)) {
+        case (null) {
+            1200;
+        };
+        case (?player) {
+            player.elo;
+        };
+        };
+    };
 
     public shared (msg) func setPlayerActive() : async Bool {
         assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
@@ -2334,7 +2333,7 @@ shared actor class Cosmicrafts() {
   };
 
   // Basic Stats sent for a MatchID
-  public shared query func getMatchStats(MatchID : MatchID) : async ?BasicStats {
+  public query func getMatchStats(MatchID : MatchID) : async ?BasicStats {
     return basicStats.get(MatchID);
   };
 
