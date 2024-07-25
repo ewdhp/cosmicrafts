@@ -612,17 +612,20 @@ shared actor class Cosmicrafts() {
 
 //--
 // User-Specific Missions
-    stable var _userMissionProgress: [(Principal, [MissionsUser])] = [];
-    stable var _userMissions: [(Principal, [Mission])] = [];
-    stable var _userMissionCounters: [(Principal, Nat)] = [];
-    stable var _userClaimedRewards: [(Principal, [Nat])] = [];
 
-    // HashMaps for User-Specific Missions
-    var userMissionProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_userMissionProgress.vals(), 0, Principal.equal, Principal.hash);
-    var userMissions: HashMap.HashMap<Principal, [Mission]> = HashMap.fromIter(_userMissions.vals(), 0, Principal.equal, Principal.hash);
-    var userMissionCounters: HashMap.HashMap<Principal, Nat> = HashMap.fromIter(_userMissionCounters.vals(), 0, Principal.equal, Principal.hash);
-    var userClaimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_userClaimedRewards.vals(), 0, Principal.equal, Principal.hash);
+    //Stable Variables
+        stable var _userMissionProgress: [(Principal, [MissionsUser])] = [];
+        stable var _userMissions: [(Principal, [Mission])] = [];
+        stable var _userMissionCounters: [(Principal, Nat)] = [];
+        stable var _userClaimedRewards: [(Principal, [Nat])] = [];
 
+        // HashMaps for User-Specific Missions
+        var userMissionProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_userMissionProgress.vals(), 0, Principal.equal, Principal.hash);
+        var userMissions: HashMap.HashMap<Principal, [Mission]> = HashMap.fromIter(_userMissions.vals(), 0, Principal.equal, Principal.hash);
+        var userMissionCounters: HashMap.HashMap<Principal, Nat> = HashMap.fromIter(_userMissionCounters.vals(), 0, Principal.equal, Principal.hash);
+        var userClaimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_userClaimedRewards.vals(), 0, Principal.equal, Principal.hash);
+
+    
     // Function to create a new user-specific mission
     public func createUserMission(user: PlayerId): async (Bool, Text, Nat) {
         Debug.print("[createUserMission] Start creating mission for user: " # Principal.toText(user));
@@ -688,101 +691,99 @@ shared actor class Cosmicrafts() {
         userMissionsList := Array.append(userMissionsList, [newMission]);
         userMissions.put(user, userMissionsList);
 
-        await assignUserMissions(user);
+        Debug.print("[createUserMission] Mission created successfully");
 
-        Debug.print("[createUserMission] Mission created and assigned successfully");
-
-        return (true, "User-specific mission created and assigned.", newMission.id);
+        return (true, "User-specific mission created.", newMission.id);
     };
 
     // Function to update progress for user-specific missions
-    func updateUserMissions(user: Principal, playerStats: {
-        secRemaining: Nat;
-        energyGenerated: Nat;
-        damageDealt: Nat;
-        damageTaken: Nat;
-        energyUsed: Nat;
-        deploys: Nat;
-        faction: Nat;
-        gameMode: Nat;
-        xpEarned: Nat;
-        kills: Nat;
-        wonGame: Bool;
+    func updateUserMissionsProgress(user: Principal, playerStats: {
+            secRemaining: Nat;
+            energyGenerated: Nat;
+            damageDealt: Nat;
+            damageTaken: Nat;
+            energyUsed: Nat;
+            deploys: Nat;
+            faction: Nat;
+            gameMode: Nat;
+            xpEarned: Nat;
+            kills: Nat;
+            wonGame: Bool;
         }): async (Bool, Text) {
 
-            Debug.print("[updateUserMissions] Updating user-specific mission progress for user: " # Principal.toText(user));
-            Debug.print("[updateUserMissions] Player stats: " # debug_show(playerStats));
+        Debug.print("[updateUserMissions] Updating user-specific mission progress for user: " # Principal.toText(user));
+        Debug.print("[updateUserMissions] Player stats: " # debug_show(playerStats));
 
-            var userSpecificProgressList = switch (userMissionProgress.get(user)) {
-                case (null) { [] };
-                case (?progress) { progress };
-            };
+        var userSpecificProgressList = switch (userMissionProgress.get(user)) {
+            case (null) { [] };
+            case (?progress) { progress };
+        };
 
-            Debug.print("[updateUserMissions] User's current missions: " # debug_show(userSpecificProgressList));
+        Debug.print("[updateUserMissions] User's current missions: " # debug_show(userSpecificProgressList));
 
-            let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-            let updatedMissions = Buffer.Buffer<MissionsUser>(userSpecificProgressList.size());
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        let updatedMissions = Buffer.Buffer<MissionsUser>(userSpecificProgressList.size());
 
-            for (mission in userSpecificProgressList.vals()) {
-                Debug.print("[updateUserMissions] Processing mission: " # debug_show(mission));
-                if (mission.finished) {
-                    updatedMissions.add(mission);
-                } else {
-                    var updatedMission = mission;
+        for (mission in userSpecificProgressList.vals()) {
+            Debug.print("[updateUserMissions] Processing mission: " # debug_show(mission));
+            if (mission.finished) {
+                updatedMissions.add(mission);
+            } else {
+                var updatedMission = mission;
 
-                    switch (mission.missionType) {
-                        case (#GamesCompleted) {
+                switch (mission.missionType) {
+                    case (#GamesCompleted) {
+                        updatedMission := { mission with progress = mission.progress + 1 };
+                    };
+                    case (#GamesWon) {
+                        if (playerStats.secRemaining > 0) {
                             updatedMission := { mission with progress = mission.progress + 1 };
                         };
-                        case (#GamesWon) {
-                            if (playerStats.secRemaining > 0) {
-                                updatedMission := { mission with progress = mission.progress + 1 };
-                            };
-                        };
-                        case (#DamageDealt) {
-                            updatedMission := { mission with progress = mission.progress + playerStats.damageDealt };
-                        };
-                        case (#DamageTaken) {
-                            updatedMission := { mission with progress = mission.progress + playerStats.damageTaken };
-                        };
-                        case (#EnergyUsed) {
-                            updatedMission := { mission with progress = mission.progress + playerStats.energyUsed };
-                        };
-                        case (#UnitsDeployed) {
-                            updatedMission := { mission with progress = mission.progress + playerStats.deploys };
-                        };
-                        case (#FactionPlayed) {
-                            updatedMission := { mission with progress = mission.progress + playerStats.faction };
-                        };
-                        case (#GameModePlayed) {
-                            updatedMission := { mission with progress = mission.progress + playerStats.gameMode };
-                        };
-                        case (#XPEarned) {
-                            updatedMission := { mission with progress = mission.progress + playerStats.xpEarned };
-                        };
-                        case (#Kills) {
-                            updatedMission := { mission with progress = mission.progress + playerStats.kills };
-                        };
                     };
-
-                    Debug.print("[updateUserMissions] Updated mission progress: " # debug_show(updatedMission.progress));
-
-                    if (updatedMission.progress >= updatedMission.total) {
-                        updatedMission := {
-                            updatedMission with
-                            progress = updatedMission.total;
-                            finished = true;
-                            finish_date = now;
-                        };
+                    case (#DamageDealt) {
+                        updatedMission := { mission with progress = mission.progress + playerStats.damageDealt };
                     };
-
-                    updatedMissions.add(updatedMission);
+                    case (#DamageTaken) {
+                        updatedMission := { mission with progress = mission.progress + playerStats.damageTaken };
+                    };
+                    case (#EnergyUsed) {
+                        updatedMission := { mission with progress = mission.progress + playerStats.energyUsed };
+                    };
+                    case (#UnitsDeployed) {
+                        updatedMission := { mission with progress = mission.progress + playerStats.deploys };
+                    };
+                    case (#FactionPlayed) {
+                        updatedMission := { mission with progress = mission.progress + playerStats.faction };
+                    };
+                    case (#GameModePlayed) {
+                        updatedMission := { mission with progress = mission.progress + playerStats.gameMode };
+                    };
+                    case (#XPEarned) {
+                        updatedMission := { mission with progress = mission.progress + playerStats.xpEarned };
+                    };
+                    case (#Kills) {
+                        updatedMission := { mission with progress = mission.progress + playerStats.kills };
+                    };
                 };
-            };
 
-            userMissionProgress.put(user, Buffer.toArray(updatedMissions));
-            Debug.print("[updateUserMissions] Updated user missions: " # debug_show(userMissionProgress.get(user)));
-            return (true, "Progress updated successfully in user-specific missions");
+                Debug.print("[updateUserMissions] Updated mission progress: " # debug_show(updatedMission.progress));
+
+                if (updatedMission.progress >= updatedMission.total) {
+                    updatedMission := {
+                        updatedMission with
+                        progress = updatedMission.total;
+                        finished = true;
+                        finish_date = now;
+                    };
+                };
+
+                updatedMissions.add(updatedMission);
+            };
+        };
+
+        userMissionProgress.put(user, Buffer.toArray(updatedMissions));
+        Debug.print("[updateUserMissions] Updated user missions: " # debug_show(userMissionProgress.get(user)));
+        return (true, "Progress updated successfully in user-specific missions");
     };
 
     // Function to assign new user-specific missions to a user
@@ -817,28 +818,30 @@ shared actor class Cosmicrafts() {
             currentMissionIds.add(mission.id_mission);
         };
 
-        // Add new active missions to the user
-        for ((_, missions) in userMissions.entries()) {
-            for (mission in missions.vals()) {
-                if (not Utils.arrayContains<Nat>(Buffer.toArray(currentMissionIds), mission.id, Utils._natEqual) and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id, Utils._natEqual)) {
-                    buffer.add({
-                        id_mission = mission.id;
-                        reward_amount = mission.reward_amount;
-                        start_date = mission.start_date;
-                        progress = 0; // Initialize with 0 progress
-                        finish_date = 0; // Initialize finish date to 0
-                        expiration = mission.end_date;
-                        missionType = mission.missionType;
-                        finished = false;
-                        reward_type = mission.reward_type;
-                        total = mission.total;
-                    });
-                }
-            }
+        // Check if the user has missions and add new active missions to the user
+        switch (userMissions.get(user)) {
+            case (null) {};
+            case (?missions) {
+                for (mission in missions.vals()) {
+                    if (not Utils.arrayContains<Nat>(Buffer.toArray(currentMissionIds), mission.id, Utils._natEqual) and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id, Utils._natEqual)) {
+                        buffer.add({
+                            id_mission = mission.id;
+                            reward_amount = mission.reward_amount;
+                            start_date = mission.start_date;
+                            progress = 0; // Initialize with 0 progress
+                            finish_date = 0; // Initialize finish date to 0
+                            expiration = mission.end_date;
+                            missionType = mission.missionType;
+                            finished = false;
+                            reward_type = mission.reward_type;
+                            total = mission.total;
+                        });
+                    }
+                };
+            };
         };
 
         userMissionProgress.put(user, Buffer.toArray(buffer));
-
         Debug.print("[assignUserMissions] User missions after update: " # debug_show(userMissionProgress.get(user)));
     };
 
@@ -1072,7 +1075,7 @@ shared actor class Cosmicrafts() {
             };
 
             let (result1, message1) = await updateGeneralMissionProgress(user, generalProgress);
-            let (result2, message2) = await updateUserMissions(user, playerStats);
+            let (result2, message2) = await updateUserMissionsProgress(user, playerStats);
             let success = result1 and result2;
             let message = message1 # " | " # message2;
 
@@ -1285,7 +1288,7 @@ shared actor class Cosmicrafts() {
                 await assignGeneralMissions(PlayerId);
 
                 // Mint a deck for the new player
-                let (mintSuccess, mintMessage) = await mintDeck(PlayerId);
+                let (_mintSuccess, mintMessage) = await mintDeck(PlayerId);
 
                 return (true, PlayerId, true, "User registered, general missions assigned, and deck minting: " # mintMessage, 0);
             };

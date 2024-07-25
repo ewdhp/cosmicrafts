@@ -141,7 +141,6 @@ module Types {
   public type MissionType = {
     #GamesCompleted;
     #GamesWon;
-    #LevelReached;
     #DamageDealt;
     #DamageTaken;
     #EnergyUsed;

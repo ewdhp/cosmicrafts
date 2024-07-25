@@ -117,10 +117,10 @@ def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
         "botDifficulty": random.randint(0, 5),
         "botMode": random.randint(0, 5),
         "characterID": random.randint(1, 2),
-        "damageCritic": random.randint(1000, 25000),  # Changed to random integer
-        "damageDealt": random.randint(1000, 25000),   # Changed to random integer
-        "damageEvaded": random.randint(1000, 25000),  # Changed to random integer
-        "damageTaken": random.randint(1000, 25000),   # Changed to random integer
+        "damageCritic": random.randint(1000, 2500),  # Changed to random integer
+        "damageDealt": random.randint(1000, 2500),   # Changed to random integer
+        "damageEvaded": random.randint(1000, 2500),  # Changed to random integer
+        "damageTaken": random.randint(1000, 2500),   # Changed to random integer
         "deploys": random.randint(10, 225),           # Changed to random integer
         "energyChargeRate": random.randint(33, 200),  # Changed to random integer
         "energyGenerated": shared_energy_generated,   # Already Nat
@@ -131,7 +131,7 @@ def generate_random_stats(shared_energy_generated, shared_sec_remaining, won):
         "kills": random.randint(10, 250),             # Changed to random integer
         "secRemaining": shared_sec_remaining,         # Already Nat
         "wonGame": won,
-        "xpEarned": random.randint(1000, 25000)       # Changed to random integer
+        "xpEarned": random.randint(1000, 10000)       # Changed to random integer
     }
     return stats
 
