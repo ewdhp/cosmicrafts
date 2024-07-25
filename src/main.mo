@@ -1119,22 +1119,6 @@ public func createIndividualAchievement(
     };
 
     individualAchievements.put(id, newIndividualAchievement);
-    
-    // Link individual achievement to its parent general achievement
-    let achievementOpt = achievements.get(achievementId);
-    switch (achievementOpt) {
-        case (null) { 
-            return (false, "Parent achievement not found", id); 
-        };
-        case (?achievement) {
-            let updatedAchievement = {
-                achievement with
-                individualAchievements = Array.append(achievement.individualAchievements, [id])
-            };
-            achievements.put(achievementId, updatedAchievement);
-        };
-    };
-
     Debug.print("[createIndividualAchievement] Individual Achievement created with ID: " # Nat.toText(id));
 
     return (true, "Individual Achievement created successfully", id);
@@ -1163,22 +1147,6 @@ public func createAchievement(
     };
 
     achievements.put(id, newAchievement);
-    
-    // Link general achievement to its category
-    let categoryOpt = categories.get(categoryId);
-    switch (categoryOpt) {
-        case (null) {
-            return (false, "Category not found", id);
-        };
-        case (?category) {
-            let updatedCategory = {
-                category with
-                achievements = Array.append(category.achievements, [id])
-            };
-            categories.put(categoryId, updatedCategory);
-        };
-    };
-
     Debug.print("[createAchievement] Achievement created with ID: " # Nat.toText(id));
 
     return (true, "Achievement created successfully", id);
@@ -1209,7 +1177,6 @@ public func createCategory(
 
     return (true, "Category created successfully", id);
 };
-
 
 
 public func updateIndividualAchievementProgress(
@@ -1422,30 +1389,25 @@ public shared ({ caller }) func getAchievements(): async ([(AchievementCategory,
 
     // Collect achievements in each category
     for (category in categories.vals()) {
-        Debug.print("[getAchievements] Processing category: " # category.name);
         let achievementsList = Buffer.Buffer<Achievement>(category.achievements.size());
         let individualAchievementProgressList = Buffer.Buffer<IndividualAchievementProgress>(category.achievements.size());
         
         for (achId in category.achievements.vals()) {
-            Debug.print("[getAchievements] Checking achievement ID: " # Nat.toText(achId));
             if (Utils.arrayContains<Nat>(userAchievementsList, achId, Utils._natEqual)) {
                 let achievementOpt = achievements.get(achId);
                 switch (achievementOpt) {
-                    case (null) { Debug.print("[getAchievements] Achievement not found for ID: " # Nat.toText(achId)); };
+                    case (null) {};
                     case (?achievement) {
                         achievementsList.add(achievement);
-                        Debug.print("[getAchievements] Found achievement: " # achievement.name);
 
                         for (indAchId in achievement.individualAchievements.vals()) {
                             let indAchOpt = individualAchievements.get(indAchId);
                             switch (indAchOpt) {
-                                case (null) { Debug.print("[getAchievements] Individual achievement not found for ID: " # Nat.toText(indAchId)); };
+                                case (null) {};
                                 case (?indAch) {
-                                    Debug.print("[getAchievements] Found individual achievement: " # indAch.name);
                                     let progressOpt = Array.find<AchievementProgress>(userProgress, func(p) { p.achievementId == indAchId });
                                     let indAchProgress: TypesAchievements.IndividualAchievementProgress = switch (progressOpt) {
                                         case (null) {
-                                            Debug.print("[getAchievements] No progress found for individual achievement: " # indAch.name);
                                             {
                                                 individualAchievement = indAch;
                                                 progress = 0;
@@ -1453,7 +1415,6 @@ public shared ({ caller }) func getAchievements(): async ([(AchievementCategory,
                                             };
                                         };
                                         case (?progress) {
-                                            Debug.print("[getAchievements] Found progress for individual achievement: " # indAch.name # " - Progress: " # Nat.toText(progress.progress));
                                             {
                                                 individualAchievement = indAch;
                                                 progress = progress.progress;
@@ -1467,8 +1428,6 @@ public shared ({ caller }) func getAchievements(): async ([(AchievementCategory,
                         }
                     };
                 };
-            } else {
-                Debug.print("[getAchievements] Achievement ID: " # Nat.toText(achId) # " not assigned to user.");
             };
         };
 
@@ -1482,12 +1441,12 @@ public shared ({ caller }) func getAchievements(): async ([(AchievementCategory,
     return Buffer.toArray(achievementsWithDetails);
 };
 
-
 // Public function to update and get achievements
 public shared ({ caller }) func updateAndGetAchievements(): async ([(AchievementCategory, [Achievement], [IndividualAchievementProgress])]) {
     await assignAchievementsToUser(caller);
     return await getAchievements();
 };
+
 
 
 public shared(msg) func claimAchievementReward(achievementId: Nat): async (Bool, Text) {
