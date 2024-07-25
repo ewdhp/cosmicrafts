@@ -2,6 +2,44 @@ module TypesAchievements {
 
     public type PlayerId = Principal;
 
+    // Individual Achievement relates to a single mission, e.g., "Play 3 games."
+    public type IndividualAchievement = {
+        id: Nat;
+        name: Text;
+        achievementType: AchievementType;
+        requiredProgress: Nat;
+        progress: Nat;
+        completed: Bool;
+        reward: AchievementReward;
+        achievementId: Nat; // Link to the general achievement
+    };
+
+    // Achievement represents a type of achievement, e.g., "Games Played."
+    public type Achievement = {
+        id: Nat;
+        name: Text;
+        individualAchievements: [Nat]; // List of related individual achievements
+        tier: AchievementTier;
+        progress: Nat;
+        requiredProgress: Nat; // Total progress required to complete this achievement
+        categoryId: Nat; // Link to the category
+        reward: AchievementReward;
+        completed: Bool; // Field added to track completion status
+    };
+
+    // Achievement Category represents a grouping of achievements, e.g., "Progression."
+    public type AchievementCategory = {
+        id: Nat;
+        name: Text;
+        achievements: [Nat]; // List of related achievements
+        tier: AchievementTier;
+        progress: Nat;
+        requiredProgress: Nat; // Total progress required to complete this category
+        reward: AchievementReward;
+        completed: Bool; // Field added to track completion status
+    };
+
+    // Achievement Type
     public type AchievementType = {
         #GamesWon;
         #GamesPlayed;
@@ -30,6 +68,7 @@ module TypesAchievements {
         #UserMissionsCompleted;
     };
 
+    // Achievement Reward Types
     public type AchievementRewardsType = {
         #Shards;
         #Item;
@@ -41,20 +80,12 @@ module TypesAchievements {
         #CosmicPower;
     };
 
+    // Achievement Reward
     public type AchievementReward = {
         rewardType: AchievementRewardsType;
         amount: Nat;
         items: [Text];
         title: Text;
-    };
-
-    // Achievement Category
-    public type AchievementCategory = {
-        #Combat;
-        #Exploration;
-        #Social;
-        #Progression;
-        #Milestone;
     };
 
     // Achievement Tier
@@ -68,22 +99,17 @@ module TypesAchievements {
         #Legend;
     };
 
-    // Achievement Structure
-    public type Achievement = {
-        id: Nat;
-        name: Text;
-        achievementType: AchievementType;
-        category: AchievementCategory;
-        tier: AchievementTier;
-        reward: AchievementReward;
-        progress: Nat;
-        completed: Bool;
-    };
-
     // Achievement Progress
     public type AchievementProgress = {
         achievementId: Nat;
         playerId: PlayerId;
+        progress: Nat;
+        completed: Bool;
+    };
+
+    // Individual Achievement Progress for User
+    public type IndividualAchievementProgress = {
+        individualAchievement: IndividualAchievement;
         progress: Nat;
         completed: Bool;
     };
