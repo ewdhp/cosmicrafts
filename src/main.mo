@@ -23,6 +23,7 @@
     import TypesICRC7 "/icrc7/types";
     import TypesICRC1 "/icrc1/Types";
     import TypesAchievements "TypesAchievements";
+    import AchievementMissionsTemplate "AchievementMissionsTemplate";
     import Validator "Validator";
     import MissionOptions "MissionOptions";
 
@@ -1057,6 +1058,14 @@ shared actor class Cosmicrafts() {
     var achievementProgress: HashMap.HashMap<PlayerId, [AchievementProgress]> = HashMap.fromIter(_achievementProgress.vals(), 0, Principal.equal, Principal.hash);
     var playerAchievements: HashMap.HashMap<PlayerId, [Nat]> = HashMap.fromIter(_playerAchievements.vals(), 0, Principal.equal, Principal.hash);
 
+    // Initialize achievements from the template
+    public func initializeAchievements(): async () {
+        for (achievement in AchievementMissionsTemplate.getAllAchievements().vals()) {
+            achievements.put(achievement.id, achievement);
+        };
+        Debug.print("[initializeAchievements] Achievements initialized from template");
+    };
+
     // Function to create a new achievement
     public func createAchievement(
         name: Text, 
@@ -1064,21 +1073,21 @@ shared actor class Cosmicrafts() {
         category: AchievementCategory, 
         tier: AchievementTier, 
         reward: AchievementReward, 
-        progress: Nat,
+        progress: Nat
         ): async (Bool, Text, Nat) {
             let id = achievementIDCounter;
             achievementIDCounter += 1;
 
-            let newAchievement: Achievement = {
-                id = id;
-                name = name;
-                achievementType = achievementType;
-                category = category;
-                tier = tier;
-                reward = reward;
-                progress = 0;
-                completed = false;
-            };
+        let newAchievement: Achievement = {
+            id = id;
+            name = name;
+            achievementType = achievementType;
+            category = category;
+            tier = tier;
+            reward = reward;
+            progress = progress;
+            completed = false;
+        };
 
         achievements.put(id, newAchievement);
         Debug.print("[createAchievement] Achievement created with ID: " # Nat.toText(id));
@@ -1268,6 +1277,11 @@ shared actor class Cosmicrafts() {
                 return result;
             };
         }
+    };
+
+    // Initialization function
+    public func init(): async () {
+        await initializeAchievements();
     };
 
     func mintShards(caller: PlayerId, amount: Nat): async (Bool, Text) {
