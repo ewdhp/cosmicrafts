@@ -210,37 +210,6 @@ module Types {
   };
 // Achievements
 
-  public type AchievementRewards = {
-    #Shards;
-    #Item;
-    #Title;
-    #Avatar;
-    #Chest;
-    #Flux;
-    #NFT;
-  };
-
-  public type AchievementReward = {
-    rewardType: AchievementRewards;
-    amount: Nat;
-    items: [Text];
-    title: Text;
-  };
-
-  public type AchievementCriteria = {
-    description: Text;
-    requiredValue: Nat;
-  };
-
-
-
-  // Achievement Category
-  public type AchievementCategory = {
-    #Combat;
-    #Exploration;
-    #Social;
-    #Progression;
-  };
 
 
 // Matchmaking

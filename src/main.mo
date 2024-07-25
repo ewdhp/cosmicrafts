@@ -22,6 +22,7 @@
     import Utils "Utils";
     import TypesICRC7 "/icrc7/types";
     import TypesICRC1 "/icrc1/Types";
+    import TypesAchievements "TypesAchievements";
     import Validator "Validator";
     import MissionOptions "MissionOptions";
 
@@ -33,7 +34,7 @@ shared actor class Cosmicrafts() {
   public type Description = Types.Description;
   public type RegistrationDate = Types.RegistrationDate;
   public type Level = Types.Level;
-  public type MatchID = Types.MatchID;
+
 
   public type FriendDetails = Types.FriendDetails;
   public type Player = Types.Player;
@@ -56,17 +57,24 @@ shared actor class Cosmicrafts() {
   public type MMPlayerStatus = Types.MMPlayerStatus;
   public type MatchData = Types.MatchData;
   public type FullMatchData = Types.FullMatchData;
+  public type MatchID = Types.MatchID;
 
   public type MissionType = Types.MissionType;
   public type RewardType = Types.MissionRewardType;
   public type Mission = Types.Mission;
   public type MissionsUser = Types.MissionsUser;
-
-
   public type MissionProgress = Types.MissionProgress;
   public type MissionTemplate = Types.MissionTemplate;
   public type RewardPool = Types.RewardPool;
   public type MissionOption = Types.MissionOption;
+
+    public type AchievementType = TypesAchievements.AchievementType;
+    public type AchievementRewardsType = TypesAchievements.AchievementRewardsType;
+    public type AchievementReward = TypesAchievements.AchievementReward;
+    public type AchievementCategory = TypesAchievements.AchievementCategory;
+    public type AchievementTier = TypesAchievements.AchievementTier;
+    public type Achievement = TypesAchievements.Achievement;
+    public type AchievementProgress = TypesAchievements.AchievementProgress;
 
   //Timer
   public type Duration = Timer.Duration;
@@ -80,9 +88,6 @@ shared actor class Cosmicrafts() {
 
 
 // Admin Tools
-
-
-    // add mint mintChest function ICRC TransactionLogs
 
     // mint deck should only be called once per PID
 
@@ -1041,6 +1046,266 @@ shared actor class Cosmicrafts() {
 //--
 // Achievements
 
+    // Stable Variables
+    stable var achievementIDCounter: Nat = 1;
+    stable var _achievementProgress: [(PlayerId, [AchievementProgress])] = [];
+    stable var _achievements: [(Nat, Achievement)] = [];
+    stable var _playerAchievements: [(PlayerId, [Nat])] = [];
+
+    // HashMaps
+    var achievements: HashMap.HashMap<Nat, Achievement> = HashMap.fromIter(_achievements.vals(), 0, Utils._natEqual, Utils._natHash);
+    var achievementProgress: HashMap.HashMap<PlayerId, [AchievementProgress]> = HashMap.fromIter(_achievementProgress.vals(), 0, Principal.equal, Principal.hash);
+    var playerAchievements: HashMap.HashMap<PlayerId, [Nat]> = HashMap.fromIter(_playerAchievements.vals(), 0, Principal.equal, Principal.hash);
+
+    // Function to create a new achievement
+    public func createAchievement(
+        name: Text, 
+        achievementType: AchievementType, 
+        category: AchievementCategory, 
+        tier: AchievementTier, 
+        reward: AchievementReward, 
+        progress: Nat,
+        ): async (Bool, Text, Nat) {
+            let id = achievementIDCounter;
+            achievementIDCounter += 1;
+
+            let newAchievement: Achievement = {
+                id = id;
+                name = name;
+                achievementType = achievementType;
+                category = category;
+                tier = tier;
+                reward = reward;
+                progress = 0;
+                completed = false;
+            };
+
+        achievements.put(id, newAchievement);
+        Debug.print("[createAchievement] Achievement created with ID: " # Nat.toText(id));
+
+        return (true, "Achievement created successfully", id);
+    };
+
+    // Function to update achievement progress
+    public func updateAchievementProgress(user: PlayerId, progressList: [AchievementProgress]): async (Bool, Text) {
+        Debug.print("[updateAchievementProgress] Updating achievement progress for user: " # Principal.toText(user));
+
+        var userProgress: [AchievementProgress] = switch (achievementProgress.get(user)) {
+            case (null) { [] };
+            case (?progress) { progress };
+        };
+
+        Debug.print("[updateAchievementProgress] User's current achievements: " # debug_show(userProgress));
+
+        let updatedProgress = Buffer.Buffer<AchievementProgress>(userProgress.size());
+
+        for (newProgress in progressList.vals()) {
+            var updated = false;
+            for (progress in userProgress.vals()) {
+                if (progress.achievementId == newProgress.achievementId) {
+                    let combinedProgress = progress.progress + newProgress.progress;
+                    let achievement = achievements.get(newProgress.achievementId);
+                    switch (achievement) {
+                        case (?ach) {
+                            let isCompleted = combinedProgress >= ach.progress;
+                            updatedProgress.add({
+                                achievementId = progress.achievementId;
+                                playerId = progress.playerId;
+                                progress = if (isCompleted) ach.progress else combinedProgress;
+                                completed = isCompleted;
+                            });
+                            updated := true;
+                        };
+                        case (null) {};
+                    };
+                };
+            };
+            if (not updated) {
+                updatedProgress.add(newProgress);
+            };
+        };
+
+        achievementProgress.put(user, Buffer.toArray(updatedProgress));
+        Debug.print("[updateAchievementProgress] Updated user achievements: " # debug_show(achievementProgress.get(user)));
+        return (true, "Achievement progress updated successfully");
+    };
+
+    // Function to assign new achievements to a user
+    public func assignAchievements(user: PlayerId): async () {
+        Debug.print("[assignAchievements] Assigning new achievements to user: " # Principal.toText(user));
+
+        var userAchievementsList: [Nat] = switch (playerAchievements.get(user)) {
+            case (null) { [] };
+            case (?achievements) { achievements };
+        };
+
+        Debug.print("[assignAchievements] User achievements before update: " # debug_show(userAchievementsList));
+
+        // Add new achievements to the user
+        for ((id, achievement) in achievements.entries()) {
+            if (not Utils.arrayContains<Nat>(userAchievementsList, id, Utils._natEqual)) {
+                userAchievementsList := Array.append(userAchievementsList, [id]);
+            }
+        };
+
+        playerAchievements.put(user, userAchievementsList);
+        Debug.print("[assignAchievements] User achievements after update: " # debug_show(playerAchievements.get(user)));
+    };
+
+    // Function to get achievements for a user
+    public shared ({ caller }) func getAchievements(): async [Achievement] {
+        // Step 1: Assign new achievements to the user
+        await assignAchievements(caller);
+
+        // Step 2: Get the achievements assigned to the user
+        let userAchievementsList: [Nat] = switch (playerAchievements.get(caller)) {
+            case (null) { [] };
+            case (?achievements) { achievements };
+        };
+
+        let achievementsWithDetails = Buffer.Buffer<Achievement>(userAchievementsList.size());
+        for (id in userAchievementsList.vals()) {
+            let achievement = achievements.get(id);
+            switch (achievement) {
+                case (null) {};
+                case (?ach) {
+                    achievementsWithDetails.add(ach);
+                };
+            };
+        };
+
+        return Buffer.toArray(achievementsWithDetails);
+    };
+
+    // Function to claim an achievement reward
+    public shared (msg) func claimAchievementReward(idAchievement: Nat): async (Bool, Text) {
+        let achievementOpt = achievements.get(idAchievement);
+        switch (achievementOpt) {
+            case (null) {
+                return (false, "Achievement not found");
+            };
+            case (?achievement) {
+                let userProgress = achievementProgress.get(msg.caller);
+                switch (userProgress) {
+                    case (null) {
+                        return (false, "Achievement progress not found");
+                    };
+                    case (?progressList) {
+                        let progressOpt = Array.find<AchievementProgress>(progressList, func(p) { p.achievementId == idAchievement });
+                        switch (progressOpt) {
+                            case (null) {
+                                return (false, "Achievement progress not found");
+                            };
+                            case (?progress) {
+                                if (not progress.completed) {
+                                    return (false, "Achievement not completed");
+                                };
+                                // Mint the rewards
+                                let (success, message) = await mintAchievementRewards(achievement, msg.caller);
+                                if (success) {
+                                    // Mark the achievement as claimed
+                                    var updatedProgressList = Buffer.Buffer<AchievementProgress>(progressList.size());
+                                    for (p in progressList.vals()) {
+                                        if (p.achievementId != idAchievement) {
+                                            updatedProgressList.add(p);
+                                        } else {
+                                            updatedProgressList.add({
+                                                achievementId = p.achievementId;
+                                                playerId = p.playerId;
+                                                progress = p.progress;
+                                                completed = true; // Ensure it's marked as completed
+                                            });
+                                        }
+                                    };
+                                    achievementProgress.put(msg.caller, Buffer.toArray(updatedProgressList));
+                                };
+                                return (success, message);
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+
+    func mintAchievementRewards(achievement: Achievement, caller: PlayerId): async (Bool, Text) {
+        // Implementation for minting achievement rewards (similar to mintGeneralRewards and mintUserRewards)
+        // This will depend on the specific reward type and logic for minting.
+        // Add the minting logic here and return (true, "Reward minted successfully") or (false, "Minting reward failed")
+        // For simplicity, let's assume we have a mintReward function available
+        let reward = achievement.reward;
+        switch (reward.rewardType) {
+            case (#Shards) {
+                let result = await mintShards(caller, reward.amount);
+                return result;
+            };
+            case (#Item) {
+                let result = await mintItem(caller, reward.items);
+                return result;
+            };
+            case (#Title) {
+                let result = await mintTitle(caller, reward.title);
+                return result;
+            };
+            case (#Avatar) {
+                let result = await mintAvatar(caller, reward.items);
+                return result;
+            };
+            case (#Chest) {
+                let result = await mintChest(caller, reward.amount);
+                return result;
+            };
+            case (#Flux) {
+                let result = await mintFlux(caller, reward.amount);
+                return result;
+            };
+            case (#NFT) {
+                let result = await mintNFT(caller, reward.items);
+                return result;
+            };
+            case (#CosmicPower) {
+                let result = await mintCosmicPower(caller, reward.amount);
+                return result;
+            };
+        }
+    };
+
+    func mintShards(caller: PlayerId, amount: Nat): async (Bool, Text) {
+        // Add logic to mint shards
+        return (true, "Shards minted successfully");
+    };
+
+    func mintItem(caller: PlayerId, items: [Text]): async (Bool, Text) {
+        // Add logic to mint item
+        return (true, "Item minted successfully");
+    };
+
+    func mintTitle(caller: PlayerId, title: Text): async (Bool, Text) {
+        // Add logic to mint title
+        return (true, "Title minted successfully");
+    };
+
+    func mintAvatar(caller: PlayerId, items: [Text]): async (Bool, Text) {
+        // Add logic to mint avatar
+        return (true, "Avatar minted successfully");
+    };
+
+    func mintFlux(caller: PlayerId, amount: Nat): async (Bool, Text) {
+        // Add logic to mint flux
+        return (true, "Flux minted successfully");
+    };
+
+    func mintNFT(caller: PlayerId, items: [Text]): async (Bool, Text) {
+        // Add logic to mint NFT
+        return (true, "NFT minted successfully");
+    };
+
+    func mintCosmicPower(caller: PlayerId, amount: Nat): async (Bool, Text) {
+        // Add logic to mint cosmic power
+        return (true, "Cosmic power minted successfully");
+    };
+
+//--
 
 // Progress Manager
 
