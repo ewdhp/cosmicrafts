@@ -1,7 +1,7 @@
 import Time "mo:base/Time";
 
 module Types {
-  // General Types
+// General Types
   public type PlayerId = Principal;
   public type Username = Text;
   public type AvatarID = Nat;
@@ -16,7 +16,7 @@ module Types {
   public type PlayerFaction = Text;
   public type Faction = Text;
 
-  // Player and Friend Details
+// Player and Friend Details
   public type Player = {
     id: PlayerId;
     username: Username;
@@ -34,7 +34,7 @@ module Types {
     avatar: AvatarID;
   };
 
-  // Statistics
+// Statistics
   public type PlayerStats = {
     playerId: PlayerId;
     energyUsed: Nat;
@@ -55,7 +55,6 @@ module Types {
     gameMode: Nat;
     botMode: Nat;
     botDifficulty: Nat;
-   // level: Nat;
   };
 
   public type BasicStats = {
@@ -138,7 +137,7 @@ module Types {
     gamesPlayed: Nat;
   };
 
-  // Missions Types
+// Missions
   public type MissionType = {
     #GamesCompleted;
     #GamesWon;
@@ -153,7 +152,7 @@ module Types {
     #Kills;
   };
 
-  public type RewardType = {
+  public type MissionRewardType = {
     #Chest;
     #Flux;
     #Shards;
@@ -170,7 +169,7 @@ module Types {
     id: Nat;
     missionType: MissionType;
     name: Text;
-    reward_type: RewardType;
+    reward_type: MissionRewardType;
     reward_amount: Nat;
     start_date: Nat64;
     end_date: Nat64;
@@ -186,7 +185,7 @@ module Types {
     start_date: Nat64;
     expiration: Nat64;
     missionType: MissionType;
-    reward_type: RewardType;
+    reward_type: MissionRewardType;
     reward_amount: Nat;
   };
 
@@ -198,7 +197,7 @@ module Types {
   public type MissionTemplate = {
     name: Text;
     missionType: MissionType;
-    rewardType: RewardType;
+    rewardType: MissionRewardType;
     minReward: Nat;
     maxReward: Nat;
     total: Nat;
@@ -210,8 +209,42 @@ module Types {
     flux: (Nat, Nat);
     shards: (Nat, Nat);
   };
+// Achievements
 
-  // Matchmaking
+  public type AchievementRewards = {
+    #Shards;
+    #Item;
+    #Title;
+    #Avatar;
+    #Chest;
+    #Flux;
+    #NFT;
+  };
+
+  public type AchievementReward = {
+    rewardType: AchievementRewards;
+    amount: Nat;
+    items: [Text];
+    title: Text;
+  };
+
+  public type AchievementCriteria = {
+    description: Text;
+    requiredValue: Nat;
+  };
+
+
+
+  // Achievement Category
+  public type AchievementCategory = {
+    #Combat;
+    #Exploration;
+    #Social;
+    #Progression;
+  };
+
+
+// Matchmaking
   public type MMInfo = {
     id: PlayerId;
     matchAccepted: Bool;
@@ -271,7 +304,7 @@ module Types {
     status: MMStatus;
   };
 
-  // Match History
+// Match History
   public type MatchOpt = {
     #Ranked;
     #Normal;

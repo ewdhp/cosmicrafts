@@ -58,7 +58,7 @@ shared actor class Cosmicrafts() {
   public type FullMatchData = Types.FullMatchData;
 
   public type MissionType = Types.MissionType;
-  public type RewardType = Types.RewardType;
+  public type RewardType = Types.MissionRewardType;
   public type Mission = Types.Mission;
   public type MissionsUser = Types.MissionsUser;
 
@@ -696,7 +696,7 @@ shared actor class Cosmicrafts() {
     };
 
     // Function to update progress for user-specific missions
-    private func updateUserMissions(user: Principal, playerStats: {
+    func updateUserMissions(user: Principal, playerStats: {
         secRemaining: Nat;
         energyGenerated: Nat;
         damageDealt: Nat;
@@ -1041,7 +1041,7 @@ shared actor class Cosmicrafts() {
 
 // Progress Manager
 
-    public shared func updateProgressManager(user: Principal, playerStats: {
+    func updateProgressManager(user: Principal, playerStats: {
         secRemaining: Nat;
         energyGenerated: Nat;
         damageDealt: Nat;
@@ -1078,7 +1078,6 @@ shared actor class Cosmicrafts() {
 
             return (success, message);
     };
-
 
     public shared (msg) func saveFinishedGame(matchID: MatchID, _playerStats: {
         secRemaining: Nat;
@@ -1265,7 +1264,7 @@ shared actor class Cosmicrafts() {
     var players: HashMap.HashMap<PlayerId, Player> = HashMap.fromIter(_players.vals(), 0, Principal.equal, Principal.hash);
 
     // Function to register a new player
-    public shared ({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID) : async (Bool, PlayerId, Bool, Text, Nat) {
+    public shared({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID): async (Bool, PlayerId, Bool, Text, Nat) {
         let PlayerId = caller;
         switch (players.get(PlayerId)) {
             case (null) {
@@ -1285,7 +1284,10 @@ shared actor class Cosmicrafts() {
                 // Assign new missions to the user
                 await assignGeneralMissions(PlayerId);
 
-                return (true, PlayerId, true, "User registered and general missions assigned.", 0);
+                // Mint a deck for the new player
+                let (mintSuccess, mintMessage) = await mintDeck(PlayerId);
+
+                return (true, PlayerId, true, "User registered, general missions assigned, and deck minting: " # mintMessage, 0);
             };
             case (?_) {
                 return (false, PlayerId, false, "User already exists", 0); // User already exists
@@ -2516,7 +2518,7 @@ shared actor class Cosmicrafts() {
     // GameNFTs
 
     // Mint deck with 8 units and random rarity within a range provided
-    public shared({ caller }) func mintDeck() : async (Bool, Text) {
+    private func mintDeck(caller: Principal): async (Bool, Text) {
         let units = Utils.initDeck();
 
         var _deck = Buffer.Buffer<TypesICRC7.MintArgs>(8);
@@ -2878,6 +2880,7 @@ shared actor class Cosmicrafts() {
             updateStableVariables();
         };
 
+
         // Function to update minted chests
         func updateMintedChests(user: Principal, tokenID: TokenID): async () {
             let current = switch (mintedChestsMap.get(user)) {
@@ -2966,6 +2969,7 @@ shared actor class Cosmicrafts() {
                 gameNFTs = gameNFTs;
             };
         };
+
 
 
 };
