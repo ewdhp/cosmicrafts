@@ -10,7 +10,7 @@ module TypesAchievements {
         requiredProgress: Nat;
         progress: Nat;
         completed: Bool;
-        reward: AchievementReward;
+        reward: [AchievementReward]; // Allowing multiple rewards
         achievementId: Nat; // Link to the general achievement
     };
 
@@ -23,7 +23,7 @@ module TypesAchievements {
         progress: Nat;
         requiredProgress: Nat; // Total progress required to complete this achievement
         categoryId: Nat; // Link to the category
-        reward: AchievementReward;
+        reward: [AchievementReward]; // Allowing multiple rewards
         completed: Bool; // Field added to track completion status
     };
 
@@ -35,7 +35,7 @@ module TypesAchievements {
         tier: AchievementTier;
         progress: Nat;
         requiredProgress: Nat; // Total progress required to complete this category
-        reward: AchievementReward;
+        reward: [AchievementReward]; // Allowing multiple rewards
         completed: Bool; // Field added to track completion status
     };
 
@@ -71,12 +71,8 @@ module TypesAchievements {
     // Achievement Reward Types
     public type AchievementRewardsType = {
         #Shards;
-        #Item;
-        #Title;
-        #Avatar;
         #Chest;
         #Flux;
-        #NFT;
         #CosmicPower;
     };
 
@@ -84,8 +80,6 @@ module TypesAchievements {
     public type AchievementReward = {
         rewardType: AchievementRewardsType;
         amount: Nat;
-        items: [Text];
-        title: Text;
     };
 
     // Achievement Tier
