@@ -209,9 +209,6 @@ module Types {
     shards: (Nat, Nat);
   };
 // Achievements
-
-
-
 // Matchmaking
   public type MMInfo = {
     id: PlayerId;
