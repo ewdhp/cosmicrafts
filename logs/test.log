@@ -6005,3 +6005,2260 @@ Check that the method being called is exported by the target canister. See docum
 2024-07-29 06:09:52,682 - Running command: dfx identity use player3
 2024-07-29 06:09:52,701 - Output: 
 2024-07-29 06:09:52,702 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:09:54,017 - Output: (false, "Cannot send friend request to this user")
+2024-07-29 06:09:54,017 - Running command: dfx identity use player1
+2024-07-29 06:09:54,024 - Output: 
+2024-07-29 06:09:54,025 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { acceptAll })'
+2024-07-29 06:09:56,347 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:09:56,348 - Testing notifications...
+2024-07-29 06:09:56,348 - Running command: dfx identity use player1
+2024-07-29 06:09:56,356 - Output: 
+2024-07-29 06:09:56,357 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { friendsOfFriends })'
+2024-07-29 06:09:58,865 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:09:58,865 - Running command: dfx identity use player1
+2024-07-29 06:09:58,871 - Output: 
+2024-07-29 06:09:58,871 - Running command: dfx canister call cosmicrafts getNotifications
+2024-07-29 06:09:58,896 - Output: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_254_987_218_225_979 : int;
+    };
+  },
+)
+2024-07-29 06:09:58,897 - Notifications for player1: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_254_987_218_225_979 : int;
+    };
+  },
+)
+2024-07-29 06:09:58,897 - Running command: dfx canister call cosmicrafts sendNotification '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe", "Old notification", 1719576598)'
+2024-07-29 06:10:00,775 - Command failed: dfx canister call cosmicrafts sendNotification '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe", "Old notification", 1719576598)'
+WARN: Cannot fetch Candid interface for sendNotification, sending arguments with inferred types.
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterError, reject message Error from Canister bkyz2-fmaaa-aaaaa-qaaaq-cai: Canister has no update method 'sendNotification'..
+Check that the method being called is exported by the target canister. See documentation: http://internetcomputer.org/docs/current/references/execution-errors#method-not-found, error code None
+2024-07-29 06:10:00,775 - Error during notification tests: Command failed: dfx canister call cosmicrafts sendNotification '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe", "Old notification", 1719576598)'
+WARN: Cannot fetch Candid interface for sendNotification, sending arguments with inferred types.
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterError, reject message Error from Canister bkyz2-fmaaa-aaaaa-qaaaq-cai: Canister has no update method 'sendNotification'..
+Check that the method being called is exported by the target canister. See documentation: http://internetcomputer.org/docs/current/references/execution-errors#method-not-found, error code None
+2024-07-29 06:10:00,775 - Testing profile retrieval...
+2024-07-29 06:10:00,776 - Running command: dfx identity use player1
+2024-07-29 06:10:00,789 - Output: 
+2024-07-29 06:10:00,789 - Running command: dfx canister call cosmicrafts getProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:10:00,891 - Output: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_254_950_189_162_812 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:10:00,891 - Profile of player2: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_254_950_189_162_812 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:10:00,891 - Running command: dfx identity use player1
+2024-07-29 06:10:00,900 - Output: 
+2024-07-29 06:10:00,900 - Running command: dfx canister call cosmicrafts getFullUserProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:10:00,928 - Output: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_254_950_189_162_812 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:10:00,928 - Full profile of player2: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_254_950_189_162_812 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:10:00,928 - Running command: dfx identity use player1
+2024-07-29 06:10:00,935 - Output: 
+2024-07-29 06:10:00,935 - Running command: dfx canister call cosmicrafts searchUserByUsername '("PlayerTwo")'
+2024-07-29 06:10:00,964 - Output: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_254_950_189_162_812 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:10:00,964 - Search results for PlayerTwo: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_254_950_189_162_812 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:16:28,598 - Running command: dfx identity use player1
+2024-07-29 06:16:28,604 - Output: 
+2024-07-29 06:16:28,604 - Running command: dfx identity get-principal
+2024-07-29 06:16:28,619 - Output: mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe
+2024-07-29 06:16:28,619 - Running command: dfx identity use player1
+2024-07-29 06:16:28,625 - Output: 
+2024-07-29 06:16:28,625 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerOne", 1)'
+2024-07-29 06:16:29,702 - Output: (false, null, "User is already registered")
+2024-07-29 06:16:29,702 - Running command: dfx identity use player2
+2024-07-29 06:16:29,707 - Output: 
+2024-07-29 06:16:29,708 - Running command: dfx identity get-principal
+2024-07-29 06:16:29,723 - Output: 6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae
+2024-07-29 06:16:29,723 - Running command: dfx identity use player2
+2024-07-29 06:16:29,729 - Output: 
+2024-07-29 06:16:29,729 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerTwo", 2)'
+2024-07-29 06:16:31,185 - Output: (false, null, "User is already registered")
+2024-07-29 06:16:31,186 - Running command: dfx identity use player3
+2024-07-29 06:16:31,211 - Output: 
+2024-07-29 06:16:31,212 - Running command: dfx identity get-principal
+2024-07-29 06:16:31,277 - Output: udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe
+2024-07-29 06:16:31,277 - Running command: dfx identity use player3
+2024-07-29 06:16:31,289 - Output: 
+2024-07-29 06:16:31,289 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerThree", 3)'
+2024-07-29 06:16:32,148 - Output: (false, null, "User is already registered")
+2024-07-29 06:16:32,149 - Running command: dfx identity use player4
+2024-07-29 06:16:32,176 - Output: 
+2024-07-29 06:16:32,177 - Running command: dfx identity get-principal
+2024-07-29 06:16:32,228 - Output: pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae
+2024-07-29 06:16:32,229 - Running command: dfx identity use player4
+2024-07-29 06:16:32,247 - Output: 
+2024-07-29 06:16:32,247 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerFour", 4)'
+2024-07-29 06:16:33,778 - Output: (false, null, "User is already registered")
+2024-07-29 06:16:33,779 - Running command: dfx identity use player5
+2024-07-29 06:16:33,785 - Output: 
+2024-07-29 06:16:33,785 - Running command: dfx identity get-principal
+2024-07-29 06:16:33,802 - Output: xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae
+2024-07-29 06:16:33,802 - Running command: dfx identity use player5
+2024-07-29 06:16:33,807 - Output: 
+2024-07-29 06:16:33,808 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerFive", 5)'
+2024-07-29 06:16:34,984 - Output: (false, null, "User is already registered")
+2024-07-29 06:16:34,984 - Running command: dfx identity use player6
+2024-07-29 06:16:35,010 - Output: 
+2024-07-29 06:16:35,011 - Running command: dfx identity get-principal
+2024-07-29 06:16:35,058 - Output: yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe
+2024-07-29 06:16:35,058 - Running command: dfx identity use player6
+2024-07-29 06:16:35,069 - Output: 
+2024-07-29 06:16:35,069 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerSix", 6)'
+2024-07-29 06:16:36,360 - Output: (false, null, "User is already registered")
+2024-07-29 06:16:36,361 - Testing player registration...
+2024-07-29 06:16:36,361 - Running command: dfx identity use player4
+2024-07-29 06:16:36,388 - Output: 
+2024-07-29 06:16:36,388 - Running command: dfx canister call cosmicrafts registerPlayer '("ValidUser", 4)'
+2024-07-29 06:16:38,009 - Output: (false, null, "User is already registered")
+2024-07-29 06:16:38,010 - Running command: dfx identity use player5
+2024-07-29 06:16:38,038 - Output: 
+2024-07-29 06:16:38,039 - Running command: dfx canister call cosmicrafts registerPlayer '("ValidUser", 5)'
+2024-07-29 06:16:40,073 - Output: (false, null, "User is already registered")
+2024-07-29 06:16:40,073 - Running command: dfx identity use player6
+2024-07-29 06:16:40,078 - Output: 
+2024-07-29 06:16:40,078 - Running command: dfx canister call cosmicrafts registerPlayer '("ThisUsernameIsWayTooLong", 6)'
+2024-07-29 06:16:41,810 - Output: (false, null, "Username must be 12 characters or less")
+2024-07-29 06:16:41,810 - Testing player updates...
+2024-07-29 06:16:41,810 - Running command: dfx identity use player1
+2024-07-29 06:16:41,816 - Output: 
+2024-07-29 06:16:41,816 - Running command: dfx canister call cosmicrafts updateUsername '("UpdatedUser")'
+2024-07-29 06:16:43,075 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "New username cannot be the same as the current username",
+)
+2024-07-29 06:16:43,075 - Running command: dfx identity use player1
+2024-07-29 06:16:43,099 - Output: 
+2024-07-29 06:16:43,100 - Running command: dfx canister call cosmicrafts updateUsername '("ThisUsernameIsWayTooLong")'
+2024-07-29 06:16:44,903 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Username updated successfully",
+)
+2024-07-29 06:16:44,903 - Running command: dfx identity use player1
+2024-07-29 06:16:44,929 - Output: 
+2024-07-29 06:16:44,929 - Running command: dfx canister call cosmicrafts updateAvatar '(5)'
+2024-07-29 06:16:46,198 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "New avatar cannot be the same as the current avatar",
+)
+2024-07-29 06:16:46,198 - Running command: dfx identity use player1
+2024-07-29 06:16:46,224 - Output: 
+2024-07-29 06:16:46,225 - Running command: dfx canister call cosmicrafts updateDescription '("This is a valid description.")'
+2024-07-29 06:16:48,675 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "New description cannot be the same as the current description",
+)
+2024-07-29 06:16:48,675 - Running command: dfx identity use player1
+2024-07-29 06:16:48,696 - Output: 
+2024-07-29 06:16:48,696 - Running command: dfx canister call cosmicrafts updateDescription '("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")'
+2024-07-29 06:16:50,839 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Description must be 160 characters or less",
+)
+2024-07-29 06:16:50,839 - Testing friend requests...
+2024-07-29 06:16:50,840 - Running command: dfx identity use player1
+2024-07-29 06:16:50,866 - Output: 
+2024-07-29 06:16:50,866 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:16:53,074 - Output: (false, "Cannot send friend request to yourself")
+2024-07-29 06:16:53,075 - Running command: dfx identity use player1
+2024-07-29 06:16:53,101 - Output: 
+2024-07-29 06:16:53,101 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:16:54,392 - Output: (true, "Friend request sent successfully")
+2024-07-29 06:16:54,393 - Running command: dfx identity use player1
+2024-07-29 06:16:54,398 - Output: 
+2024-07-29 06:16:54,398 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:16:55,752 - Output: (false, "Friend request already sent")
+2024-07-29 06:16:55,752 - Running command: dfx identity use player2
+2024-07-29 06:16:55,766 - Output: 
+2024-07-29 06:16:55,766 - Running command: dfx canister call cosmicrafts acceptFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:16:57,187 - Output: (true, "Friend request accepted")
+2024-07-29 06:16:57,187 - Running command: dfx identity use player2
+2024-07-29 06:16:57,213 - Output: 
+2024-07-29 06:16:57,213 - Running command: dfx canister call cosmicrafts acceptFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:16:59,682 - Output: (false, "Friend request not found")
+2024-07-29 06:16:59,683 - Running command: dfx identity use player1
+2024-07-29 06:16:59,713 - Output: 
+2024-07-29 06:16:59,713 - Running command: dfx canister call cosmicrafts getFriendsList
+2024-07-29 06:16:59,752 - Output: (
+  opt vec {
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+    principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+    principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+    principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+  },
+)
+2024-07-29 06:16:59,752 - Error during friend request tests: Should not be friends yet
+2024-07-29 06:16:59,752 - Testing blocking and unblocking...
+2024-07-29 06:16:59,753 - Running command: dfx identity use player1
+2024-07-29 06:16:59,758 - Output: 
+2024-07-29 06:16:59,758 - Running command: dfx canister call cosmicrafts blockUser '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:17:00,964 - Output: (false, "Cannot block yourself")
+2024-07-29 06:17:00,964 - Running command: dfx identity use player1
+2024-07-29 06:17:00,970 - Output: 
+2024-07-29 06:17:00,970 - Running command: dfx canister call cosmicrafts blockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:17:02,572 - Output: (true, "User blocked successfully")
+2024-07-29 06:17:02,572 - Running command: dfx identity use player1
+2024-07-29 06:17:02,577 - Output: 
+2024-07-29 06:17:02,577 - Running command: dfx canister call cosmicrafts blockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:17:05,229 - Output: (false, "User is already blocked")
+2024-07-29 06:17:05,229 - Running command: dfx identity use player1
+2024-07-29 06:17:05,256 - Output: 
+2024-07-29 06:17:05,257 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { blockAll })'
+2024-07-29 06:17:06,773 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:17:06,773 - Running command: dfx identity use player3
+2024-07-29 06:17:06,800 - Output: 
+2024-07-29 06:17:06,801 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:17:08,718 - Output: (false, "You are blocked by this user")
+2024-07-29 06:17:08,718 - Running command: dfx identity use player1
+2024-07-29 06:17:08,744 - Output: 
+2024-07-29 06:17:08,744 - Running command: dfx canister call cosmicrafts unblockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:17:10,121 - Output: (true, "User unblocked successfully")
+2024-07-29 06:17:10,121 - Testing privacy settings...
+2024-07-29 06:17:10,122 - Running command: dfx identity use player1
+2024-07-29 06:17:10,145 - Output: 
+2024-07-29 06:17:10,145 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { blockAll })'
+2024-07-29 06:17:12,633 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:17:12,634 - Running command: dfx identity use player3
+2024-07-29 06:17:12,660 - Output: 
+2024-07-29 06:17:12,660 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:17:14,096 - Output: (false, "Cannot send friend request to this user")
+2024-07-29 06:17:14,096 - Running command: dfx identity use player1
+2024-07-29 06:17:14,108 - Output: 
+2024-07-29 06:17:14,108 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { acceptAll })'
+2024-07-29 06:17:15,575 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:17:15,575 - Testing notifications...
+2024-07-29 06:17:15,575 - Running command: dfx identity use player1
+2024-07-29 06:17:15,581 - Output: 
+2024-07-29 06:17:15,581 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { friendsOfFriends })'
+2024-07-29 06:17:16,938 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:17:16,938 - Running command: dfx identity use player1
+2024-07-29 06:17:16,964 - Output: 
+2024-07-29 06:17:16,965 - Running command: dfx canister call cosmicrafts getNotifications
+2024-07-29 06:17:17,009 - Output: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_254_987_218_225_979 : int;
+    };
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_425_875_715_540 : int;
+    };
+  },
+)
+2024-07-29 06:17:17,009 - Notifications for player1: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_254_987_218_225_979 : int;
+    };
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_425_875_715_540 : int;
+    };
+  },
+)
+2024-07-29 06:17:17,009 - Running command: dfx canister call cosmicrafts sendNotification '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe", "Old notification", 1719577037)'
+2024-07-29 06:17:18,622 - Command failed: dfx canister call cosmicrafts sendNotification '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe", "Old notification", 1719577037)'
+WARN: Cannot fetch Candid interface for sendNotification, sending arguments with inferred types.
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterError, reject message Error from Canister bkyz2-fmaaa-aaaaa-qaaaq-cai: Canister has no update method 'sendNotification'..
+Check that the method being called is exported by the target canister. See documentation: http://internetcomputer.org/docs/current/references/execution-errors#method-not-found, error code None
+2024-07-29 06:17:18,622 - Error during notification tests: Command failed: dfx canister call cosmicrafts sendNotification '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe", "Old notification", 1719577037)'
+WARN: Cannot fetch Candid interface for sendNotification, sending arguments with inferred types.
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterError, reject message Error from Canister bkyz2-fmaaa-aaaaa-qaaaq-cai: Canister has no update method 'sendNotification'..
+Check that the method being called is exported by the target canister. See documentation: http://internetcomputer.org/docs/current/references/execution-errors#method-not-found, error code None
+2024-07-29 06:17:18,622 - Testing profile retrieval...
+2024-07-29 06:17:18,622 - Running command: dfx identity use player1
+2024-07-29 06:17:18,635 - Output: 
+2024-07-29 06:17:18,635 - Running command: dfx canister call cosmicrafts getProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:17:18,665 - Output: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_254_950_189_162_812 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "PlayerThree";
+        playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+        avatar = 3 : nat;
+      };
+      record {
+        username = "PlayerThree";
+        playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+        avatar = 3 : nat;
+      };
+      record {
+        username = "PlayerFour";
+        playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+        avatar = 4 : nat;
+      };
+      record {
+        username = "PlayerFour";
+        playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+        avatar = 4 : nat;
+      };
+      record {
+        username = "ThisUsernameIsWayTooLong";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "ThisUsernameIsWayTooLong";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:17:18,665 - Profile of player2: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_254_950_189_162_812 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "PlayerThree";
+        playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+        avatar = 3 : nat;
+      };
+      record {
+        username = "PlayerThree";
+        playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+        avatar = 3 : nat;
+      };
+      record {
+        username = "PlayerFour";
+        playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+        avatar = 4 : nat;
+      };
+      record {
+        username = "PlayerFour";
+        playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+        avatar = 4 : nat;
+      };
+      record {
+        username = "ThisUsernameIsWayTooLong";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "ThisUsernameIsWayTooLong";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:17:18,665 - Running command: dfx identity use player1
+2024-07-29 06:17:18,670 - Output: 
+2024-07-29 06:17:18,671 - Running command: dfx canister call cosmicrafts getFullUserProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:17:18,697 - Output: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_254_950_189_162_812 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "PlayerThree";
+          playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+          avatar = 3 : nat;
+        };
+        record {
+          username = "PlayerThree";
+          playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+          avatar = 3 : nat;
+        };
+        record {
+          username = "PlayerFour";
+          playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+          avatar = 4 : nat;
+        };
+        record {
+          username = "PlayerFour";
+          playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+          avatar = 4 : nat;
+        };
+        record {
+          username = "ThisUsernameIsWayTooLong";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "ThisUsernameIsWayTooLong";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:17:18,697 - Full profile of player2: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_254_950_189_162_812 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "PlayerThree";
+          playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+          avatar = 3 : nat;
+        };
+        record {
+          username = "PlayerThree";
+          playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+          avatar = 3 : nat;
+        };
+        record {
+          username = "PlayerFour";
+          playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+          avatar = 4 : nat;
+        };
+        record {
+          username = "PlayerFour";
+          playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+          avatar = 4 : nat;
+        };
+        record {
+          username = "ThisUsernameIsWayTooLong";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "ThisUsernameIsWayTooLong";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:17:18,697 - Running command: dfx identity use player1
+2024-07-29 06:17:18,703 - Output: 
+2024-07-29 06:17:18,703 - Running command: dfx canister call cosmicrafts searchUserByUsername '("PlayerTwo")'
+2024-07-29 06:17:18,729 - Output: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_254_950_189_162_812 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "PlayerThree";
+          playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+          avatar = 3 : nat;
+        };
+        record {
+          username = "PlayerThree";
+          playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+          avatar = 3 : nat;
+        };
+        record {
+          username = "PlayerFour";
+          playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+          avatar = 4 : nat;
+        };
+        record {
+          username = "PlayerFour";
+          playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+          avatar = 4 : nat;
+        };
+        record {
+          username = "ThisUsernameIsWayTooLong";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "ThisUsernameIsWayTooLong";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:17:18,729 - Search results for PlayerTwo: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_254_950_189_162_812 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "PlayerThree";
+          playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+          avatar = 3 : nat;
+        };
+        record {
+          username = "PlayerThree";
+          playerId = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+          avatar = 3 : nat;
+        };
+        record {
+          username = "PlayerFour";
+          playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+          avatar = 4 : nat;
+        };
+        record {
+          username = "PlayerFour";
+          playerId = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+          avatar = 4 : nat;
+        };
+        record {
+          username = "ThisUsernameIsWayTooLong";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "ThisUsernameIsWayTooLong";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:22:40,722 - Running command: dfx identity use player1
+2024-07-29 06:22:40,728 - Output: 
+2024-07-29 06:22:40,728 - Running command: dfx identity get-principal
+2024-07-29 06:22:40,744 - Output: mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe
+2024-07-29 06:22:40,744 - Running command: dfx identity use player1
+2024-07-29 06:22:40,749 - Output: 
+2024-07-29 06:22:40,750 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerOne", 1)'
+2024-07-29 06:22:42,506 - Output: (
+  true,
+  opt record {
+    id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+    elo = 1200.0 : float64;
+    username = "PlayerOne";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_761_192_000_649 : int;
+    friends = vec {};
+    avatar = 1 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:22:42,506 - Running command: dfx identity use player2
+2024-07-29 06:22:42,533 - Output: 
+2024-07-29 06:22:42,534 - Running command: dfx identity get-principal
+2024-07-29 06:22:42,577 - Output: 6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae
+2024-07-29 06:22:42,577 - Running command: dfx identity use player2
+2024-07-29 06:22:42,591 - Output: 
+2024-07-29 06:22:42,592 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerTwo", 2)'
+2024-07-29 06:22:43,922 - Output: (
+  true,
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_763_180_553_066 : int;
+    friends = vec {};
+    avatar = 2 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:22:43,923 - Running command: dfx identity use player3
+2024-07-29 06:22:43,947 - Output: 
+2024-07-29 06:22:43,947 - Running command: dfx identity get-principal
+2024-07-29 06:22:43,978 - Output: udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe
+2024-07-29 06:22:43,978 - Running command: dfx identity use player3
+2024-07-29 06:22:43,989 - Output: 
+2024-07-29 06:22:43,989 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerThree", 3)'
+2024-07-29 06:22:45,410 - Output: (
+  true,
+  opt record {
+    id = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+    elo = 1200.0 : float64;
+    username = "PlayerThree";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_764_501_478_151 : int;
+    friends = vec {};
+    avatar = 3 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:22:45,410 - Running command: dfx identity use player4
+2024-07-29 06:22:45,434 - Output: 
+2024-07-29 06:22:45,434 - Running command: dfx identity get-principal
+2024-07-29 06:22:45,472 - Output: pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae
+2024-07-29 06:22:45,472 - Running command: dfx identity use player4
+2024-07-29 06:22:45,486 - Output: 
+2024-07-29 06:22:45,487 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerFour", 4)'
+2024-07-29 06:22:47,247 - Output: (
+  true,
+  opt record {
+    id = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+    elo = 1200.0 : float64;
+    username = "PlayerFour";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_765_825_291_955 : int;
+    friends = vec {};
+    avatar = 4 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:22:47,247 - Running command: dfx identity use player5
+2024-07-29 06:22:47,253 - Output: 
+2024-07-29 06:22:47,253 - Running command: dfx identity get-principal
+2024-07-29 06:22:47,269 - Output: xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae
+2024-07-29 06:22:47,269 - Running command: dfx identity use player5
+2024-07-29 06:22:47,274 - Output: 
+2024-07-29 06:22:47,274 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerFive", 5)'
+2024-07-29 06:22:49,285 - Output: (
+  true,
+  opt record {
+    id = principal "xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae";
+    elo = 1200.0 : float64;
+    username = "PlayerFive";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_767_811_999_549 : int;
+    friends = vec {};
+    avatar = 5 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:22:49,285 - Running command: dfx identity use player6
+2024-07-29 06:22:49,294 - Output: 
+2024-07-29 06:22:49,294 - Running command: dfx identity get-principal
+2024-07-29 06:22:49,312 - Output: yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe
+2024-07-29 06:22:49,312 - Running command: dfx identity use player6
+2024-07-29 06:22:49,317 - Output: 
+2024-07-29 06:22:49,317 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerSix", 6)'
+2024-07-29 06:22:51,365 - Output: (
+  true,
+  opt record {
+    id = principal "yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe";
+    elo = 1200.0 : float64;
+    username = "PlayerSix";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_769_802_459_293 : int;
+    friends = vec {};
+    avatar = 6 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:22:51,365 - Testing player registration...
+2024-07-29 06:22:51,365 - Running command: dfx identity use player4
+2024-07-29 06:22:51,380 - Output: 
+2024-07-29 06:22:51,380 - Running command: dfx canister call cosmicrafts registerPlayer '("ValidUser", 4)'
+2024-07-29 06:22:53,019 - Output: (false, null, "User is already registered")
+2024-07-29 06:22:53,019 - Running command: dfx identity use player5
+2024-07-29 06:22:53,025 - Output: 
+2024-07-29 06:22:53,025 - Running command: dfx canister call cosmicrafts registerPlayer '("ValidUser", 5)'
+2024-07-29 06:22:54,629 - Output: (false, null, "User is already registered")
+2024-07-29 06:22:54,629 - Running command: dfx identity use player6
+2024-07-29 06:22:54,639 - Output: 
+2024-07-29 06:22:54,639 - Running command: dfx canister call cosmicrafts registerPlayer '("ThisUsernameIsWayTooLong", 6)'
+2024-07-29 06:22:56,255 - Output: (false, null, "Username must be 12 characters or less")
+2024-07-29 06:22:56,256 - Testing player updates...
+2024-07-29 06:22:56,256 - Running command: dfx identity use player1
+2024-07-29 06:22:56,283 - Output: 
+2024-07-29 06:22:56,284 - Running command: dfx canister call cosmicrafts updateUsername '("UpdatedUser")'
+2024-07-29 06:22:57,621 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Username updated successfully",
+)
+2024-07-29 06:22:57,621 - Running command: dfx identity use player1
+2024-07-29 06:22:57,649 - Output: 
+2024-07-29 06:22:57,649 - Running command: dfx canister call cosmicrafts updateUsername '("ThisUsernameIsWayTooLong")'
+2024-07-29 06:22:58,905 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "You can only update your username once every minute",
+)
+2024-07-29 06:22:58,905 - Running command: dfx identity use player1
+2024-07-29 06:22:58,931 - Output: 
+2024-07-29 06:22:58,931 - Running command: dfx canister call cosmicrafts updateAvatar '(5)'
+2024-07-29 06:23:00,118 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Avatar updated successfully",
+)
+2024-07-29 06:23:00,118 - Running command: dfx identity use player1
+2024-07-29 06:23:00,124 - Output: 
+2024-07-29 06:23:00,124 - Running command: dfx canister call cosmicrafts updateDescription '("This is a valid description.")'
+2024-07-29 06:23:01,926 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Description updated successfully",
+)
+2024-07-29 06:23:01,927 - Running command: dfx identity use player1
+2024-07-29 06:23:01,953 - Output: 
+2024-07-29 06:23:01,953 - Running command: dfx canister call cosmicrafts updateDescription '("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")'
+2024-07-29 06:23:04,354 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Description must be 160 characters or less",
+)
+2024-07-29 06:23:04,354 - Testing friend requests...
+2024-07-29 06:23:04,354 - Running command: dfx identity use player1
+2024-07-29 06:23:04,360 - Output: 
+2024-07-29 06:23:04,360 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:23:06,874 - Output: (false, "Cannot send friend request to yourself")
+2024-07-29 06:23:06,875 - Running command: dfx identity use player1
+2024-07-29 06:23:06,901 - Output: 
+2024-07-29 06:23:06,901 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:23:08,965 - Output: (true, "Friend request sent successfully")
+2024-07-29 06:23:08,965 - Running command: dfx identity use player1
+2024-07-29 06:23:08,971 - Output: 
+2024-07-29 06:23:08,971 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:23:10,773 - Output: (false, "Friend request already sent")
+2024-07-29 06:23:10,773 - Running command: dfx identity use player2
+2024-07-29 06:23:10,779 - Output: 
+2024-07-29 06:23:10,779 - Running command: dfx canister call cosmicrafts acceptFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:23:12,354 - Output: (true, "Friend request accepted")
+2024-07-29 06:23:12,355 - Running command: dfx identity use player2
+2024-07-29 06:23:12,380 - Output: 
+2024-07-29 06:23:12,381 - Running command: dfx canister call cosmicrafts acceptFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:23:14,724 - Output: (false, "Friend request not found")
+2024-07-29 06:23:14,724 - Running command: dfx identity use player1
+2024-07-29 06:23:14,749 - Output: 
+2024-07-29 06:23:14,750 - Running command: dfx canister call cosmicrafts getFriendsList
+2024-07-29 06:23:14,799 - Output: (
+  opt vec {
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+  },
+)
+2024-07-29 06:23:14,799 - Running command: dfx identity use player1
+2024-07-29 06:23:14,805 - Output: 
+2024-07-29 06:23:14,805 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:23:16,032 - Output: (false, "You are already friends with this user")
+2024-07-29 06:23:16,032 - Running command: dfx identity use player2
+2024-07-29 06:23:16,058 - Output: 
+2024-07-29 06:23:16,059 - Running command: dfx canister call cosmicrafts getFriendRequests
+2024-07-29 06:23:16,127 - Output: (vec {})
+2024-07-29 06:23:16,127 - Error during friend request tests: string indices must be integers, not 'str'
+2024-07-29 06:23:16,128 - Testing blocking and unblocking...
+2024-07-29 06:23:16,128 - Running command: dfx identity use player1
+2024-07-29 06:23:16,138 - Output: 
+2024-07-29 06:23:16,139 - Running command: dfx canister call cosmicrafts blockUser '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:23:17,481 - Output: (false, "Cannot block yourself")
+2024-07-29 06:23:17,481 - Running command: dfx identity use player1
+2024-07-29 06:23:17,491 - Output: 
+2024-07-29 06:23:17,491 - Running command: dfx canister call cosmicrafts blockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:23:19,876 - Output: (true, "User blocked successfully")
+2024-07-29 06:23:19,876 - Running command: dfx identity use player1
+2024-07-29 06:23:19,901 - Output: 
+2024-07-29 06:23:19,902 - Running command: dfx canister call cosmicrafts blockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:23:22,044 - Output: (false, "User is already blocked")
+2024-07-29 06:23:22,044 - Running command: dfx identity use player1
+2024-07-29 06:23:22,071 - Output: 
+2024-07-29 06:23:22,071 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { blockAll })'
+2024-07-29 06:23:24,556 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:23:24,556 - Running command: dfx identity use player3
+2024-07-29 06:23:24,583 - Output: 
+2024-07-29 06:23:24,583 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:23:26,266 - Output: (false, "You are blocked by this user")
+2024-07-29 06:23:26,266 - Running command: dfx identity use player1
+2024-07-29 06:23:26,290 - Output: 
+2024-07-29 06:23:26,291 - Running command: dfx canister call cosmicrafts unblockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:23:28,621 - Output: (true, "User unblocked successfully")
+2024-07-29 06:23:28,621 - Testing privacy settings...
+2024-07-29 06:23:28,621 - Running command: dfx identity use player1
+2024-07-29 06:23:28,647 - Output: 
+2024-07-29 06:23:28,647 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { blockAll })'
+2024-07-29 06:23:30,053 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:23:30,053 - Running command: dfx identity use player3
+2024-07-29 06:23:30,081 - Output: 
+2024-07-29 06:23:30,081 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:23:32,659 - Output: (false, "Cannot send friend request to this user")
+2024-07-29 06:23:32,659 - Running command: dfx identity use player1
+2024-07-29 06:23:32,665 - Output: 
+2024-07-29 06:23:32,665 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { acceptAll })'
+2024-07-29 06:23:33,666 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:23:33,666 - Testing notifications...
+2024-07-29 06:23:33,667 - Running command: dfx identity use player1
+2024-07-29 06:23:33,693 - Output: 
+2024-07-29 06:23:33,693 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { friendsOfFriends })'
+2024-07-29 06:23:35,007 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:23:35,007 - Running command: dfx identity use player1
+2024-07-29 06:23:35,018 - Output: 
+2024-07-29 06:23:35,018 - Running command: dfx canister call cosmicrafts getNotifications
+2024-07-29 06:23:35,042 - Output: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_802_770_847_457 : int;
+    };
+  },
+)
+2024-07-29 06:23:35,042 - Notifications for player1: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_802_770_847_457 : int;
+    };
+  },
+)
+2024-07-29 06:23:35,042 - Testing profile retrieval...
+2024-07-29 06:23:35,042 - Running command: dfx identity use player1
+2024-07-29 06:23:35,048 - Output: 
+2024-07-29 06:23:35,048 - Running command: dfx canister call cosmicrafts getProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:23:35,073 - Output: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_763_180_553_066 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:23:35,073 - Profile of player2: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_763_180_553_066 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:23:35,073 - Running command: dfx identity use player1
+2024-07-29 06:23:35,079 - Output: 
+2024-07-29 06:23:35,079 - Running command: dfx canister call cosmicrafts getFullUserProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:23:35,104 - Output: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_763_180_553_066 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:23:35,104 - Full profile of player2: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_763_180_553_066 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:23:35,104 - Running command: dfx identity use player1
+2024-07-29 06:23:35,110 - Output: 
+2024-07-29 06:23:35,110 - Running command: dfx canister call cosmicrafts searchUserByUsername '("PlayerTwo")'
+2024-07-29 06:23:35,135 - Output: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_763_180_553_066 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:23:35,135 - Search results for PlayerTwo: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_763_180_553_066 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:24:45,443 - Running command: dfx identity use player1
+2024-07-29 06:24:45,449 - Output: 
+2024-07-29 06:24:45,449 - Running command: dfx identity get-principal
+2024-07-29 06:24:45,465 - Output: mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe
+2024-07-29 06:24:45,465 - Running command: dfx identity use player1
+2024-07-29 06:24:45,471 - Output: 
+2024-07-29 06:24:45,471 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerOne", 1)'
+2024-07-29 06:24:48,205 - Output: (
+  true,
+  opt record {
+    id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+    elo = 1200.0 : float64;
+    username = "PlayerOne";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_886_071_559_794 : int;
+    friends = vec {};
+    avatar = 1 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:24:48,205 - Running command: dfx identity use player2
+2024-07-29 06:24:48,231 - Output: 
+2024-07-29 06:24:48,231 - Running command: dfx identity get-principal
+2024-07-29 06:24:48,267 - Output: 6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae
+2024-07-29 06:24:48,268 - Running command: dfx identity use player2
+2024-07-29 06:24:48,275 - Output: 
+2024-07-29 06:24:48,275 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerTwo", 2)'
+2024-07-29 06:24:50,432 - Output: (
+  true,
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_888_710_446_967 : int;
+    friends = vec {};
+    avatar = 2 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:24:50,433 - Running command: dfx identity use player3
+2024-07-29 06:24:50,454 - Output: 
+2024-07-29 06:24:50,454 - Running command: dfx identity get-principal
+2024-07-29 06:24:50,478 - Output: udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe
+2024-07-29 06:24:50,478 - Running command: dfx identity use player3
+2024-07-29 06:24:50,485 - Output: 
+2024-07-29 06:24:50,485 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerThree", 3)'
+2024-07-29 06:24:52,002 - Output: (
+  true,
+  opt record {
+    id = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+    elo = 1200.0 : float64;
+    username = "PlayerThree";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_890_694_179_100 : int;
+    friends = vec {};
+    avatar = 3 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:24:52,003 - Running command: dfx identity use player4
+2024-07-29 06:24:52,014 - Output: 
+2024-07-29 06:24:52,014 - Running command: dfx identity get-principal
+2024-07-29 06:24:52,046 - Output: pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae
+2024-07-29 06:24:52,046 - Running command: dfx identity use player4
+2024-07-29 06:24:52,057 - Output: 
+2024-07-29 06:24:52,058 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerFour", 4)'
+2024-07-29 06:24:53,846 - Output: (
+  true,
+  opt record {
+    id = principal "pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae";
+    elo = 1200.0 : float64;
+    username = "PlayerFour";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_892_678_686_767 : int;
+    friends = vec {};
+    avatar = 4 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:24:53,846 - Running command: dfx identity use player5
+2024-07-29 06:24:53,868 - Output: 
+2024-07-29 06:24:53,869 - Running command: dfx identity get-principal
+2024-07-29 06:24:53,900 - Output: xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae
+2024-07-29 06:24:53,900 - Running command: dfx identity use player5
+2024-07-29 06:24:53,911 - Output: 
+2024-07-29 06:24:53,911 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerFive", 5)'
+2024-07-29 06:24:55,834 - Output: (
+  true,
+  opt record {
+    id = principal "xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae";
+    elo = 1200.0 : float64;
+    username = "PlayerFive";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_894_663_355_285 : int;
+    friends = vec {};
+    avatar = 5 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:24:55,834 - Running command: dfx identity use player6
+2024-07-29 06:24:55,840 - Output: 
+2024-07-29 06:24:55,840 - Running command: dfx identity get-principal
+2024-07-29 06:24:55,860 - Output: yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe
+2024-07-29 06:24:55,860 - Running command: dfx identity use player6
+2024-07-29 06:24:55,868 - Output: 
+2024-07-29 06:24:55,868 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerSix", 6)'
+2024-07-29 06:24:57,041 - Output: (
+  true,
+  opt record {
+    id = principal "yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe";
+    elo = 1200.0 : float64;
+    username = "PlayerSix";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_895_978_250_723 : int;
+    friends = vec {};
+    avatar = 6 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 06:24:57,041 - Testing player registration...
+2024-07-29 06:24:57,041 - Running command: dfx identity use player4
+2024-07-29 06:24:57,047 - Output: 
+2024-07-29 06:24:57,048 - Running command: dfx canister call cosmicrafts registerPlayer '("ValidUser", 4)'
+2024-07-29 06:24:58,569 - Output: (false, null, "User is already registered")
+2024-07-29 06:24:58,569 - Running command: dfx identity use player5
+2024-07-29 06:24:58,575 - Output: 
+2024-07-29 06:24:58,575 - Running command: dfx canister call cosmicrafts registerPlayer '("ValidUser", 5)'
+2024-07-29 06:24:59,819 - Output: (false, null, "User is already registered")
+2024-07-29 06:24:59,819 - Running command: dfx identity use player6
+2024-07-29 06:24:59,826 - Output: 
+2024-07-29 06:24:59,826 - Running command: dfx canister call cosmicrafts registerPlayer '("ThisUsernameIsWayTooLong", 6)'
+2024-07-29 06:25:01,141 - Output: (false, null, "Username must be 12 characters or less")
+2024-07-29 06:25:01,141 - Testing player updates...
+2024-07-29 06:25:01,141 - Running command: dfx identity use player1
+2024-07-29 06:25:01,147 - Output: 
+2024-07-29 06:25:01,147 - Running command: dfx canister call cosmicrafts updateUsername '("UpdatedUser")'
+2024-07-29 06:25:02,586 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Username updated successfully",
+)
+2024-07-29 06:25:02,586 - Running command: dfx identity use player1
+2024-07-29 06:25:02,592 - Output: 
+2024-07-29 06:25:02,592 - Running command: dfx canister call cosmicrafts updateUsername '("ThisUsernameIsWayTooLong")'
+2024-07-29 06:25:04,489 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "You can only update your username once every minute",
+)
+2024-07-29 06:25:04,489 - Running command: dfx identity use player1
+2024-07-29 06:25:04,515 - Output: 
+2024-07-29 06:25:04,515 - Running command: dfx canister call cosmicrafts updateAvatar '(5)'
+2024-07-29 06:25:06,797 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Avatar updated successfully",
+)
+2024-07-29 06:25:06,798 - Running command: dfx identity use player1
+2024-07-29 06:25:06,815 - Output: 
+2024-07-29 06:25:06,815 - Running command: dfx canister call cosmicrafts updateDescription '("This is a valid description.")'
+2024-07-29 06:25:07,969 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Description updated successfully",
+)
+2024-07-29 06:25:07,969 - Running command: dfx identity use player1
+2024-07-29 06:25:07,996 - Output: 
+2024-07-29 06:25:07,996 - Running command: dfx canister call cosmicrafts updateDescription '("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")'
+2024-07-29 06:25:09,459 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Description must be 160 characters or less",
+)
+2024-07-29 06:25:09,460 - Testing friend requests...
+2024-07-29 06:25:09,460 - Running command: dfx identity use player1
+2024-07-29 06:25:09,485 - Output: 
+2024-07-29 06:25:09,486 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:25:11,610 - Output: (false, "Cannot send friend request to yourself")
+2024-07-29 06:25:11,610 - Running command: dfx identity use player1
+2024-07-29 06:25:11,635 - Output: 
+2024-07-29 06:25:11,635 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:25:12,771 - Output: (true, "Friend request sent successfully")
+2024-07-29 06:25:12,771 - Running command: dfx identity use player1
+2024-07-29 06:25:12,777 - Output: 
+2024-07-29 06:25:12,777 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:25:14,056 - Output: (false, "Friend request already sent")
+2024-07-29 06:25:14,056 - Running command: dfx identity use player2
+2024-07-29 06:25:14,062 - Output: 
+2024-07-29 06:25:14,062 - Running command: dfx canister call cosmicrafts acceptFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:25:15,486 - Output: (true, "Friend request accepted")
+2024-07-29 06:25:15,487 - Running command: dfx identity use player2
+2024-07-29 06:25:15,514 - Output: 
+2024-07-29 06:25:15,514 - Running command: dfx canister call cosmicrafts acceptFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:25:16,607 - Output: (false, "Friend request not found")
+2024-07-29 06:25:16,607 - Running command: dfx identity use player1
+2024-07-29 06:25:16,630 - Output: 
+2024-07-29 06:25:16,630 - Running command: dfx canister call cosmicrafts getFriendsList
+2024-07-29 06:25:16,671 - Output: (
+  opt vec {
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+  },
+)
+2024-07-29 06:25:16,671 - Running command: dfx identity use player1
+2024-07-29 06:25:16,677 - Output: 
+2024-07-29 06:25:16,677 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:25:18,165 - Output: (false, "You are already friends with this user")
+2024-07-29 06:25:18,165 - Running command: dfx identity use player2
+2024-07-29 06:25:18,178 - Output: 
+2024-07-29 06:25:18,178 - Running command: dfx canister call cosmicrafts getFriendRequests
+2024-07-29 06:25:18,210 - Output: (vec {})
+2024-07-29 06:25:18,210 - Error during friend request tests: string indices must be integers, not 'str'
+2024-07-29 06:25:18,210 - Testing blocking and unblocking...
+2024-07-29 06:25:18,210 - Running command: dfx identity use player1
+2024-07-29 06:25:18,216 - Output: 
+2024-07-29 06:25:18,216 - Running command: dfx canister call cosmicrafts blockUser '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:25:19,294 - Output: (false, "Cannot block yourself")
+2024-07-29 06:25:19,294 - Running command: dfx identity use player1
+2024-07-29 06:25:19,304 - Output: 
+2024-07-29 06:25:19,304 - Running command: dfx canister call cosmicrafts blockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:25:21,585 - Output: (true, "User blocked successfully")
+2024-07-29 06:25:21,586 - Running command: dfx identity use player1
+2024-07-29 06:25:21,612 - Output: 
+2024-07-29 06:25:21,612 - Running command: dfx canister call cosmicrafts blockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:25:23,001 - Output: (false, "User is already blocked")
+2024-07-29 06:25:23,001 - Running command: dfx identity use player1
+2024-07-29 06:25:23,011 - Output: 
+2024-07-29 06:25:23,011 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { blockAll })'
+2024-07-29 06:25:24,315 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:25:24,315 - Running command: dfx identity use player3
+2024-07-29 06:25:24,339 - Output: 
+2024-07-29 06:25:24,340 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:25:25,506 - Output: (false, "You are blocked by this user")
+2024-07-29 06:25:25,506 - Running command: dfx identity use player1
+2024-07-29 06:25:25,519 - Output: 
+2024-07-29 06:25:25,520 - Running command: dfx canister call cosmicrafts unblockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:25:26,954 - Output: (true, "User unblocked successfully")
+2024-07-29 06:25:26,954 - Testing privacy settings...
+2024-07-29 06:25:26,954 - Running command: dfx identity use player1
+2024-07-29 06:25:26,960 - Output: 
+2024-07-29 06:25:26,960 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { blockAll })'
+2024-07-29 06:25:28,455 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:25:28,456 - Running command: dfx identity use player3
+2024-07-29 06:25:28,475 - Output: 
+2024-07-29 06:25:28,475 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:25:29,966 - Output: (false, "Cannot send friend request to this user")
+2024-07-29 06:25:29,966 - Running command: dfx identity use player1
+2024-07-29 06:25:29,991 - Output: 
+2024-07-29 06:25:29,992 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { acceptAll })'
+2024-07-29 06:25:31,412 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:25:31,413 - Testing notifications...
+2024-07-29 06:25:31,413 - Running command: dfx identity use player1
+2024-07-29 06:25:31,440 - Output: 
+2024-07-29 06:25:31,440 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { friendsOfFriends })'
+2024-07-29 06:25:33,133 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:25:33,133 - Running command: dfx identity use player1
+2024-07-29 06:25:33,159 - Output: 
+2024-07-29 06:25:33,160 - Running command: dfx canister call cosmicrafts getNotifications
+2024-07-29 06:25:33,203 - Output: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_923_089_897_245 : int;
+    };
+  },
+)
+2024-07-29 06:25:33,203 - Notifications for player1: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_923_089_897_245 : int;
+    };
+  },
+)
+2024-07-29 06:25:33,203 - Testing profile retrieval...
+2024-07-29 06:25:33,203 - Running command: dfx identity use player1
+2024-07-29 06:25:33,209 - Output: 
+2024-07-29 06:25:33,209 - Running command: dfx canister call cosmicrafts getProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:25:33,233 - Output: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_888_710_446_967 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:25:33,234 - Profile of player2: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_888_710_446_967 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:25:33,234 - Running command: dfx identity use player1
+2024-07-29 06:25:33,239 - Output: 
+2024-07-29 06:25:33,239 - Running command: dfx canister call cosmicrafts getFullUserProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:25:33,265 - Output: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_888_710_446_967 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:25:33,265 - Full profile of player2: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_888_710_446_967 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:25:33,265 - Running command: dfx identity use player1
+2024-07-29 06:25:33,270 - Output: 
+2024-07-29 06:25:33,270 - Running command: dfx canister call cosmicrafts searchUserByUsername '("PlayerTwo")'
+2024-07-29 06:25:33,294 - Output: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_888_710_446_967 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:25:33,294 - Search results for PlayerTwo: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_888_710_446_967 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:25:49,650 - Running command: dfx identity use player1
+2024-07-29 06:25:49,656 - Output: 
+2024-07-29 06:25:49,656 - Running command: dfx identity get-principal
+2024-07-29 06:25:49,671 - Output: mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe
+2024-07-29 06:25:49,672 - Running command: dfx identity use player1
+2024-07-29 06:25:49,677 - Output: 
+2024-07-29 06:25:49,677 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerOne", 1)'
+2024-07-29 06:25:51,975 - Output: (false, null, "User is already registered")
+2024-07-29 06:25:51,975 - Running command: dfx identity use player2
+2024-07-29 06:25:51,983 - Output: 
+2024-07-29 06:25:51,983 - Running command: dfx identity get-principal
+2024-07-29 06:25:51,999 - Output: 6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae
+2024-07-29 06:25:51,999 - Running command: dfx identity use player2
+2024-07-29 06:25:52,005 - Output: 
+2024-07-29 06:25:52,005 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerTwo", 2)'
+2024-07-29 06:25:53,642 - Output: (false, null, "User is already registered")
+2024-07-29 06:25:53,642 - Running command: dfx identity use player3
+2024-07-29 06:25:53,670 - Output: 
+2024-07-29 06:25:53,670 - Running command: dfx identity get-principal
+2024-07-29 06:25:53,697 - Output: udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe
+2024-07-29 06:25:53,697 - Running command: dfx identity use player3
+2024-07-29 06:25:53,706 - Output: 
+2024-07-29 06:25:53,706 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerThree", 3)'
+2024-07-29 06:25:55,337 - Output: (false, null, "User is already registered")
+2024-07-29 06:25:55,337 - Running command: dfx identity use player4
+2024-07-29 06:25:55,343 - Output: 
+2024-07-29 06:25:55,343 - Running command: dfx identity get-principal
+2024-07-29 06:25:55,361 - Output: pjcea-ebuwa-e2hhf-ec7dd-k7rgw-o6ikl-xhsdh-xkpio-5dyk7-m4w5c-tae
+2024-07-29 06:25:55,361 - Running command: dfx identity use player4
+2024-07-29 06:25:55,367 - Output: 
+2024-07-29 06:25:55,367 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerFour", 4)'
+2024-07-29 06:25:57,351 - Output: (false, null, "User is already registered")
+2024-07-29 06:25:57,351 - Running command: dfx identity use player5
+2024-07-29 06:25:57,363 - Output: 
+2024-07-29 06:25:57,364 - Running command: dfx identity get-principal
+2024-07-29 06:25:57,394 - Output: xgukz-lyqa2-uaq4b-bhkvz-5e3fs-3bx6o-af2py-fim3c-djc44-yhhzc-4ae
+2024-07-29 06:25:57,394 - Running command: dfx identity use player5
+2024-07-29 06:25:57,405 - Output: 
+2024-07-29 06:25:57,405 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerFive", 5)'
+2024-07-29 06:25:59,915 - Output: (false, null, "User is already registered")
+2024-07-29 06:25:59,915 - Running command: dfx identity use player6
+2024-07-29 06:25:59,942 - Output: 
+2024-07-29 06:25:59,943 - Running command: dfx identity get-principal
+2024-07-29 06:25:59,969 - Output: yumhx-xrmg4-ceupy-3ijpv-uzmxj-ghdfx-j6e6d-3532g-x2mzx-ofwrh-4qe
+2024-07-29 06:25:59,969 - Running command: dfx identity use player6
+2024-07-29 06:25:59,976 - Output: 
+2024-07-29 06:25:59,976 - Running command: dfx canister call cosmicrafts registerPlayer '("PlayerSix", 6)'
+2024-07-29 06:26:01,263 - Output: (false, null, "User is already registered")
+2024-07-29 06:26:01,263 - Testing player registration...
+2024-07-29 06:26:01,264 - Running command: dfx identity use player4
+2024-07-29 06:26:01,290 - Output: 
+2024-07-29 06:26:01,291 - Running command: dfx canister call cosmicrafts registerPlayer '("ValidUser", 4)'
+2024-07-29 06:26:02,535 - Output: (false, null, "User is already registered")
+2024-07-29 06:26:02,535 - Running command: dfx identity use player5
+2024-07-29 06:26:02,550 - Output: 
+2024-07-29 06:26:02,550 - Running command: dfx canister call cosmicrafts registerPlayer '("ValidUser", 5)'
+2024-07-29 06:26:03,613 - Output: (false, null, "User is already registered")
+2024-07-29 06:26:03,614 - Running command: dfx identity use player6
+2024-07-29 06:26:03,626 - Output: 
+2024-07-29 06:26:03,626 - Running command: dfx canister call cosmicrafts registerPlayer '("ThisUsernameIsWayTooLong", 6)'
+2024-07-29 06:26:06,036 - Output: (false, null, "Username must be 12 characters or less")
+2024-07-29 06:26:06,036 - Testing player updates...
+2024-07-29 06:26:06,036 - Running command: dfx identity use player1
+2024-07-29 06:26:06,058 - Output: 
+2024-07-29 06:26:06,058 - Running command: dfx canister call cosmicrafts updateUsername '("UpdatedUser")'
+2024-07-29 06:26:07,472 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "New username cannot be the same as the current username",
+)
+2024-07-29 06:26:07,472 - Running command: dfx identity use player1
+2024-07-29 06:26:07,490 - Output: 
+2024-07-29 06:26:07,490 - Running command: dfx canister call cosmicrafts updateUsername '("ThisUsernameIsWayTooLong")'
+2024-07-29 06:26:08,850 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Username updated successfully",
+)
+2024-07-29 06:26:08,850 - Running command: dfx identity use player1
+2024-07-29 06:26:08,866 - Output: 
+2024-07-29 06:26:08,867 - Running command: dfx canister call cosmicrafts updateAvatar '(5)'
+2024-07-29 06:26:09,883 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "New avatar cannot be the same as the current avatar",
+)
+2024-07-29 06:26:09,883 - Running command: dfx identity use player1
+2024-07-29 06:26:09,899 - Output: 
+2024-07-29 06:26:09,899 - Running command: dfx canister call cosmicrafts updateDescription '("This is a valid description.")'
+2024-07-29 06:26:12,471 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "New description cannot be the same as the current description",
+)
+2024-07-29 06:26:12,471 - Running command: dfx identity use player1
+2024-07-29 06:26:12,481 - Output: 
+2024-07-29 06:26:12,481 - Running command: dfx canister call cosmicrafts updateDescription '("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")'
+2024-07-29 06:26:15,001 - Output: (
+  false,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Description must be 160 characters or less",
+)
+2024-07-29 06:26:15,001 - Testing friend requests...
+2024-07-29 06:26:15,001 - Running command: dfx identity use player1
+2024-07-29 06:26:15,010 - Output: 
+2024-07-29 06:26:15,010 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:26:16,728 - Output: (false, "Cannot send friend request to yourself")
+2024-07-29 06:26:16,728 - Running command: dfx identity use player1
+2024-07-29 06:26:16,740 - Output: 
+2024-07-29 06:26:16,740 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:26:17,978 - Output: (false, "You are already friends with this user")
+2024-07-29 06:26:17,978 - Running command: dfx identity use player1
+2024-07-29 06:26:17,990 - Output: 
+2024-07-29 06:26:17,990 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:26:20,378 - Output: (false, "You are already friends with this user")
+2024-07-29 06:26:20,378 - Running command: dfx identity use player2
+2024-07-29 06:26:20,390 - Output: 
+2024-07-29 06:26:20,390 - Running command: dfx canister call cosmicrafts acceptFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:26:21,846 - Output: (false, "Friend request not found")
+2024-07-29 06:26:21,846 - Running command: dfx identity use player2
+2024-07-29 06:26:21,869 - Output: 
+2024-07-29 06:26:21,869 - Running command: dfx canister call cosmicrafts acceptFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:26:23,631 - Output: (false, "Friend request not found")
+2024-07-29 06:26:23,632 - Running command: dfx identity use player1
+2024-07-29 06:26:23,652 - Output: 
+2024-07-29 06:26:23,652 - Running command: dfx canister call cosmicrafts getFriendsList
+2024-07-29 06:26:23,753 - Output: (
+  opt vec {
+    principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+  },
+)
+2024-07-29 06:26:23,754 - Running command: dfx identity use player1
+2024-07-29 06:26:23,765 - Output: 
+2024-07-29 06:26:23,766 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:26:25,772 - Output: (false, "You are already friends with this user")
+2024-07-29 06:26:25,772 - Running command: dfx identity use player2
+2024-07-29 06:26:25,780 - Output: 
+2024-07-29 06:26:25,780 - Running command: dfx canister call cosmicrafts getFriendRequests
+2024-07-29 06:26:25,814 - Output: (vec {})
+2024-07-29 06:26:25,814 - Error during friend request tests: string indices must be integers, not 'str'
+2024-07-29 06:26:25,814 - Testing blocking and unblocking...
+2024-07-29 06:26:25,814 - Running command: dfx identity use player1
+2024-07-29 06:26:25,822 - Output: 
+2024-07-29 06:26:25,822 - Running command: dfx canister call cosmicrafts blockUser '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:26:27,301 - Output: (false, "Cannot block yourself")
+2024-07-29 06:26:27,301 - Running command: dfx identity use player1
+2024-07-29 06:26:27,307 - Output: 
+2024-07-29 06:26:27,307 - Running command: dfx canister call cosmicrafts blockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:26:29,326 - Output: (true, "User blocked successfully")
+2024-07-29 06:26:29,327 - Running command: dfx identity use player1
+2024-07-29 06:26:29,353 - Output: 
+2024-07-29 06:26:29,353 - Running command: dfx canister call cosmicrafts blockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:26:31,192 - Output: (false, "User is already blocked")
+2024-07-29 06:26:31,192 - Running command: dfx identity use player1
+2024-07-29 06:26:31,219 - Output: 
+2024-07-29 06:26:31,219 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { blockAll })'
+2024-07-29 06:26:32,827 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:26:32,827 - Running command: dfx identity use player3
+2024-07-29 06:26:32,849 - Output: 
+2024-07-29 06:26:32,849 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:26:34,459 - Output: (false, "You are blocked by this user")
+2024-07-29 06:26:34,459 - Running command: dfx identity use player1
+2024-07-29 06:26:34,482 - Output: 
+2024-07-29 06:26:34,483 - Running command: dfx canister call cosmicrafts unblockUser '(principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe")'
+2024-07-29 06:26:36,543 - Output: (true, "User unblocked successfully")
+2024-07-29 06:26:36,543 - Testing privacy settings...
+2024-07-29 06:26:36,543 - Running command: dfx identity use player1
+2024-07-29 06:26:36,557 - Output: 
+2024-07-29 06:26:36,557 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { blockAll })'
+2024-07-29 06:26:38,227 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:26:38,228 - Running command: dfx identity use player3
+2024-07-29 06:26:38,255 - Output: 
+2024-07-29 06:26:38,256 - Running command: dfx canister call cosmicrafts sendFriendRequest '(principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe")'
+2024-07-29 06:26:39,717 - Output: (false, "Cannot send friend request to this user")
+2024-07-29 06:26:39,718 - Running command: dfx identity use player1
+2024-07-29 06:26:39,735 - Output: 
+2024-07-29 06:26:39,735 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { acceptAll })'
+2024-07-29 06:26:42,126 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:26:42,126 - Testing notifications...
+2024-07-29 06:26:42,126 - Running command: dfx identity use player1
+2024-07-29 06:26:42,132 - Output: 
+2024-07-29 06:26:42,132 - Running command: dfx canister call cosmicrafts setPrivacySetting '(variant { friendsOfFriends })'
+2024-07-29 06:26:43,777 - Output: (true, "Privacy settings updated successfully")
+2024-07-29 06:26:43,777 - Running command: dfx identity use player1
+2024-07-29 06:26:43,800 - Output: 
+2024-07-29 06:26:43,801 - Running command: dfx canister call cosmicrafts getNotifications
+2024-07-29 06:26:43,878 - Output: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_923_089_897_245 : int;
+    };
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_991_601_754_489 : int;
+    };
+  },
+)
+2024-07-29 06:26:43,879 - Notifications for player1: (
+  vec {
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_923_089_897_245 : int;
+    };
+    record {
+      from = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      message = "Your privacy settings have been updated.";
+      timestamp = 1_722_255_991_601_754_489 : int;
+    };
+  },
+)
+2024-07-29 06:26:43,879 - Testing profile retrieval...
+2024-07-29 06:26:43,879 - Running command: dfx identity use player1
+2024-07-29 06:26:43,894 - Output: 
+2024-07-29 06:26:43,895 - Running command: dfx canister call cosmicrafts getProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:26:43,953 - Output: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_888_710_446_967 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:26:43,953 - Profile of player2: (
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_255_888_710_446_967 : int;
+    friends = vec {
+      record {
+        username = "UpdatedUser";
+        playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+        avatar = 5 : nat;
+      };
+    };
+    avatar = 2 : nat;
+  },
+)
+2024-07-29 06:26:43,953 - Running command: dfx identity use player1
+2024-07-29 06:26:43,966 - Output: 
+2024-07-29 06:26:43,966 - Running command: dfx canister call cosmicrafts getFullUserProfile '(principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae")'
+2024-07-29 06:26:43,999 - Output: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_888_710_446_967 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:26:43,999 - Full profile of player2: (
+  opt record {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_888_710_446_967 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+    record {
+      gamesLost = 0 : nat;
+      energyGenerated = 0 : nat;
+      gamesPlayed = 0 : nat;
+      totalGamesGameMode = vec {};
+      totalDamageDealt = 0 : nat;
+      totalDamageCrit = 0 : nat;
+      totalDamageTaken = 0 : nat;
+      energyUsed = 0 : nat;
+      totalDamageEvaded = 0 : nat;
+      energyWasted = 0 : nat;
+      gamesWon = 0 : nat;
+      totalKills = 0 : nat;
+      totalXpEarned = 0 : nat;
+      totalGamesWithCharacter = vec {};
+      totalGamesWithFaction = vec {};
+    };
+    record {
+      averageDamageDealt = 0 : nat;
+      averageEnergyGenerated = 0 : nat;
+      averageEnergyUsed = 0 : nat;
+      averageKills = 0 : nat;
+      averageEnergyWasted = 0 : nat;
+      averageXpEarned = 0 : nat;
+    };
+  },
+)
+2024-07-29 06:26:43,999 - Running command: dfx identity use player1
+2024-07-29 06:26:44,006 - Output: 
+2024-07-29 06:26:44,006 - Running command: dfx canister call cosmicrafts searchUserByUsername '("PlayerTwo")'
+2024-07-29 06:26:44,034 - Output: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_888_710_446_967 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)
+2024-07-29 06:26:44,034 - Search results for PlayerTwo: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_255_888_710_446_967 : int;
+      friends = vec {
+        record {
+          username = "UpdatedUser";
+          playerId = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+          avatar = 5 : nat;
+        };
+      };
+      avatar = 2 : nat;
+    };
+  },
+)

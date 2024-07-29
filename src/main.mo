@@ -2073,6 +2073,11 @@ shared actor class Cosmicrafts() {
             return (false, "You are blocked by this user");
         };
 
+        // Check if the players are already friends
+        if (areFriends(playerId, friendId)) {
+            return (false, "You are already friends with this user");
+        };
+
         switch (players.get(playerId)) {
             case (null) {
                 return (false, "User record does not exist");
@@ -2247,32 +2252,37 @@ shared actor class Cosmicrafts() {
         return Utils.nullishCoalescing<[PlayerId]>(blockedUsers.get(caller), []);
     };
 
-private func addFriendToUser(userId: PlayerId, friendId: PlayerId) {
-    switch (players.get(userId)) {
-        case (null) {};
-        case (?user) {
-            switch (players.get(friendId)) {
-                case (null) {};
-                case (?friend) {
-                    let updatedUserFriends = Array.append(user.friends, [{
-                        playerId = friendId;
-                        username = friend.username;
-                        avatar = friend.avatar;
-                    }]);
-                    let updatedFriendFriends = Array.append(friend.friends, [{
-                        playerId = userId;
-                        username = user.username;
-                        avatar = user.avatar;
-                    }]);
-                    
-                    // Update both users' friends lists
-                    players.put(userId, { user with friends = updatedUserFriends });
-                    players.put(friendId, { friend with friends = updatedFriendFriends });
+    private func addFriendToUser(userId: PlayerId, friendId: PlayerId) {
+        switch (players.get(userId)) {
+            case (null) {};
+            case (?user) {
+                switch (players.get(friendId)) {
+                    case (null) {};
+                    case (?friend) {
+                        // Ensure friend is not already in user's friends list
+                        if (Array.find(user.friends, func (f: FriendDetails): Bool { f.playerId == friendId }) == null) {
+                            let updatedUserFriends = Array.append(user.friends, [{
+                                playerId = friendId;
+                                username = friend.username;
+                                avatar = friend.avatar;
+                            }]);
+                            players.put(userId, { user with friends = updatedUserFriends });
+                        };
+
+                        // Ensure user is not already in friend's friends list
+                        if (Array.find(friend.friends, func (f: FriendDetails): Bool { f.playerId == userId }) == null) {
+                            let updatedFriendFriends = Array.append(friend.friends, [{
+                                playerId = userId;
+                                username = user.username;
+                                avatar = user.avatar;
+                            }]);
+                            players.put(friendId, { friend with friends = updatedFriendFriends });
+                        };
+                    };
                 };
             };
         };
     };
-};
 
     // Helper function to check if two players are friends
     private func areFriends(playerId1: PlayerId, playerId2: PlayerId) : Bool {
