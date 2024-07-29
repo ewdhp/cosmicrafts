@@ -34,6 +34,37 @@ module Types {
     avatar: AvatarID;
   };
 
+  public type FriendRequest = {
+      from: PlayerId;
+      to: PlayerId;
+      timestamp: Int;
+  };
+  public type MutualFriendship = {
+      friend1: PlayerId;
+      friend2: PlayerId;
+      friendsSince: Int;
+  };
+
+  public type PrivacySetting = {
+    #acceptAll;
+    #blockAll;
+    #friendsOfFriends
+  };
+
+  public type Notification = {
+    from: PlayerId;
+    message: Text;
+    timestamp: Time.Time;
+  };
+
+public type UpdateTimestamps = {
+    avatar: Nat64;
+    description: Nat64;
+    username: Nat64;
+};
+
+
+
 // Statistics
   public type PlayerStats = {
     playerId: PlayerId;

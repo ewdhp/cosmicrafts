@@ -1,0 +1,152 @@
+2024-07-29 04:35:31,691 - Command: dfx identity use player1
+2024-07-29 04:35:31,691 - Output: 
+2024-07-29 04:35:33,739 - Command: dfx canister call cosmicrafts registerPlayer '("PlayerOne", 1)'
+2024-07-29 04:35:33,739 - Output: (
+  true,
+  opt record {
+    id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+    elo = 1200.0 : float64;
+    username = "PlayerOne";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_249_332_387_807_921 : int;
+    friends = vec {};
+    avatar = 1 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 04:35:33,745 - Command: dfx identity use player2
+2024-07-29 04:35:33,745 - Output: 
+2024-07-29 04:35:35,631 - Command: dfx canister call cosmicrafts registerPlayer '("PlayerTwo", 2)'
+2024-07-29 04:35:35,631 - Output: (
+  true,
+  opt record {
+    id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+    elo = 1200.0 : float64;
+    username = "PlayerTwo";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_249_334_327_189_034 : int;
+    friends = vec {};
+    avatar = 2 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 04:35:35,661 - Command: dfx identity use player3
+2024-07-29 04:35:35,661 - Output: 
+2024-07-29 04:35:37,869 - Command: dfx canister call cosmicrafts registerPlayer '("PlayerThree", 3)'
+2024-07-29 04:35:37,869 - Output: (
+  true,
+  opt record {
+    id = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+    elo = 1200.0 : float64;
+    username = "PlayerThree";
+    description = "";
+    level = 1 : nat;
+    registrationDate = 1_722_249_336_326_379_590 : int;
+    friends = vec {};
+    avatar = 3 : nat;
+  },
+  "User registered successfully",
+)
+2024-07-29 04:35:37,950 - Command: dfx canister call cosmicrafts getAllPlayers
+2024-07-29 04:35:37,951 - Output: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_249_334_327_189_034 : int;
+      friends = vec {};
+      avatar = 2 : nat;
+    };
+    record {
+      id = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+      elo = 1200.0 : float64;
+      username = "PlayerThree";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_249_336_326_379_590 : int;
+      friends = vec {};
+      avatar = 3 : nat;
+    };
+    record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "PlayerOne";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_249_332_387_807_921 : int;
+      friends = vec {};
+      avatar = 1 : nat;
+    };
+  },
+)
+2024-07-29 04:35:37,951 - All players after registration: (
+  vec {
+    record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "PlayerTwo";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_249_334_327_189_034 : int;
+      friends = vec {};
+      avatar = 2 : nat;
+    };
+    record {
+      id = principal "udu2i-qpmth-clt4p-cql4d-y2hi6-fci2t-kadbj-5io6q-pt6ny-d6hye-kqe";
+      elo = 1200.0 : float64;
+      username = "PlayerThree";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_249_336_326_379_590 : int;
+      friends = vec {};
+      avatar = 3 : nat;
+    };
+    record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "PlayerOne";
+      description = "";
+      level = 1 : nat;
+      registrationDate = 1_722_249_332_387_807_921 : int;
+      friends = vec {};
+      avatar = 1 : nat;
+    };
+  },
+)
+2024-07-29 04:35:37,959 - Command: dfx identity use player1
+2024-07-29 04:35:37,959 - Output: 
+2024-07-29 04:35:39,544 - Command: dfx canister call cosmicrafts updateUsername '("NewPlayerOne")'
+2024-07-29 04:35:39,544 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Username updated successfully",
+)
+2024-07-29 04:35:39,550 - Command: dfx identity use player1
+2024-07-29 04:35:39,550 - Output: 
+2024-07-29 04:35:40,993 - Command: dfx canister call cosmicrafts updateAvatar '(2)'
+2024-07-29 04:35:40,994 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Avatar updated successfully",
+)
+2024-07-29 04:35:41,027 - Command: dfx identity use player1
+2024-07-29 04:35:41,027 - Output: 
+2024-07-29 04:35:43,573 - Command: dfx canister call cosmicrafts updateDescription '("This is a test description")'
+2024-07-29 04:35:43,573 - Output: (
+  true,
+  principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe",
+  "Description updated successfully",
+)
+2024-07-29 04:35:43,601 - Command: dfx identity use player1
+2024-07-29 04:35:43,601 - Output: 
+2024-07-29 04:35:43,638 - Command failed: dfx canister call cosmicrafts sendFriendRequest '("player2")'
+[31mError: (B[mFailed to create argument blob.
+[33mCaused by: (B[mInvalid data: Unable to serialize Candid values: Invalid data: Unable to serialize Candid values: type mismatch: "player2" cannot be of type principal
+2024-07-29 04:35:43,638 - An error occurred: Command failed: dfx canister call cosmicrafts sendFriendRequest '("player2")'
+[31mError: (B[mFailed to create argument blob.
+[33mCaused by: (B[mInvalid data: Unable to serialize Candid values: Invalid data: Unable to serialize Candid values: type mismatch: "player2" cannot be of type principal

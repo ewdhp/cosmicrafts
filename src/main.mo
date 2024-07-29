@@ -17,7 +17,6 @@
     import Timer "mo:base/Timer";
     import Blob "mo:base/Blob";
     import Bool "mo:base/Bool";
-
     import Types "Types";
     import Utils "Utils";
     import TypesICRC7 "/icrc7/types";
@@ -35,10 +34,14 @@ shared actor class Cosmicrafts() {
   public type Description = Types.Description;
   public type RegistrationDate = Types.RegistrationDate;
   public type Level = Types.Level;
-
-
-  public type FriendDetails = Types.FriendDetails;
   public type Player = Types.Player;
+
+  public type FriendRequest = Types.FriendRequest;
+  public type MutualFriendship = Types.MutualFriendship;
+  public type FriendDetails = Types.FriendDetails;
+  public type PrivacySetting = Types.PrivacySetting;
+  public type Notification = Types.Notification;
+  public type UpdateTimestamps = Types.UpdateTimestamps;
 
   public type GamesWithFaction = Types.GamesWithFaction;
   public type GamesWithGameMode = Types.GamesWithGameMode;
@@ -69,6 +72,8 @@ shared actor class Cosmicrafts() {
   public type RewardPool = Types.RewardPool;
   public type MissionOption = Types.MissionOption;
 
+  
+
     public type IndividualAchievement = TypesAchievements.IndividualAchievement;
     public type Achievement = TypesAchievements.Achievement;
     public type AchievementCategory = TypesAchievements.AchievementCategory;
@@ -78,6 +83,8 @@ shared actor class Cosmicrafts() {
     public type AchievementTier = TypesAchievements.AchievementTier;
     public type AchievementProgress = TypesAchievements.AchievementProgress;
     public type IndividualAchievementProgress = TypesAchievements.IndividualAchievementProgress;
+
+    
 
     type AchievementName = Text;
     type IndividualAchievementList = [Nat];
@@ -280,7 +287,7 @@ shared actor class Cosmicrafts() {
         let randomBytes = await Random.blob(); // Generating random bytes
         let byteArray = Blob.toArray(randomBytes);
         let randomByte = byteArray[0]; // Use the first byte for randomness
-        let range = maxReward + minReward + 1;
+        let range = maxReward - minReward + 1;
         let randomValue = Nat8.toNat(randomByte) % range;
         return minReward + randomValue;
     };
@@ -1840,73 +1847,141 @@ shared actor class Cosmicrafts() {
 
 //--
 // Players
+    var ONE_SECOND : Nat64 = 1_000_000_000;
+    var ONE_MINUTE : Nat64 = 60 * ONE_SECOND;
 
     stable var _players: [(PlayerId, Player)] = [];
+    stable var _friendRequests: [(PlayerId, [FriendRequest])] = [];
+    stable var _privacySettings: [(PlayerId, PrivacySetting)] = [];
+    stable var _blockedUsers: [(PlayerId, [PlayerId])] = [];
+    stable var _mutualFriendships: [((PlayerId, PlayerId), MutualFriendship)] = [];
+    stable var _notifications: [(PlayerId, [Notification])] = [];
+    stable var _updateTimestamps: [(PlayerId, UpdateTimestamps)] = [];
+
+    // Initialize HashMaps using the stable lists
     var players: HashMap.HashMap<PlayerId, Player> = HashMap.fromIter(_players.vals(), 0, Principal.equal, Principal.hash);
+    var friendRequests: HashMap.HashMap<PlayerId, [FriendRequest]> = HashMap.fromIter(_friendRequests.vals(), 0, Principal.equal, Principal.hash);
+    var privacySettings: HashMap.HashMap<PlayerId, PrivacySetting> = HashMap.fromIter(_privacySettings.vals(), 0, Principal.equal, Principal.hash);
+    var blockedUsers: HashMap.HashMap<PlayerId, [PlayerId]> = HashMap.fromIter(_blockedUsers.vals(), 0, Principal.equal, Principal.hash);
+    var mutualFriendships: HashMap.HashMap<(PlayerId, PlayerId), MutualFriendship> = HashMap.fromIter(_mutualFriendships.vals(), 0, Utils.tupleEqual, Utils.tupleHash);
+    var notifications: HashMap.HashMap<PlayerId, [Notification]> = HashMap.fromIter(_notifications.vals(), 0, Principal.equal, Principal.hash);
+    var updateTimestamps: HashMap.HashMap<PlayerId, UpdateTimestamps> = HashMap.fromIter(_updateTimestamps.vals(), 0, Principal.equal, Principal.hash);
 
-    // Function to register a new player
-    public shared({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID): async (Bool, PlayerId, Bool, Text, Nat) {
-        let PlayerId = caller;
-        switch (players.get(PlayerId)) {
-            case (null) {
-                let registrationDate = Time.now();
-                let newPlayer: Player = {
-                    id = PlayerId;
-                    username = username;
-                    avatar = avatar;
-                    description = "";
-                    registrationDate = registrationDate;
-                    level = 1;
-                    elo = 1200;
-                    friends = [];
-                };
-                players.put(PlayerId, newPlayer);
+    private func addNotification(to: PlayerId, notification: Notification) {
+    var userNotifications = Utils.nullishCoalescing<[Notification]>(notifications.get(to), []);
+    userNotifications := Array.append(userNotifications, [notification]);
+    notifications.put(to, userNotifications);
+    };
 
-                // Assign new missions to the user
-                await assignGeneralMissions(PlayerId);
-
-                // Mint a deck for the new player
-                let (_mintSuccess, mintMessage) = await mintDeck(PlayerId);
-
-                return (true, PlayerId, true, "User registered, general missions assigned, and deck minting: " # mintMessage, 0);
-            };
-            case (?_) {
-                return (false, PlayerId, false, "User already exists", 0); // User already exists
-            };
+    private func getDefaultTimestamps() : UpdateTimestamps {
+        return {
+            username = 0;
+            avatar = 0;
+            description = 0;
         };
     };
 
-    public shared ({ caller: PlayerId }) func updateUsername(username: Username) : async (Bool, PlayerId) {
-        let PlayerId = caller;
-        switch (players.get(PlayerId)) {
-        case (null) {
-            return (false, PlayerId); // User record does not exist
+    // Function to clean notifications older than a certain time (e.g., 30 days)
+    private func cleanOldNotifications(playerId: PlayerId) {
+        let currentTime = Time.now();
+        var userNotifications = Utils.nullishCoalescing<[Notification]>(notifications.get(playerId), []);
+        userNotifications := Array.filter(userNotifications, func(notification: Notification): Bool {
+            (currentTime - notification.timestamp) < 30*24*60*60*1000000000; // 30 days in nanoseconds
+        });
+        notifications.put(playerId, userNotifications);
+    };
+
+    private func sendNotification(to: PlayerId, message: Text) {
+        let notification: Notification = {
+            from = to;
+            message = message;
+            timestamp = Time.now();
         };
-        case (?player) {
-            let updatedPlayer: Player = {
-            id = player.id;
+        addNotification(to, notification);
+        cleanOldNotifications(to); // Clean old notifications after adding a new one
+    };
+
+    public shared({ caller: PlayerId }) func registerPlayer(username: Username, avatar: AvatarID): async (Bool, ?Player, Text) {
+        if (username.size() > 12) {
+            return (false, null, "Username must be 12 characters or less");
+        };
+        let PlayerId = caller;
+        let registrationDate = Time.now();
+        let newPlayer: Player = {
+            id = PlayerId;
             username = username;
-            avatar = player.avatar;
-            description = player.description;
-            registrationDate = player.registrationDate;
-            level = player.level;
-            elo = player.elo;
-            friends = player.friends;
-            };
-            players.put(PlayerId, updatedPlayer);
-            return (true, PlayerId);
+            avatar = avatar;
+            description = "";
+            registrationDate = registrationDate;
+            level = 1;
+            elo = 1200;
+            friends = [];
         };
-        };
+        players.put(PlayerId, newPlayer);
+        return (true, ?newPlayer, "User registered successfully");
     };
 
-    public shared ({ caller : PlayerId }) func updateAvatar(avatar : AvatarID) : async (Bool, PlayerId) {
-        let PlayerId = caller;
-        switch (players.get(PlayerId)) {
+    public shared ({ caller: PlayerId }) func updateUsername(username: Username) : async (Bool, PlayerId, Text) {
+        let playerId = caller;
+        let currentTime = Nat64.fromIntWrap(Time.now());
+
+        switch (players.get(playerId)) {
             case (null) {
-                return (false, PlayerId);
+                return (false, playerId, "User record does not exist");
             };
             case (?player) {
-                let updatedPlayer : Player = {
+                if (player.username == username) {
+                    return (false, playerId, "New username cannot be the same as the current username");
+                };
+
+                let timestamps = Utils.nullishCoalescing<UpdateTimestamps>(updateTimestamps.get(playerId), getDefaultTimestamps());
+                let usernameTimestamp = timestamps.username;
+
+                if (Nat64.sub(currentTime, usernameTimestamp) < ONE_MINUTE) {
+                    return (false, playerId, "You can only update your username once every minute");
+                };
+
+                let updatedPlayer: Player = {
+                    id = player.id;
+                    username = username;
+                    avatar = player.avatar;
+                    description = player.description;
+                    registrationDate = player.registrationDate;
+                    level = player.level;
+                    elo = player.elo;
+                    friends = player.friends;
+                };
+                players.put(playerId, updatedPlayer);
+
+                let updatedTimestamps = { timestamps with username = currentTime };
+                updateTimestamps.put(playerId, updatedTimestamps);
+
+                return (true, playerId, "Username updated successfully");
+            };
+        };
+    };
+
+    public shared ({ caller: PlayerId }) func updateAvatar(avatar: AvatarID) : async (Bool, PlayerId, Text) {
+        let playerId = caller;
+        let currentTime = Nat64.fromIntWrap(Time.now());
+
+        switch (players.get(playerId)) {
+            case (null) {
+                return (false, playerId, "User record does not exist");
+            };
+            case (?player) {
+                if (player.avatar == avatar) {
+                    return (false, playerId, "New avatar cannot be the same as the current avatar");
+                };
+
+                let timestamps = Utils.nullishCoalescing<UpdateTimestamps>(updateTimestamps.get(playerId), getDefaultTimestamps());
+                let avatarTimestamp = timestamps.avatar;
+
+                if (Nat64.sub(currentTime, avatarTimestamp) < ONE_MINUTE) {
+                    return (false, playerId, "You can only update your avatar once every minute");
+                };
+
+                let updatedPlayer: Player = {
                     id = player.id;
                     username = player.username;
                     avatar = avatar;
@@ -1916,20 +1991,41 @@ shared actor class Cosmicrafts() {
                     elo = player.elo;
                     friends = player.friends;
                 };
-                players.put(PlayerId, updatedPlayer);
-                return (true, PlayerId);
+                players.put(playerId, updatedPlayer);
+
+                let updatedTimestamps = { timestamps with avatar = currentTime };
+                updateTimestamps.put(playerId, updatedTimestamps);
+
+                return (true, playerId, "Avatar updated successfully");
             };
         };
     };
 
-    public shared ({ caller : PlayerId }) func updateDescription(description : Description) : async (Bool, PlayerId) {
-        let PlayerId = caller;
-        switch (players.get(PlayerId)) {
+    public shared ({ caller: PlayerId }) func updateDescription(description: Description) : async (Bool, PlayerId, Text) {
+        let playerId = caller;
+        let currentTime = Nat64.fromIntWrap(Time.now());
+
+        if (description.size() > 160) {
+            return (false, playerId, "Description must be 160 characters or less");
+        };
+
+        switch (players.get(playerId)) {
             case (null) {
-                return (false, PlayerId); // User record does not exist
+                return (false, playerId, "User record does not exist");
             };
             case (?player) {
-                let updatedPlayer : Player = {
+                if (player.description == description) {
+                    return (false, playerId, "New description cannot be the same as the current description");
+                };
+
+                let timestamps = Utils.nullishCoalescing<UpdateTimestamps>(updateTimestamps.get(playerId), getDefaultTimestamps());
+                let descriptionTimestamp = timestamps.description;
+
+                if (Nat64.sub(currentTime, descriptionTimestamp) < ONE_MINUTE) {
+                    return (false, playerId, "You can only update your description once every minute");
+                };
+
+                let updatedPlayer: Player = {
                     id = player.id;
                     username = player.username;
                     avatar = player.avatar;
@@ -1939,26 +2035,209 @@ shared actor class Cosmicrafts() {
                     elo = player.elo;
                     friends = player.friends;
                 };
-                players.put(PlayerId, updatedPlayer);
-                return (true, PlayerId);
+                players.put(playerId, updatedPlayer);
+
+                let updatedTimestamps = { timestamps with description = currentTime };
+                updateTimestamps.put(playerId, updatedTimestamps);
+
+                return (true, playerId, "Description updated successfully");
             };
         };
     };
 
-    public shared ({ caller: PlayerId }) func addFriend(friendId: PlayerId) : async (Bool, Text) {
+    public shared ({ caller: PlayerId }) func sendFriendRequest(friendId: PlayerId) : async (Bool, Text) {
         let playerId = caller;
+
+        // Prevent sending friend request to self
+        if (playerId == friendId) {
+            return (false, "Cannot send friend request to yourself");
+        };
+
+        // Check if the player is blocked by the recipient
+        if (isBlockedBy(friendId, playerId)) {
+            return (false, "You are blocked by this user");
+        };
+
         switch (players.get(playerId)) {
             case (null) {
-                return (false, "User record does not exist"); // User record does not exist
+                return (false, "User record does not exist");
             };
             case (?player) {
                 switch (players.get(friendId)) {
                     case (null) {
-                        return (false, "Friend principal not registered"); // Friend principal not registered
+                        return (false, "Friend principal not registered");
                     };
+                    case (?_) {
+                        if (not canSendRequestToNonFriend(playerId, friendId)) {
+                            return (false, "Cannot send friend request to this user");
+                        };
+
+                        var requests = Utils.nullishCoalescing<[FriendRequest]>(friendRequests.get(friendId), []);
+                        if (findFriendRequestIndex(requests, playerId) != null) {
+                            return (false, "Friend request already sent");
+                        };
+
+                        let newRequest: FriendRequest = {
+                            from = playerId;
+                            to = friendId;
+                            timestamp = Time.now();
+                        };
+
+                        requests := Array.append<FriendRequest>(requests, [newRequest]);
+                        friendRequests.put(friendId, requests);
+                        
+                        sendNotification(friendId, "You have a new friend request from " # player.username);
+
+                        return (true, "Friend request sent successfully");
+                    };
+                };
+            };
+        };
+    };
+
+    public shared ({ caller: PlayerId }) func acceptFriendRequest(fromId: PlayerId) : async (Bool, Text) {
+        let playerId = caller;
+        switch (players.get(playerId)) {
+            case (null) {
+                return (false, "User record does not exist");
+            };
+            case (?player) {
+                var requests = Utils.nullishCoalescing<[FriendRequest]>(friendRequests.get(playerId), []);
+                let requestIndex = findFriendRequestIndex(requests, fromId);
+                switch (requestIndex) {
+                    case (null) {
+                        return (false, "Friend request not found");
+                    };
+                    case (?_index) {
+                        // Remove the request from the list
+                        requests := Array.filter<FriendRequest>(requests, func(req: FriendRequest) : Bool { req.from != fromId });
+                        friendRequests.put(playerId, requests);
+
+                        // Add friend to both users' friends list
+                        addFriendToUser(playerId, fromId);
+                        addFriendToUser(fromId, player.id);
+
+                        // Record the mutual friendship with timestamp
+                        let friendship: MutualFriendship = {
+                            friend1 = playerId;
+                            friend2 = fromId;
+                            friendsSince = Time.now();
+                        };
+                        mutualFriendships.put((playerId, fromId), friendship);
+                        mutualFriendships.put((fromId, playerId), friendship);
+
+                        return (true, "Friend request accepted");
+                    };
+                };
+            };
+        };
+    };
+
+    public shared ({ caller: PlayerId }) func declineFriendRequest(fromId: PlayerId) : async (Bool, Text) {
+        let playerId = caller;
+        switch (players.get(playerId)) {
+            case (null) {
+                return (false, "User record does not exist");
+            };
+            case (?_) {
+                var requests = Utils.nullishCoalescing<[FriendRequest]>(friendRequests.get(playerId), []);
+                let requestIndex = findFriendRequestIndex(requests, fromId);
+                switch (requestIndex) {
+                    case (null) {
+                        return (false, "Friend request not found");
+                    };
+                    case (?_index) {
+                        // Remove the request from the list
+                        requests := Array.filter<FriendRequest>(requests, func(req: FriendRequest) : Bool { req.from != fromId });
+                        friendRequests.put(playerId, requests);
+                        return (true, "Friend request declined");
+                    };
+                };
+            };
+        };
+    };
+
+    public shared ({ caller: PlayerId }) func blockUser(blockedId: PlayerId) : async (Bool, Text) {
+        let playerId = caller;
+
+        // Prevent blocking oneself
+        if (playerId == blockedId) {
+            return (false, "Cannot block yourself");
+        };
+
+        switch (players.get(playerId)) {
+            case (null) {
+                return (false, "User record does not exist");
+            };
+            case (?_player) {
+                var blockedUsersList = Utils.nullishCoalescing<[PlayerId]>(blockedUsers.get(playerId), []);
+                
+                // Prevent blocking the same user more than once
+                if (isUserBlocked(blockedUsersList, blockedId)) {
+                    return (false, "User is already blocked");
+                };
+                
+                blockedUsersList := Array.append(blockedUsersList, [blockedId]);
+                blockedUsers.put(playerId, blockedUsersList);
+
+                // Remove friend request from blocked user if it exists
+                var requests = Utils.nullishCoalescing<[FriendRequest]>(friendRequests.get(playerId), []);
+                let requestIndex = findFriendRequestIndex(requests, blockedId);
+                switch (requestIndex) {
+                    case (null) {};
+                    case (?_index) {
+                        requests := Array.filter<FriendRequest>(requests, func(req: FriendRequest) : Bool { req.from != blockedId });
+                        friendRequests.put(playerId, requests);
+                    };
+                };
+
+                return (true, "User blocked successfully");
+            };
+        };
+    };
+
+    public shared ({ caller: PlayerId }) func unblockUser(blockedId: PlayerId) : async (Bool, Text) {
+        let playerId = caller;
+        switch (players.get(playerId)) {
+            case (null) {
+                return (false, "User record does not exist");
+            };
+            case (?_player) {
+                var blockedUsersList = Utils.nullishCoalescing<[PlayerId]>(blockedUsers.get(playerId), []);
+                blockedUsersList := Array.filter(blockedUsersList, func(blocked: PlayerId) : Bool { blocked != blockedId });
+                blockedUsers.put(playerId, blockedUsersList);
+                return (true, "User unblocked successfully");
+            };
+        };
+    };
+
+    public shared ({ caller: PlayerId }) func setPrivacySetting(setting: PrivacySetting) : async (Bool, Text) {
+        let playerId = caller;
+        switch (players.get(playerId)) {
+            case (null) {
+                return (false, "User record does not exist");
+            };
+            case (?_player) {
+                privacySettings.put(playerId, setting);
+                sendNotification(playerId, "Your privacy settings have been updated.");
+                return (true, "Privacy settings updated successfully");
+            };
+        };
+    };
+
+    public query ({ caller: PlayerId }) func getBlockedUsers() : async [PlayerId] {
+        return Utils.nullishCoalescing<[PlayerId]>(blockedUsers.get(caller), []);
+    };
+
+    private func addFriendToUser(userId: PlayerId, friendId: PlayerId) {
+        switch (players.get(userId)) {
+            case (null) {};
+            case (?user) {
+                switch (players.get(friendId)) {
+                    case (null) {};
                     case (?friend) {
-                        let updatedFriends = Buffer.Buffer<FriendDetails>(player.friends.size() + 1);
-                        for (friendDetail in player.friends.vals()) {
+                        let updatedFriends = Buffer.Buffer<FriendDetails>(user.friends.size() + 1);
+                        for (friendDetail in user.friends.vals()) {
                             updatedFriends.add(friendDetail);
                         };
                         updatedFriends.add({
@@ -1967,24 +2246,89 @@ shared actor class Cosmicrafts() {
                             avatar = friend.avatar;
                         });
                         let updatedPlayer: Player = {
-                            id = player.id;
-                            username = player.username;
-                            avatar = player.avatar;
-                            description = player.description;
-                            registrationDate = player.registrationDate;
-                            level = player.level;
-                            elo = player.elo;
+                            id = user.id;
+                            username = user.username;
+                            avatar = user.avatar;
+                            description = user.description;
+                            registrationDate = user.registrationDate;
+                            level = user.level;
+                            elo = user.elo;
                             friends = Buffer.toArray(updatedFriends);
                         };
-                        players.put(playerId, updatedPlayer);
-                        return (true, "Friend added successfully");
+                        players.put(userId, updatedPlayer);
                     };
                 };
             };
         };
     };
 
+    // Helper function to check if two players are friends
+    private func areFriends(playerId1: PlayerId, playerId2: PlayerId) : Bool {
+        switch (mutualFriendships.get((playerId1, playerId2))) {
+            case (null) false;
+            case (?_) true;
+        }
+    };
+
+    // Helper function to check if a request can be sent from a non-friend
+    private func canSendRequestToNonFriend(senderId: PlayerId, recipientId: PlayerId) : Bool {
+        let privacySetting = getPrivacySettings(recipientId);
+        switch (privacySetting) {
+            case (#acceptAll) true;
+            case (#blockAll) false;
+            case (#friendsOfFriends) areFriends(senderId, recipientId);
+        }
+    };
+
+    private func findFriendRequestIndex(requests: [FriendRequest], fromId: PlayerId) : ?Nat {
+        for (index in Iter.range(0, Array.size(requests) - 1)) {
+            if (requests[index].from == fromId) {
+                return ?index;
+            }
+        };
+        return null;
+    };
+
+    // Helper function to check if a user is in the blocked list
+    private func isUserBlocked(blockedUsersList: [PlayerId], userId: PlayerId) : Bool {
+        return Array.find(blockedUsersList, func(blocked: PlayerId) : Bool { blocked == userId }) != null;
+    };
+
+    private func isBlockedBy(blockedId: PlayerId, playerId: PlayerId) : Bool {
+        switch (blockedUsers.get(blockedId)) {
+            case (null) false;
+            case (?userBlockedList) isUserBlocked(userBlockedList, playerId);
+        }
+    };
+
+    private func getPrivacySettings(playerId: PlayerId) : PrivacySetting {
+        Utils.nullishCoalescing<PrivacySetting>(privacySettings.get(playerId), #acceptAll)
+    };
+
     // QPlayers
+
+    public query ({ caller: PlayerId }) func getNotifications() : async [Notification] {
+        return Utils.nullishCoalescing<[Notification]>(notifications.get(caller), []);
+    };
+
+
+    public query ({ caller: PlayerId }) func getFriendRequests() : async [FriendRequest] {
+        return Utils.nullishCoalescing<[FriendRequest]>(friendRequests.get(caller), []);
+    };
+
+    public query ({ caller: PlayerId }) func getMyPrivacySettings() : async PrivacySetting {
+        return getPrivacySettings(caller);
+    };
+
+    // Query function to self get player data
+    public query (msg) func getPlayer() : async ?Player {
+        return players.get(msg.caller);
+    };
+
+    // Function to get another user profile
+    public query func getProfile(player: PlayerId) : async ?Player {
+        return players.get(player);
+    };
 
     // Full User Profile with statistics and friends
     public query func getFullUserProfile(player: PlayerId) : async ?(Player, PlayerGamesStats, AverageStats) {
@@ -2054,17 +2398,6 @@ shared actor class Cosmicrafts() {
                 return ?friendIds;
             };
         };
-    };
-
-
-    // Self query to get user profile
-    public shared (msg) func getMyProfile() : async ?Player {
-        return players.get(msg.caller);
-    };
-
-    // Function to get another user profile
-    public query func getProfile(player: PlayerId) : async ?Player {
-        return players.get(player);
     };
 
     // List all players
@@ -2445,10 +2778,38 @@ shared actor class Cosmicrafts() {
         overallStats := _os;
     };
 
+    public shared query(msg) func getMyStats () : async ?PlayerGamesStats {
+            switch(playerGamesStats.get(msg.caller)){
+                case(null){
+                    let _playerStats : PlayerGamesStats = {
+                        gamesPlayed             = 0;
+                        gamesWon                = 0;
+                        gamesLost               = 0;
+                        energyGenerated         = 0;
+                        energyUsed              = 0;
+                        energyWasted            = 0;
+                        totalDamageDealt        = 0;
+                        totalDamageTaken        = 0;
+                        totalDamageCrit         = 0;
+                        totalDamageEvaded       = 0;
+                        totalXpEarned           = 0;
+                        totalKills              = 0;
+                        totalGamesWithFaction   = [];
+                        totalGamesGameMode      = [];
+                        totalGamesWithCharacter = [];
+                    };
+                    return ?_playerStats;
+                };
+                case(?_p){
+                    return playerGamesStats.get(msg.caller);
+                };
+            };
+        };
+
 //--
 // MatchMaking
 
-  var ONE_SECOND : Nat64 = 1_000_000_000;
+  
   stable var _matchID : Nat = 0;
   var inactiveSeconds : Nat64 = 30 * ONE_SECOND;
 
@@ -3041,259 +3402,20 @@ shared actor class Cosmicrafts() {
 
 //--
 // Custom Matchmaking
-public shared (msg) func createCustomMatch(pgd : Text) : async (Bool, Nat) {
-    assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
-    assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
-    
-    _matchID := _matchID + 1_000_000_000 + 1;
-    let username = switch (await getProfile(msg.caller)) {
-        case (null) { "" };
-        case (?player) { player.username };
-    };
-    let _player : MMInfo = {
-        id = msg.caller;
-        elo = await getPlayerElo(msg.caller);
-        matchAccepted = false;
-        playerGameData = pgd;
-        lastPlayerActive = Nat64.fromIntWrap(Time.now());
-        username = username;
-    };
-    let _match : MatchData = {
-        matchID = _matchID;
-        player1 = _player;
-        player2 = null;
-        status = #CustomWaiting;
-    };
-    searching.put(_matchID, _match);
-    let _ps : MMPlayerStatus = {
-        status = #Searching;
-        matchID = _matchID;
-    };
-    playerStatus.put(msg.caller, _ps);
-    return (true, _matchID);
-};
 
-public shared (msg) func invitePlayerToCustomMatch(matchID : Nat, invitee : Principal) : async Bool {
-    assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
-    assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
-    
-    switch (searching.get(matchID)) {
-        case (null) { return false };
-        case (?_m) {
-            if (_m.player1.id != msg.caller or _m.status != #CustomWaiting) {
-                return false;
-            };
-            let username = switch (await getProfile(invitee)) {
-                case (null) { "" };
-                case (?player) { player.username };
-            };
-            let _p2 : MMInfo = {
-                id = invitee;
-                elo = await getPlayerElo(invitee);
-                matchAccepted = false;
-                playerGameData = "";
-                lastPlayerActive = Nat64.fromIntWrap(Time.now());
-                username = username;
-            };
-            let _gameData : MatchData = {
-                matchID = _m.matchID;
-                player1 = _m.player1;
-                player2 = ?_p2;
-                status = #CustomWaiting;
-            };
-            searching.put(_m.matchID, _gameData);
-            return true;
-        };
-    };
-};
-
-public shared (msg) func joinCustomMatch(matchID: Nat) : async Bool {
-    assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
-    assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
-
-    switch (searching.get(matchID)) {
-        case (null) { return false };
-        case (?_m) {
-            if (_m.status != #CustomWaiting) { return false };
-            if (_m.player2 != null and switch (_m.player2) { case (?_p2) _p2.id == msg.caller; case null false }) {
-                return true; // Player already joined
-            };
-            return false;
-        };
-    };
-};
-
-public shared (msg) func cancelInvitation(matchID: Nat) : async Bool {
-    assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
-    assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
-
-    switch (searching.get(matchID)) {
-        case (null) { return false };
-        case (?_m) {
-            if (_m.player2 == null or switch (_m.player2) { case (?_p2) _p2.id != msg.caller; case null false }) {
-                return false;
-            };
-            let _gameData : MatchData = {
-                matchID = _m.matchID;
-                player1 = _m.player1;
-                player2 = null;
-                status = #CustomWaiting;
-            };
-            searching.put(_m.matchID, _gameData);
-            return true;
-        };
-    };
-};
-
-public shared (msg) func confirmReadiness(matchID : Nat) : async Bool {
-    assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
-    assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
-
-    switch (searching.get(matchID)) {
-        case (null) { return false };
-        case (?_m) {
-            if (_m.status != #CustomWaiting) { return false };
-            if (_m.player2 == null or switch (_m.player2) { case (?_p2) _p2.id != msg.caller; case null false }) {
-                return false;
-            };
-            let _p2 : MMInfo = switch (_m.player2) {
-                case (?_p2) {
-                    {
-                        id = _p2.id;
-                        elo = _p2.elo;
-                        matchAccepted = true;
-                        playerGameData = _p2.playerGameData;
-                        lastPlayerActive = Nat64.fromIntWrap(Time.now());
-                        username = _p2.username;
-                    }
-                };
-                case null unreachable;
-            };
-            let _gameData : MatchData = {
-                matchID = _m.matchID;
-                player1 = _m.player1;
-                player2 = ?_p2;
-                status = #ReadyToStart;
-            };
-            searching.put(_m.matchID, _gameData);
-            return true;
-        };
-    };
-};
-
-public shared (msg) func cancelReadiness(matchID : Nat) : async Bool {
-    assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
-    assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
-
-    switch (searching.get(matchID)) {
-        case (null) { return false };
-        case (?_m) {
-            if (_m.status != #ReadyToStart) { return false };
-            if (_m.player2 == null or switch (_m.player2) { case (?_p2) _p2.id != msg.caller; case null false }) {
-                return false;
-            };
-            let _p2 : MMInfo = switch (_m.player2) {
-                case (?_p2) {
-                    {
-                        id = _p2.id;
-                        elo = _p2.elo;
-                        matchAccepted = false;
-                        playerGameData = _p2.playerGameData;
-                        lastPlayerActive = Nat64.fromIntWrap(Time.now());
-                        username = _p2.username;
-                    }
-                };
-                case null unreachable;
-            };
-            let _gameData : MatchData = {
-                matchID = _m.matchID;
-                player1 = _m.player1;
-                player2 = ?_p2;
-                status = #CustomWaiting;
-            };
-            searching.put(_m.matchID, _gameData);
-            return true;
-        };
-    };
-};
-
-public shared (msg) func launchCustomGame(matchID : Nat) : async Bool {
-    assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
-    assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
-
-    switch (searching.get(matchID)) {
-        case (null) { return false };
-        case (?_m) {
-            if (_m.player1.id != msg.caller or _m.status != #ReadyToStart) {
-                return false;
-            };
-            let _gameData : MatchData = {
-                matchID = _m.matchID;
-                player1 = _m.player1;
-                player2 = _m.player2;
-                status = #InProgress;
-            };
-            inProgress.put(_m.matchID, _gameData);
-            searching.remove(_m.matchID);
-            return true;
-        };
-    };
-};
-
-public shared (msg) func cancelCustomMatchmaking(matchID : Nat) : async Bool {
-    assert (Principal.notEqual(msg.caller, NULL_PRINCIPAL));
-    assert (Principal.notEqual(msg.caller, ANON_PRINCIPAL));
-
-    switch (searching.get(matchID)) {
-        case (null) { return false };
-        case (?_m) {
-            if (_m.player1.id != msg.caller) {
-                return false;
-            };
-            searching.remove(matchID);
-            playerStatus.remove(_m.player1.id);
-            if (_m.player2 != null) {
-                playerStatus.remove(switch (_m.player2) { case (?_p2) _p2.id; case null unreachable });
-            };
-            return true;
-        };
-    };
-};
-
-func checkInactivity() {
-    let _now = Nat64.fromIntWrap(Time.now());
-    
-    for ((matchID, matchData) in searching.entries()) {
-        if ((matchData.player1.lastPlayerActive + inactiveSeconds) < _now) {
-            searching.remove(matchID);
-            playerStatus.remove(matchData.player1.id);
-            if (matchData.player2 != null) {
-                playerStatus.remove(switch (matchData.player2) { case (?p2) p2.id; case null unreachable });
-            };
-        } else if (matchData.player2 != null and switch (matchData.player2) { case (?p2) (p2.lastPlayerActive + inactiveSeconds) < _now; case null false }) {
-            let _gameData : MatchData = {
-                matchID = matchData.matchID;
-                player1 = matchData.player1;
-                player2 = null;
-                status = #CustomWaiting;
-            };
-            searching.put(matchID, _gameData);
-        };
-    };
-}
 
 //--
 // ICRCs
 
     type Result <S, E> = Result.Result<S, E>;
 
-    let shards: ICRC1Interface = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : ICRC1Interface;
+    let shards: ICRC1Interface = actor("svcoe-6iaaa-aaaam-ab4rq-cai") : ICRC1Interface;
 
-    let flux: ICRC1Interface = actor("b77ix-eeaaa-aaaaa-qaada-cai") : ICRC1Interface;
+    let flux: ICRC1Interface = actor("plahz-wyaaa-aaaam-accta-cai") : ICRC1Interface;
 
-    let gameNFTs: ICRC7Interface = actor("be2us-64aaa-aaaaa-qaabq-cai") : ICRC7Interface;
+    let gameNFTs: ICRC7Interface = actor("etqmj-zyaaa-aaaap-aakaq-cai") : ICRC7Interface;
 
-    let chests: ICRC7Interface = actor("br5f7-7uaaa-aaaaa-qaaca-cai") : ICRC7Interface;
+    let chests: ICRC7Interface = actor("opcce-byaaa-aaaak-qcgda-cai") : ICRC7Interface;
 
     // ICRC 1
     type ICRC1Interface = actor {
@@ -3344,15 +3466,19 @@ func checkInactivity() {
     // GameNFTs
 
     // Mint deck with 8 units and random rarity within a range provided
-    private func mintDeck(caller: Principal): async (Bool, Text) {
+    public func mintDeck(caller: Principal): async (Bool, Text) {
         let units = Utils.initDeck();
 
         var _deck = Buffer.Buffer<TypesICRC7.MintArgs>(8);
         var uuids = Buffer.Buffer<TokenID>(8);
 
+        // Generate the initial UUID
+        let initialUUID = await Utils.generateUUID64();
+
         for (i in Iter.range(0, 7)) {
             let (name, damage, hp, rarity) = units[i];
-            let uuid = await Utils.generateUUID64();
+            // Increment the UUID for each NFT
+            let uuid = initialUUID + i;
             let _mintArgs: TypesICRC7.MintArgs = {
                 to = { owner = caller; subaccount = null };
                 token_id = uuid;
@@ -3392,7 +3518,6 @@ func checkInactivity() {
             };
         };
     };
-
 
     public shared(msg) func upgradeNFT(nftID: TokenID) : async (Bool, Text) {
         // Initiate metadata retrieval in the background

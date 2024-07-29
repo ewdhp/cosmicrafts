@@ -10,6 +10,7 @@ import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import HashMap "mo:base/HashMap";
 import Time "mo:base/Time";
+import Iter "mo:base/Iter";
 import Types "./types";
 import Utils "./utils";
 
@@ -33,7 +34,9 @@ shared actor class GameNFTs(collectionOwner: Types.Account, init: Types.Collecti
   private var PERMITTED_DRIFT : Nat64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
   private var TX_WINDOW : Nat64 = 24 * 60 * 60 * 1_000_000_000; // 24 hours in nanoseconds
 
-  private stable var _cosmicraftsPrincipal : Principal = Principal.fromActor(actor("bkyz2-fmaaa-aaaaa-qaaaq-cai"));
+  private stable var _cosmicraftsPrincipal : Principal = Principal.fromActor(actor("fdaor-cqaaa-aaaao-ai7nq-cai"));
+  //  private stable var _cosmicraftsPrincipal : Principal = Principal.fromActor(actor("bkyz2-fmaaa-aaaaa-qaaaq-cai"));
+
 
   private stable var tokens: Trie<Types.TokenId, Types.TokenMetadata> = Trie.empty(); 
   //owner Trie: use of Text insted of Account to improve performanances in lookup
@@ -884,5 +887,20 @@ shared actor class GameNFTs(collectionOwner: Types.Account, init: Types.Collecti
     let _transaction: Types.Transaction = _addTransaction(#mint, now, ?_deck, ?acceptedTo, null, null, null, null, null);
     return #Ok(lastTokenMinted);
   };
+
+
+// Self-query function to get all token IDs with their respective metadata for the caller
+public query ({ caller }) func getNFTs() : async [(Types.TokenId, Types.TokenMetadata)] {
+    let entries = Iter.toArray(Trie.iter(tokens));
+    var result: [(Types.TokenId, Types.TokenMetadata)] = [];
+    for (entry in entries.vals()) {
+        let key = entry.0;
+        let value = entry.1;
+        if (value.owner.owner == caller) {
+            result := Array.append(result, [(key, value)]);
+        };
+    };
+    return result;
+};
 
 };

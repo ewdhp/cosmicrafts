@@ -15,12 +15,43 @@ import Nat64 "mo:base/Nat64";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Time "mo:base/Time";
+import Principal "mo:base/Principal";
 import Types "Types";
 import TypesICRC7 "/icrc7/types";
 import TypesICRC1 "/icrc1/Types";
 
-
 module Utils {
+
+    public type PlayerId = Types.PlayerId;
+
+
+    // Define a custom equality function for tuples of (PlayerId, PlayerId)
+    public func tupleEqual(x: (PlayerId, PlayerId), y: (PlayerId, PlayerId)) : Bool {
+        return x == y;
+    };
+
+    // Define a custom hash function for tuples of (PlayerId, PlayerId)
+    public func tupleHash(tuple: (PlayerId, PlayerId)) : Hash.Hash {
+        let hash1 = Principal.hash(tuple.0);
+        let hash2 = Principal.hash(tuple.1);
+        return Utils._natHash(Nat32.toNat(hash1) + Nat32.toNat(hash2)); // Combine the hashes using a simple addition and then hash the result
+    };
+
+    public func nullishCoalescing<T>(value: ?T, defaultValue: T): T {
+        switch (value) {
+            case (null) defaultValue;
+            case (?v) v;
+        }
+    };
+
+    public func pushIntoArray<T>(item: T, array: [T]): [T] {
+        var buffer = Buffer.Buffer<T>(array.size() + 1);
+        for (i in Iter.range(0, array.size() - 1)) {
+            buffer.add(array[i]);
+        };
+        buffer.add(item);
+        return Buffer.toArray(buffer);
+    };
 
     public func generateULID(): async Text {
         // Get the current timestamp in UNIX epoch format
@@ -42,15 +73,15 @@ module Utils {
     };
 
     public func get2BytesBlob() : async Blob {
-    let fullBlob = await Random.blob();
-    // Convert the Blob to an array of bytes
-    let byteArray = Iter.toArray<Nat8>(fullBlob.vals());
-    // Extract the first 2 bytes
-    let twoBytes = Array.tabulate<Nat8>(2, func(i) {
-        byteArray[i];
-    });
-    // Convert the array back to a Blob
-    Blob.fromArray(twoBytes)
+        let fullBlob = await Random.blob();
+        // Convert the Blob to an array of bytes
+        let byteArray = Iter.toArray<Nat8>(fullBlob.vals());
+        // Extract the first 2 bytes
+        let twoBytes = Array.tabulate<Nat8>(2, func(i) {
+            byteArray[i];
+        });
+        // Convert the array back to a Blob
+        Blob.fromArray(twoBytes)
     };
 
     public func nat64ToHex(value: Nat64): Text {

@@ -397,3 +397,23 @@ private func _processChestContents(chestID: Nat, caller: Principal): async () {
 
         return userClaimedMissions;
     };
+
+
+
+
+
+
+
+
+
+    // Query function to get all token IDs with their respective metadata
+public query func getAllTokensWithMetadata() : async [(Types.TokenId, Types.TokenMetadata)] {
+    let entries = Iter.toArray(Trie.iter(tokens));
+    var result: [(Types.TokenId, Types.TokenMetadata)] = [];
+    for (entry in entries.vals()) {
+        let key = entry.0;
+        let value = entry.1;
+        result := Array.append(result, [(key, value)]);
+    };
+    return result;
+};
