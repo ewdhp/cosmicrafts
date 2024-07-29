@@ -1868,9 +1868,9 @@ shared actor class Cosmicrafts() {
     var updateTimestamps: HashMap.HashMap<PlayerId, UpdateTimestamps> = HashMap.fromIter(_updateTimestamps.vals(), 0, Principal.equal, Principal.hash);
 
     private func addNotification(to: PlayerId, notification: Notification) {
-    var userNotifications = Utils.nullishCoalescing<[Notification]>(notifications.get(to), []);
-    userNotifications := Array.append(userNotifications, [notification]);
-    notifications.put(to, userNotifications);
+        var userNotifications = Utils.nullishCoalescing<[Notification]>(notifications.get(to), []);
+        userNotifications := Array.append(userNotifications, [notification]);
+        notifications.put(to, userNotifications);
     };
 
     private func getDefaultTimestamps() : UpdateTimestamps {
@@ -1881,7 +1881,6 @@ shared actor class Cosmicrafts() {
         };
     };
 
-    // Function to clean notifications older than a certain time (e.g., 30 days)
     private func cleanOldNotifications(playerId: PlayerId) {
         let currentTime = Time.now();
         var userNotifications = Utils.nullishCoalescing<[Notification]>(notifications.get(playerId), []);
@@ -1897,7 +1896,13 @@ shared actor class Cosmicrafts() {
             message = message;
             timestamp = Time.now();
         };
-        addNotification(to, notification);
+
+        var userNotifications = Utils.nullishCoalescing<[Notification]>(notifications.get(to), []);
+        if (Array.find(userNotifications, func (n: Notification): Bool {
+            n.message == message and Nat64.fromIntWrap(Time.now() - n.timestamp) < ONE_MINUTE;
+        }) == null) {
+            addNotification(to, notification);
+        };
         cleanOldNotifications(to); // Clean old notifications after adding a new one
     };
 
@@ -1905,20 +1910,30 @@ shared actor class Cosmicrafts() {
         if (username.size() > 12) {
             return (false, null, "Username must be 12 characters or less");
         };
-        let PlayerId = caller;
-        let registrationDate = Time.now();
-        let newPlayer: Player = {
-            id = PlayerId;
-            username = username;
-            avatar = avatar;
-            description = "";
-            registrationDate = registrationDate;
-            level = 1;
-            elo = 1200;
-            friends = [];
+        
+        let playerId = caller;
+
+        // Check if the player is already registered
+        switch (players.get(playerId)) {
+            case (?_) {
+                return (false, null, "User is already registered");
+            };
+            case (null) {
+                let registrationDate = Time.now();
+                let newPlayer: Player = {
+                    id = playerId;
+                    username = username;
+                    avatar = avatar;
+                    description = "";
+                    registrationDate = registrationDate;
+                    level = 1;
+                    elo = 1200;
+                    friends = [];
+                };
+                players.put(playerId, newPlayer);
+                return (true, ?newPlayer, "User registered successfully");
+            };
         };
-        players.put(PlayerId, newPlayer);
-        return (true, ?newPlayer, "User registered successfully");
     };
 
     public shared ({ caller: PlayerId }) func updateUsername(username: Username) : async (Bool, PlayerId, Text) {
@@ -2101,7 +2116,7 @@ shared actor class Cosmicrafts() {
             case (null) {
                 return (false, "User record does not exist");
             };
-            case (?player) {
+            case (?_player) {
                 var requests = Utils.nullishCoalescing<[FriendRequest]>(friendRequests.get(playerId), []);
                 let requestIndex = findFriendRequestIndex(requests, fromId);
                 switch (requestIndex) {
@@ -2115,7 +2130,7 @@ shared actor class Cosmicrafts() {
 
                         // Add friend to both users' friends list
                         addFriendToUser(playerId, fromId);
-                        addFriendToUser(fromId, player.id);
+                        addFriendToUser(fromId, playerId);
 
                         // Record the mutual friendship with timestamp
                         let friendship: MutualFriendship = {
@@ -2218,8 +2233,11 @@ shared actor class Cosmicrafts() {
                 return (false, "User record does not exist");
             };
             case (?_player) {
-                privacySettings.put(playerId, setting);
-                sendNotification(playerId, "Your privacy settings have been updated.");
+                let currentSetting = Utils.nullishCoalescing<PrivacySetting>(privacySettings.get(playerId), #acceptAll);
+                if (currentSetting != setting) {
+                    privacySettings.put(playerId, setting);
+                    sendNotification(playerId, "Your privacy settings have been updated.");
+                };
                 return (true, "Privacy settings updated successfully");
             };
         };
@@ -2229,38 +2247,32 @@ shared actor class Cosmicrafts() {
         return Utils.nullishCoalescing<[PlayerId]>(blockedUsers.get(caller), []);
     };
 
-    private func addFriendToUser(userId: PlayerId, friendId: PlayerId) {
-        switch (players.get(userId)) {
-            case (null) {};
-            case (?user) {
-                switch (players.get(friendId)) {
-                    case (null) {};
-                    case (?friend) {
-                        let updatedFriends = Buffer.Buffer<FriendDetails>(user.friends.size() + 1);
-                        for (friendDetail in user.friends.vals()) {
-                            updatedFriends.add(friendDetail);
-                        };
-                        updatedFriends.add({
-                            playerId = friendId;
-                            username = friend.username;
-                            avatar = friend.avatar;
-                        });
-                        let updatedPlayer: Player = {
-                            id = user.id;
-                            username = user.username;
-                            avatar = user.avatar;
-                            description = user.description;
-                            registrationDate = user.registrationDate;
-                            level = user.level;
-                            elo = user.elo;
-                            friends = Buffer.toArray(updatedFriends);
-                        };
-                        players.put(userId, updatedPlayer);
-                    };
+private func addFriendToUser(userId: PlayerId, friendId: PlayerId) {
+    switch (players.get(userId)) {
+        case (null) {};
+        case (?user) {
+            switch (players.get(friendId)) {
+                case (null) {};
+                case (?friend) {
+                    let updatedUserFriends = Array.append(user.friends, [{
+                        playerId = friendId;
+                        username = friend.username;
+                        avatar = friend.avatar;
+                    }]);
+                    let updatedFriendFriends = Array.append(friend.friends, [{
+                        playerId = userId;
+                        username = user.username;
+                        avatar = user.avatar;
+                    }]);
+                    
+                    // Update both users' friends lists
+                    players.put(userId, { user with friends = updatedUserFriends });
+                    players.put(friendId, { friend with friends = updatedFriendFriends });
                 };
             };
         };
     };
+};
 
     // Helper function to check if two players are friends
     private func areFriends(playerId1: PlayerId, playerId2: PlayerId) : Bool {

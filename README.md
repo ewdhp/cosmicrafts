@@ -417,3 +417,62 @@ public query func getAllTokensWithMetadata() : async [(Types.TokenId, Types.Toke
     };
     return result;
 };
+
+
+
+Summary of Actions Tested by the Script
+Player Registration Tests
+Register a new player with a valid username and avatar.
+Register multiple players with the same username but different principals.
+Attempt to register a player with an invalid (too long) username.
+Attempt to register a player with an empty username.
+Update Tests
+Update the username to a valid new username.
+Attempt to update the username to an invalid (too long) username.
+Update the avatar to a valid new avatar.
+Update the description with a valid description.
+Attempt to update the description with an invalid (too long) description.
+Friend Request Tests
+Attempt to send a friend request to oneself and ensure it fails.
+Send a friend request to another player.
+Attempt to send a duplicate friend request to the same user.
+Attempt to send a friend request to a non-existent user.
+Accept a friend request from another player.
+Attempt to accept a non-existent friend request.
+Verify that a friend request is not accepted until the other user accepts.
+Ensure friend request shows up in the pending friend requests list.
+Verify that blocked users cannot send friend requests.
+Unblock a user and verify the process.
+Blocking Tests
+Attempt to block oneself and ensure it fails.
+Block another player.
+Attempt to block an already blocked user.
+Test sending friend requests with different privacy settings (e.g., blockAll, acceptAll).
+Privacy Setting Tests
+Set an invalid privacy setting and ensure it fails.
+Set the privacy setting to blockAll and verify it restricts friend requests.
+Set the privacy setting to acceptAll and verify it allows friend requests.
+Notification Tests
+Verify that notifications are sent when privacy settings are updated.
+Check the notifications list for a player.
+Ensure old notifications are cleaned (conceptual, as time manipulation is not performed in the script).
+Profile and Data Retrieval Tests
+Retrieve a player's own profile.
+Retrieve another player's profile.
+Retrieve the full profile of another player, including stats and friends.
+Search for a user by username and verify the results.
+Get the list of all registered players.
+General Robustness Tests
+Simulate multiple simultaneous actions to test for concurrency issues.
+Test the system's behavior under load by registering a large number of players and performing various operations.
+New Players Introduced for Testing
+player1
+player2
+player3
+player4
+player5
+player6
+Test Accounts and Principal IDs Retrieval
+Retrieve and store the principal ID for each test account.
+Comprehensive Summary
+This testing script covers a wide range of scenarios including registration, updates, friend requests, blocking, privacy settings, notifications, profile retrieval, and general robustness. Each test is designed to ensure that the system handles various edge cases and typical usage scenarios correctly, providing thorough validation of the public functions.
