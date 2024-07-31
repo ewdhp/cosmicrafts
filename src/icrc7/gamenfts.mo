@@ -841,54 +841,6 @@ shared actor class GameNFTs(collectionOwner: Types.Account, init: Types.Collecti
     return #Ok(upgradeArgs.token_id);
   };
 
-  /// Mint deck with 8 units and random rarity within a range provided
-  public shared({ caller}) func mintDeck(deck : [Types.MintArgs]) : async Types.MintReceipt {
-    if (Principal.notEqual(caller, owner.owner) and Principal.notEqual(caller, _cosmicraftsPrincipal) ) {
-      return #Err(#Unauthorized);
-    };
-    var lastTokenMinted : Nat = 0;
-    let now = Nat64.fromIntWrap(Time.now());
-    let acceptedTo: Types.Account = _acceptAccount({owner= caller; subaccount=null});
-    var _deck : [Types.TokenId] = [];
-    for (mintArgs in deck.vals()) {
-      let tokenId : Types.TokenId = mintArgs.token_id;
-      let acceptedTo: Types.Account = _acceptAccount(mintArgs.to);
-      //todo add a more complex roles management
-      //check on supply cap overflow
-      if (supplyCap != null) {
-        let _supplyCap: Nat = Utils.nullishCoalescing<Nat>(supplyCap, 0);
-        if (totalSupply + 1 > _supplyCap) {
-          return #Err(#SupplyCapOverflow);
-        };
-      };
-      //cannot mint to zero principal
-      if (Principal.equal(acceptedTo.owner, NULL_PRINCIPAL)) {
-        return #Err(#InvalidRecipient);
-      };
-      //cannot mint an existing token id
-      let alreadyExists = _exists(tokenId);
-      if (alreadyExists) {
-        return #Err(#AlreadyExistTokenId);
-      };
-      //create the new token
-      let newToken: Types.TokenMetadata = {
-        tokenId = mintArgs.token_id;
-        owner = acceptedTo;
-        metadata = mintArgs.metadata;
-      };
-      //update the token metadata
-      tokens := Trie.put(tokens, _keyFromTokenId tokenId, Nat.equal, newToken).0;
-      _addTokenToOwners(acceptedTo, mintArgs.token_id);
-      _incrementBalance(acceptedTo);
-      _incrementTotalSupply(1);
-      _deck := Utils.pushIntoArray<Types.TokenId>(tokenId, _deck);
-      lastTokenMinted := tokenId;
-    };
-    let _transaction: Types.Transaction = _addTransaction(#mint, now, ?_deck, ?acceptedTo, null, null, null, null, null);
-    return #Ok(lastTokenMinted);
-  };
-
-
 // Self-query function to get all token IDs with their respective metadata for the caller
 public query ({ caller }) func getNFTs() : async [(Types.TokenId, Types.TokenMetadata)] {
     let entries = Iter.toArray(Trie.iter(tokens));
@@ -902,5 +854,88 @@ public query ({ caller }) func getNFTs() : async [(Types.TokenId, Types.TokenMet
     };
     return result;
 };
+
+
+  // Stable map to store the principal IDs of callers who have minted a deck
+  stable var _mintedCallers: [(Principal, Bool)] = [];
+
+  var mintedCallersMap: HashMap.HashMap<Principal, Bool> = HashMap.fromIter(_mintedCallers.vals(), 0, Principal.equal, Principal.hash);
+
+
+public shared({ caller }) func mintDeck(): async (Bool, Text, [Types.TokenId]) {
+    // Check if the caller has already minted a deck
+    if (mintedCallersMap.get(caller) != null) {
+        return (false, "Deck mint failed: Caller has already minted a deck", []);
+    };
+
+    let units = Utils.initDeck();
+
+    var _deck = Buffer.Buffer<Types.MintArgs>(8);
+    var uuids = Buffer.Buffer<Types.TokenId>(8);
+
+    // Generate the initial UUID
+    let initialUUID = await Utils.generateUUID64();
+
+    for (i in Iter.range(0, 7)) {
+        let (name, damage, hp, rarity) = units[i];
+        // Increment the UUID for each NFT
+        let uuid = initialUUID + i;
+        let _mintArgs: Types.MintArgs = {
+            to = { owner = caller; subaccount = null };
+            token_id = uuid;
+            metadata = Utils.getBaseMetadataWithAttributes(rarity, i + 1, name, damage, hp);
+        };
+        _deck.add(_mintArgs);
+        uuids.add(uuid); // Collect the UUIDs
+    };
+
+    var lastTokenMinted: Nat = 0;
+    let now = Nat64.fromIntWrap(Time.now());
+    let acceptedTo: Types.Account = _acceptAccount({ owner = caller; subaccount = null });
+    var _deckTokens: [Types.TokenId] = [];
+
+    for (mintArgs in Buffer.toArray(_deck).vals()) {
+        let tokenId: Types.TokenId = mintArgs.token_id;
+        let acceptedTo: Types.Account = _acceptAccount(mintArgs.to);
+        
+        // Check on supply cap overflow
+        if (supplyCap != null) {
+            let _supplyCap: Nat = Utils.nullishCoalescing<Nat>(supplyCap, 0);
+            if (totalSupply + 1 > _supplyCap) {
+                return (false, "Deck mint failed: SupplyCapOverflow", []);
+            };
+        };
+        // Cannot mint to zero principal
+        if (Principal.equal(acceptedTo.owner, NULL_PRINCIPAL)) {
+            return (false, "Deck mint failed: InvalidRecipient", []);
+        };
+        // Cannot mint an existing token id
+        if (_exists(tokenId)) {
+            return (false, "Deck mint failed: Token ID already exists", []);
+        };
+        // Create the new token
+        let newToken: Types.TokenMetadata = {
+            tokenId = mintArgs.token_id;
+            owner = acceptedTo;
+            metadata = mintArgs.metadata;
+        };
+        // Update the token metadata
+        tokens := Trie.put(tokens, _keyFromTokenId(tokenId), Nat.equal, newToken).0;
+        _addTokenToOwners(acceptedTo, mintArgs.token_id);
+        _incrementBalance(acceptedTo);
+        _incrementTotalSupply(1);
+        _deckTokens := Utils.pushIntoArray<Types.TokenId>(tokenId, _deckTokens);
+        lastTokenMinted := tokenId;
+    };
+
+    let _transaction: Types.Transaction = _addTransaction(#mint, now, ?_deckTokens, ?acceptedTo, null, null, null, null, null);
+    transactionSequentialIndex += 1;
+
+    // Record the caller's principal ID as having minted a deck
+    mintedCallersMap.put(caller, true);
+
+    return (true, "Deck minted. # NFTs: " # Nat.toText(_deckTokens.size()), _deckTokens);
+};
+
 
 };
