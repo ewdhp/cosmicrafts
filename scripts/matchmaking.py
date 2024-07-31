@@ -8,7 +8,10 @@ import sys
 import signal
 
 # Set up logging
-#logging.basicConfig(filename='logs/matchmaking.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s', handlers=[
+    logging.FileHandler("logs/matchmaking.log"),
+    logging.StreamHandler(sys.stdout)
+])
 
 def execute_dfx_command(command, log_output=True):
     """Executes a shell command and logs the output."""
@@ -147,11 +150,6 @@ def claim_user_specific_reward(identity_name, mission_id):
     command = f'dfx canister call cosmicrafts claimUserReward \'({mission_id})\''
     return execute_dfx_command(command)
 
-def create_user_specific_hourly_mission(principal):
-    """Creates a user-specific hourly mission for the given principal."""
-    command = f'dfx canister call cosmicrafts createUserMission \'(principal "{principal}")\''
-    return execute_dfx_command(command)
-
 def handle_mission_progress(identity_name):
     """Handles the mission progress after saving the finished game."""
     progress_result = get_current_mission_progress(identity_name)
@@ -161,7 +159,7 @@ def handle_mission_progress(identity_name):
     # Check if the mission progress result is null
     if progress_result == "(null)":
         principal = get_principal(identity_name)
-        create_result = create_user_specific_hourly_mission(principal)
+        create_result = get_current_mission_progress(identity_name)
         logging.info(f"Create result for {identity_name}: {create_result}")
         print(f"Create result for {identity_name}: {create_result}")
         return
@@ -182,10 +180,9 @@ def handle_mission_progress(identity_name):
 
     # Always create a new mission
     principal = get_principal(identity_name)
-    create_result = create_user_specific_hourly_mission(principal)
+    create_result = get_current_mission_progress(identity_name)
     logging.info(f"Create result for {identity_name}: {create_result}")
     print(f"Create result for {identity_name}: {create_result}")
-
 
 def run_matches(num_matches, loop):
     """Run the specified number of matches."""

@@ -1,0 +1,434 @@
+2024-07-31 15:52:13,387 - Command: dfx identity get-principal
+2024-07-31 15:52:13,387 - Output: mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe
+2024-07-31 15:52:13,387 - player1 principal: mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe
+2024-07-31 15:52:13,408 - Command: dfx identity get-principal
+2024-07-31 15:52:13,408 - Output: 6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae
+2024-07-31 15:52:13,408 - player2 principal: 6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae
+2024-07-31 15:52:13,408 - player1 starts searching for a match
+2024-07-31 15:52:15,669 - Command: dfx canister call cosmicrafts getMatchSearching '{"userAvatar": 1, "listSavedKeys": []}'
+2024-07-31 15:52:15,669 - Output: (variant { Assigned }, 3 : nat, "Lobby created")
+2024-07-31 15:52:15,669 - player1 search result: (variant { Assigned }, 3 : nat, "Lobby created")
+2024-07-31 15:52:17,202 - Command: dfx canister call cosmicrafts setPlayerActive
+2024-07-31 15:52:17,202 - Output: (true)
+2024-07-31 15:52:17,202 - player1 active result: (true)
+2024-07-31 15:52:17,202 - player2 starts searching for a match
+2024-07-31 15:52:18,237 - Command: dfx canister call cosmicrafts getMatchSearching '{"userAvatar": 1, "listSavedKeys": []}'
+2024-07-31 15:52:18,237 - Output: (variant { Assigned }, 3 : nat, "Game found")
+2024-07-31 15:52:18,237 - player2 search result: (variant { Assigned }, 3 : nat, "Game found")
+2024-07-31 15:52:19,955 - Command: dfx canister call cosmicrafts setPlayerActive
+2024-07-31 15:52:19,955 - Output: (false)
+2024-07-31 15:52:19,955 - player2 active result: (false)
+2024-07-31 15:52:19,990 - Command: dfx canister call cosmicrafts isGameMatched
+2024-07-31 15:52:19,990 - Output: (true, "Game matched")
+2024-07-31 15:52:20,062 - Command: dfx canister call cosmicrafts isGameMatched
+2024-07-31 15:52:20,063 - Output: (true, "Game matched")
+2024-07-31 15:52:20,063 - Is game matched result for player1: (true, "Game matched")
+2024-07-31 15:52:20,063 - Is game matched result for player2: (true, "Game matched")
+2024-07-31 15:52:20,063 - Match found! Ending search.
+2024-07-31 15:52:20,097 - Command: dfx canister call cosmicrafts getMyMatchData
+2024-07-31 15:52:20,098 - Output: (
+  opt record {
+    status = variant { Accepted };
+    matchID = 3 : nat;
+    player1 = record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+    player2 = opt record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+  },
+  1 : nat,
+)
+2024-07-31 15:52:20,128 - Command: dfx canister call cosmicrafts getMyMatchData
+2024-07-31 15:52:20,128 - Output: (
+  opt record {
+    status = variant { Accepted };
+    matchID = 3 : nat;
+    player1 = record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+    player2 = opt record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+  },
+  2 : nat,
+)
+2024-07-31 15:52:20,128 - Match data for player1: (
+  opt record {
+    status = variant { Accepted };
+    matchID = 3 : nat;
+    player1 = record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+    player2 = opt record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+  },
+  1 : nat,
+)
+2024-07-31 15:52:20,128 - Match data for player2: (
+  opt record {
+    status = variant { Accepted };
+    matchID = 3 : nat;
+    player1 = record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+    player2 = opt record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+  },
+  2 : nat,
+)
+2024-07-31 15:52:20,128 - Sending statistics for match ID: 3 for player1
+2024-07-31 15:52:20,134 - Constructed command: dfx canister call cosmicrafts saveFinishedGame '(3, record {botDifficulty = 0; botMode = 5; characterID = 1; damageCritic = 8863; damageDealt = 21758; damageEvaded = 2710; damageTaken = 16470; deploys = 133; energyChargeRate = 129; energyGenerated = 53; energyUsed = 118; energyWasted = 70; faction = 1; gameMode = 2; kills = 70; secRemaining = 100; wonGame = true; xpEarned = 7511; })'
+2024-07-31 15:52:21,583 - Command: dfx canister call cosmicrafts saveFinishedGame '(3, record {botDifficulty = 0; botMode = 5; characterID = 1; damageCritic = 8863; damageDealt = 21758; damageEvaded = 2710; damageTaken = 16470; deploys = 133; energyChargeRate = 129; energyGenerated = 53; energyUsed = 118; energyWasted = 70; faction = 1; gameMode = 2; kills = 70; secRemaining = 100; wonGame = true; xpEarned = 7511; })'
+2024-07-31 15:52:21,583 - Output: (
+  true,
+  "Game saved: Progress added successfully to general missions | Progress updated successfully in user-specific missions | Achievement progress updated successfully",
+)
+2024-07-31 15:52:21,583 - Statistics saved for player1 in match 3
+2024-07-31 15:52:24,316 - Command: dfx canister call cosmicrafts getUserMissions
+2024-07-31 15:52:24,316 - Output: (
+  vec {
+    record {
+      total = 2_500 : nat;
+      missionType = variant { DamageTaken };
+      reward_amount = 2 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_483_174_617_832 : nat64;
+      progress = 2_500 : nat;
+      finish_date = 1_722_462_740_500_868_205 : nat64;
+      expiration = 1_722_466_083_174_617_832 : nat64;
+      finished = true;
+      id_mission = 0 : nat;
+    };
+    record {
+      total = 30 : nat;
+      missionType = variant { Kills };
+      reward_amount = 3 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_741_778_693_401 : nat64;
+      progress = 0 : nat;
+      finish_date = 0 : nat64;
+      expiration = 1_722_466_341_778_693_401 : nat64;
+      finished = false;
+      id_mission = 1 : nat;
+    };
+  },
+)
+2024-07-31 15:52:24,316 - Mission progress for player1: (
+  vec {
+    record {
+      total = 2_500 : nat;
+      missionType = variant { DamageTaken };
+      reward_amount = 2 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_483_174_617_832 : nat64;
+      progress = 2_500 : nat;
+      finish_date = 1_722_462_740_500_868_205 : nat64;
+      expiration = 1_722_466_083_174_617_832 : nat64;
+      finished = true;
+      id_mission = 0 : nat;
+    };
+    record {
+      total = 30 : nat;
+      missionType = variant { Kills };
+      reward_amount = 3 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_741_778_693_401 : nat64;
+      progress = 0 : nat;
+      finish_date = 0 : nat64;
+      expiration = 1_722_466_341_778_693_401 : nat64;
+      finished = false;
+      id_mission = 1 : nat;
+    };
+  },
+)
+2024-07-31 15:52:28,722 - Command failed: dfx canister call cosmicrafts claimUserReward '(0)'
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterReject, reject message Canister opcce-byaaa-aaaak-qcgda-cai not found, error code None
+2024-07-31 15:52:28,722 - Retrying...
+2024-07-31 15:52:34,078 - Command failed: dfx canister call cosmicrafts claimUserReward '(0)'
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterReject, reject message Canister opcce-byaaa-aaaak-qcgda-cai not found, error code None
+2024-07-31 15:52:34,078 - Retrying...
+2024-07-31 15:52:39,036 - Command failed: dfx canister call cosmicrafts claimUserReward '(0)'
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterReject, reject message Canister opcce-byaaa-aaaak-qcgda-cai not found, error code None
+2024-07-31 15:52:39,036 - Error saving statistics for player1 in match 3: Command failed: dfx canister call cosmicrafts claimUserReward '(0)'
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterReject, reject message Canister opcce-byaaa-aaaak-qcgda-cai not found, error code None
+2024-07-31 15:54:26,034 - Command: dfx identity get-principal
+2024-07-31 15:54:26,034 - Output: mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe
+2024-07-31 15:54:26,035 - player1 principal: mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe
+2024-07-31 15:54:26,055 - Command: dfx identity get-principal
+2024-07-31 15:54:26,056 - Output: 6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae
+2024-07-31 15:54:26,056 - player2 principal: 6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae
+2024-07-31 15:54:26,056 - player1 starts searching for a match
+2024-07-31 15:54:27,541 - Command: dfx canister call cosmicrafts getMatchSearching '{"userAvatar": 1, "listSavedKeys": []}'
+2024-07-31 15:54:27,541 - Output: (variant { Assigned }, 4 : nat, "Lobby created")
+2024-07-31 15:54:27,541 - player1 search result: (variant { Assigned }, 4 : nat, "Lobby created")
+2024-07-31 15:54:28,867 - Command: dfx canister call cosmicrafts setPlayerActive
+2024-07-31 15:54:28,867 - Output: (true)
+2024-07-31 15:54:28,867 - player1 active result: (true)
+2024-07-31 15:54:28,867 - player2 starts searching for a match
+2024-07-31 15:54:30,352 - Command: dfx canister call cosmicrafts getMatchSearching '{"userAvatar": 1, "listSavedKeys": []}'
+2024-07-31 15:54:30,352 - Output: (variant { Assigned }, 4 : nat, "Game found")
+2024-07-31 15:54:30,352 - player2 search result: (variant { Assigned }, 4 : nat, "Game found")
+2024-07-31 15:54:31,661 - Command: dfx canister call cosmicrafts setPlayerActive
+2024-07-31 15:54:31,661 - Output: (false)
+2024-07-31 15:54:31,661 - player2 active result: (false)
+2024-07-31 15:54:31,694 - Command: dfx canister call cosmicrafts isGameMatched
+2024-07-31 15:54:31,694 - Output: (true, "Game matched")
+2024-07-31 15:54:31,725 - Command: dfx canister call cosmicrafts isGameMatched
+2024-07-31 15:54:31,725 - Output: (true, "Game matched")
+2024-07-31 15:54:31,725 - Is game matched result for player1: (true, "Game matched")
+2024-07-31 15:54:31,725 - Is game matched result for player2: (true, "Game matched")
+2024-07-31 15:54:31,725 - Match found! Ending search.
+2024-07-31 15:54:31,759 - Command: dfx canister call cosmicrafts getMyMatchData
+2024-07-31 15:54:31,759 - Output: (
+  opt record {
+    status = variant { Accepted };
+    matchID = 4 : nat;
+    player1 = record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+    player2 = opt record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+  },
+  1 : nat,
+)
+2024-07-31 15:54:31,791 - Command: dfx canister call cosmicrafts getMyMatchData
+2024-07-31 15:54:31,791 - Output: (
+  opt record {
+    status = variant { Accepted };
+    matchID = 4 : nat;
+    player1 = record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+    player2 = opt record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+  },
+  2 : nat,
+)
+2024-07-31 15:54:31,791 - Match data for player1: (
+  opt record {
+    status = variant { Accepted };
+    matchID = 4 : nat;
+    player1 = record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+    player2 = opt record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+  },
+  1 : nat,
+)
+2024-07-31 15:54:31,791 - Match data for player2: (
+  opt record {
+    status = variant { Accepted };
+    matchID = 4 : nat;
+    player1 = record {
+      id = principal "mn5iu-4ncje-ws6p5-ztjz4-7j7a3-xdkvf-hqzz7-qogk7-62pp5-7s3rl-vqe";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+    player2 = opt record {
+      id = principal "6pj2j-ccuip-744eo-4odjh-rhyeb-i3ctv-xc3ru-vkkfa-fjubh-33olq-qae";
+      elo = 1200.0 : float64;
+      username = "";
+      level = 0 : nat;
+      matchAccepted = true;
+      playerGameData = "{\"userAvatar\": 1, \"listSavedKeys\": []}";
+      avatar = 0 : nat;
+    };
+  },
+  2 : nat,
+)
+2024-07-31 15:54:31,791 - Sending statistics for match ID: 4 for player1
+2024-07-31 15:54:31,797 - Constructed command: dfx canister call cosmicrafts saveFinishedGame '(4, record {botDifficulty = 2; botMode = 0; characterID = 2; damageCritic = 16898; damageDealt = 15579; damageEvaded = 3415; damageTaken = 2160; deploys = 13; energyChargeRate = 101; energyGenerated = 130; energyUsed = 166; energyWasted = 34; faction = 0; gameMode = 1; kills = 76; secRemaining = 253; wonGame = true; xpEarned = 22129; })'
+2024-07-31 15:54:33,204 - Command: dfx canister call cosmicrafts saveFinishedGame '(4, record {botDifficulty = 2; botMode = 0; characterID = 2; damageCritic = 16898; damageDealt = 15579; damageEvaded = 3415; damageTaken = 2160; deploys = 13; energyChargeRate = 101; energyGenerated = 130; energyUsed = 166; energyWasted = 34; faction = 0; gameMode = 1; kills = 76; secRemaining = 253; wonGame = true; xpEarned = 22129; })'
+2024-07-31 15:54:33,204 - Output: (
+  true,
+  "Game saved: Progress added successfully to general missions | Progress updated successfully in user-specific missions | Achievement progress updated successfully",
+)
+2024-07-31 15:54:33,204 - Statistics saved for player1 in match 4
+2024-07-31 15:54:36,071 - Command: dfx canister call cosmicrafts getUserMissions
+2024-07-31 15:54:36,071 - Output: (
+  vec {
+    record {
+      total = 2_500 : nat;
+      missionType = variant { DamageTaken };
+      reward_amount = 2 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_483_174_617_832 : nat64;
+      progress = 2_500 : nat;
+      finish_date = 1_722_462_740_500_868_205 : nat64;
+      expiration = 1_722_466_083_174_617_832 : nat64;
+      finished = true;
+      id_mission = 0 : nat;
+    };
+    record {
+      total = 30 : nat;
+      missionType = variant { Kills };
+      reward_amount = 3 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_741_778_693_401 : nat64;
+      progress = 30 : nat;
+      finish_date = 1_722_462_871_955_513_541 : nat64;
+      expiration = 1_722_466_341_778_693_401 : nat64;
+      finished = true;
+      id_mission = 1 : nat;
+    };
+    record {
+      total = 10_000 : nat;
+      missionType = variant { XPEarned };
+      reward_amount = 2 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_873_869_896_255 : nat64;
+      progress = 0 : nat;
+      finish_date = 0 : nat64;
+      expiration = 1_722_466_473_869_896_255 : nat64;
+      finished = false;
+      id_mission = 2 : nat;
+    };
+  },
+)
+2024-07-31 15:54:36,072 - Mission progress for player1: (
+  vec {
+    record {
+      total = 2_500 : nat;
+      missionType = variant { DamageTaken };
+      reward_amount = 2 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_483_174_617_832 : nat64;
+      progress = 2_500 : nat;
+      finish_date = 1_722_462_740_500_868_205 : nat64;
+      expiration = 1_722_466_083_174_617_832 : nat64;
+      finished = true;
+      id_mission = 0 : nat;
+    };
+    record {
+      total = 30 : nat;
+      missionType = variant { Kills };
+      reward_amount = 3 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_741_778_693_401 : nat64;
+      progress = 30 : nat;
+      finish_date = 1_722_462_871_955_513_541 : nat64;
+      expiration = 1_722_466_341_778_693_401 : nat64;
+      finished = true;
+      id_mission = 1 : nat;
+    };
+    record {
+      total = 10_000 : nat;
+      missionType = variant { XPEarned };
+      reward_amount = 2 : nat;
+      reward_type = variant { Chest };
+      start_date = 1_722_462_873_869_896_255 : nat64;
+      progress = 0 : nat;
+      finish_date = 0 : nat64;
+      expiration = 1_722_466_473_869_896_255 : nat64;
+      finished = false;
+      id_mission = 2 : nat;
+    };
+  },
+)
+2024-07-31 15:54:40,451 - Command failed: dfx canister call cosmicrafts claimUserReward '(0)'
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterReject, reject message Canister opcce-byaaa-aaaak-qcgda-cai not found, error code None
+2024-07-31 15:54:40,451 - Retrying...
+2024-07-31 15:54:44,909 - Command failed: dfx canister call cosmicrafts claimUserReward '(0)'
+[31mError: (B[mFailed update call.
+[33mCaused by: (B[mThe replica returned a rejection error: reject code CanisterReject, reject message Canister opcce-byaaa-aaaak-qcgda-cai not found, error code None
+2024-07-31 15:54:44,909 - Retrying...
