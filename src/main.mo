@@ -1185,7 +1185,6 @@ shared actor class Cosmicrafts() {
         return (true, "Category created successfully", id);
     };
 
-
     public func updateIndividualAchievementProgress(
         user: PlayerId, 
         progressList: [AchievementProgress]
@@ -1932,6 +1931,10 @@ shared actor class Cosmicrafts() {
                     friends = [];
                 };
                 players.put(playerId, newPlayer);
+
+                // Call getAchievements function asynchronously without waiting for its result
+                ignore await getAchievements();
+
                 return (true, ?newPlayer, "User registered successfully");
             };
         };

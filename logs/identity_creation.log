@@ -1,9 +1,0 @@
-2024-07-23 09:14:46,240 - Creating identity: player0
-2024-07-23 09:14:46,659 - Command: dfx identity new player0 --ic
-2024-07-23 09:14:46,659 - Output: 
-2024-07-23 09:14:46,659 - Creating identity: player1
-2024-07-23 09:14:46,665 - Command failed: dfx identity new player1 --ic
-[31mError: (B[mIdentity already exists.
-2024-07-23 09:15:11,559 - Creating identity: player0
-2024-07-23 09:15:11,565 - Command failed: dfx identity new player0
-[31mError: (B[mIdentity already exists.
