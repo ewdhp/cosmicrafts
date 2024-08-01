@@ -1,5 +1,21 @@
 # `cosmicrafts`
 
+    let shards: ICRC1Interface = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : ICRC1Interface;
+
+    let flux: ICRC1Interface = actor("b77ix-eeaaa-aaaaa-qaada-cai") : ICRC1Interface;
+
+    let gameNFTs: ICRC7Interface = actor("be2us-64aaa-aaaaa-qaabq-cai") : ICRC7Interface;
+
+    let chests: ICRC7Interface = actor("br5f7-7uaaa-aaaaa-qaaca-cai") : ICRC7Interface;
+
+    //mainnet
+    let shards: ICRC1Interface = actor("svcoe-6iaaa-aaaam-ab4rq-cai") : ICRC1Interface;
+
+    let flux: ICRC1Interface = actor("plahz-wyaaa-aaaam-accta-cai") : ICRC1Interface;
+
+    let gameNFTs: ICRC7Interface = actor("etqmj-zyaaa-aaaap-aakaq-cai") : ICRC7Interface;
+
+    let chests: ICRC7Interface = actor("opcce-byaaa-aaaak-qcgda-cai") : ICRC7Interface;
 ,
     "gamenfts": {
       "main": "src/icrc7/gamenfts.mo",

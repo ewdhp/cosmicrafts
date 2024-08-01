@@ -23,57 +23,57 @@ module MissionOptions {
             hoursActive = 1;
         },
         {
-            name = "Deal 3000 Damage";
+            name = "Deal 1000 Damage";
             missionType = #DamageDealt;
             rewardType = #Shards;
             minReward = 20;
             maxReward = 42;
-            total = 3000;
+            total = 1000;
             hoursActive = 1;
         },
         {
-            name = "Take 2500 Damage";
+            name = "Take 500 Damage";
             missionType = #DamageTaken;
             rewardType = #Chest;
             minReward = 1;
             maxReward = 3;
-            total = 2500;
+            total = 500;
             hoursActive = 1;
         },
         {
-            name = "Use 100 Energy";
+            name = "Use 35 Energy";
             missionType = #EnergyUsed;
             rewardType = #Shards;
             minReward = 22;
             maxReward = 38;
-            total = 100;
+            total = 35;
             hoursActive = 1;
         },
         {
-            name = "Deploy 25 NFTs";
+            name = "Deploy 20 NFTs";
             missionType = #UnitsDeployed;
             rewardType = #Shards;
             minReward = 22;
             maxReward = 42;
-            total = 25;
+            total = 20;
             hoursActive = 1;
         },
         {
-            name = "Earn 10000 XP";
+            name = "Earn 1000 XP";
             missionType = #XPEarned;
             rewardType = #Chest;
             minReward = 2;
             maxReward = 3;
-            total = 10000;
+            total = 1000;
             hoursActive = 1;
         },
         {
-            name = "Destroy 30 enemies";
+            name = "Destroy 15 enemies";
             missionType = #Kills;
             rewardType = #Chest;
             minReward = 2;
             maxReward = 4;
-            total = 30;
+            total = 15;
             hoursActive = 1;
         }
     ];

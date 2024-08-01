@@ -294,19 +294,17 @@ shared actor class Cosmicrafts() {
 
 //----
 // General Missions
+    stable var generalMissionIDCounter: Nat = 1;
+    stable var _generalUserProgress: [(Principal, [MissionsUser])] = [];
+    stable var _missions: [(Nat, Mission)] = [];
+    stable var _activeMissions: [(Nat, Mission)] = [];
+    stable var _claimedRewards: [(Principal, [Nat])] = [];
 
-    // Stable vars
-        stable var generalMissionIDCounter: Nat = 1;
-        stable var _generalUserProgress: [(Principal, [MissionsUser])] = [];
-        stable var _missions: [(Nat, Mission)] = [];
-        stable var _activeMissions: [(Nat, Mission)] = [];
-        stable var _claimedRewards: [(Principal, [Nat])] = [];
-
-        // HashMaps for General Missions
-        var missions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_missions.vals(), 0, Utils._natEqual, Utils._natHash);
-        var activeMissions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_activeMissions.vals(), 0, Utils._natEqual, Utils._natHash);
-        var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
-        var generalUserProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_generalUserProgress.vals(), 0, Principal.equal, Principal.hash);
+    // HashMaps for General Missions
+    var missions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_missions.vals(), 0, Utils._natEqual, Utils._natHash);
+    var activeMissions: HashMap.HashMap<Nat, Mission> = HashMap.fromIter(_activeMissions.vals(), 0, Utils._natEqual, Utils._natHash);
+    var claimedRewards: HashMap.HashMap<Principal, [Nat]> = HashMap.fromIter(_claimedRewards.vals(), 0, Principal.equal, Principal.hash);
+    var generalUserProgress: HashMap.HashMap<Principal, [MissionsUser]> = HashMap.fromIter(_generalUserProgress.vals(), 0, Principal.equal, Principal.hash);
 
     // Function to create a new general mission
     func createGeneralMission(name: Text, missionType: MissionType, rewardType: RewardType, rewardAmount: Nat, total: Nat, hoursActive: Nat64): async (Bool, Text, Nat) {
@@ -445,7 +443,7 @@ shared actor class Cosmicrafts() {
         await assignGeneralMissions(caller);
 
         // Step 2: Search for active general missions assigned to the user
-        let activeMissions: [MissionsUser] = await searchGeneralMissions(caller);
+        let activeMissions: [MissionsUser] = await searchActiveGeneralMissions(caller);
 
         // Step 3: Get progress for each active general mission
         let missionsWithProgress = Buffer.Buffer<MissionsUser>(activeMissions.size());
@@ -462,31 +460,8 @@ shared actor class Cosmicrafts() {
         return Buffer.toArray(missionsWithProgress);
     };
 
-    // Function to search for active general missions for the caller
-    public query (msg) func searchActiveGeneralMissions(): async [MissionsUser] {
-        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-        var userMissions: [MissionsUser] = switch (generalUserProgress.get(msg.caller)) {
-            case (null) { [] };
-            case (?missions) { missions };
-        };
-
-        var claimedRewardsForUser: [Nat] = switch (claimedRewards.get(msg.caller)) {
-            case (null) { [] };
-            case (?claimed) { claimed };
-        };
-
-        let activeMissions = Buffer.Buffer<MissionsUser>(0);
-        for (mission in userMissions.vals()) {
-            if (mission.expiration >= now and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id_mission, Utils._natEqual)) {
-                activeMissions.add(mission);
-            }
-        };
-
-        return Buffer.toArray(activeMissions);
-    };
-
     // Function to search for active general missions for a user
-    public query func searchGeneralMissions(user: Principal): async [MissionsUser] {
+    public query func searchActiveGeneralMissions(user: Principal): async [MissionsUser] {
         let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
         var userMissions: [MissionsUser] = switch (generalUserProgress.get(user)) {
             case (null) { [] };
@@ -672,7 +647,7 @@ shared actor class Cosmicrafts() {
 
     
     // Function to create a new user-specific mission
-    func createUserMission(user: PlayerId): async (Bool, Text, [MissionsUser]) {
+    public func createUserMission(user: PlayerId): async (Bool, Text, Nat) {
         Debug.print("[createUserMission] Start creating mission for user: " # Principal.toText(user));
 
         var userMissionsList: [Mission] = switch (userMissions.get(user)) {
@@ -688,17 +663,21 @@ shared actor class Cosmicrafts() {
         Debug.print("[createUserMission] User Missions: " # debug_show(userMissionsList));
         Debug.print("[createUserMission] User Progress List: " # debug_show(userSpecificProgressList));
 
-        let now = Nat64.fromNat(Int.abs(Time.now()));
+        if (userSpecificProgressList.size() > 0) {
+            let lastMissionProgress = userSpecificProgressList[userSpecificProgressList.size() - 1];
+            let currentTime = Nat64.fromNat(Int.abs(Time.now()));
 
-        // Check for active missions
-        for (mission in userSpecificProgressList.vals()) {
-            if (not mission.finished and mission.expiration >= now) {
-                Debug.print("[createUserMission] Current mission is still active: " # debug_show(mission));
-                return (true, "Current mission is still active", userSpecificProgressList);
+            Debug.print("[createUserMission] Last Mission Progress: " # debug_show(lastMissionProgress));
+            Debug.print("[createUserMission] Current Time: " # debug_show(currentTime));
+
+            if (not lastMissionProgress.finished and currentTime <= lastMissionProgress.expiration) {
+                Debug.print("[createUserMission] Current mission is still active: " # debug_show(lastMissionProgress));
+                return (false, "Current mission is still active", lastMissionProgress.id_mission);
+            } else {
+                Debug.print("[createUserMission] Current mission is not active or is finished");
             }
         };
 
-        // Create a new mission if no active mission exists
         if (shuffledHourlyIndices.size() == 0 or currentHourlyIndex >= shuffledHourlyIndices.size()) {
             await initializeShuffledHourlyMissions();
         };
@@ -714,6 +693,7 @@ shared actor class Cosmicrafts() {
             case (?counter) { counter };
         };
 
+        let now = Nat64.fromNat(Int.abs(Time.now()));
         let newMission: Mission = {
             id = missionIDCounter;
             name = template.name;
@@ -731,25 +711,10 @@ shared actor class Cosmicrafts() {
         userMissionsList := Array.append(userMissionsList, [newMission]);
         userMissions.put(user, userMissionsList);
 
-        let newMissionProgress: MissionsUser = {
-            id_mission = newMission.id;
-            reward_amount = newMission.reward_amount;
-            start_date = newMission.start_date;
-            progress = 0;
-            finish_date = 0;
-            expiration = newMission.end_date;
-            missionType = newMission.missionType;
-            finished = false;
-            reward_type = newMission.reward_type;
-            total = newMission.total;
-        };
+        Debug.print("[createUserMission] Mission created successfully");
+        await assignUserMissions(user);
 
-        userSpecificProgressList := Array.append(userSpecificProgressList, [newMissionProgress]);
-        userMissionProgress.put(user, userSpecificProgressList);
-
-        Debug.print("[createUserMission] Mission created and assigned successfully");
-
-        return (true, "User-specific mission created and assigned.", userSpecificProgressList);
+        return (true, "User-specific mission created.", newMission.id);
     };
 
     // Function to update progress for user-specific missions
@@ -842,24 +807,97 @@ shared actor class Cosmicrafts() {
         return (true, "Progress updated successfully in user-specific missions");
     };
 
-    // Function to get user-specific missions for a user
-    public shared ({ caller }) func getUserMissions(): async [MissionsUser] {
-        // Step 1: Create or get user-specific missions for the user
-        let (_success, _message, userMissions) = await createUserMission(caller);
+    // Function to assign new user-specific missions to a user
+    func assignUserMissions(user: PlayerId): async () {
+        Debug.print("[assignUserMissions] Assigning new user-specific missions to user: " # Principal.toText(user));
 
-        // Step 2: Return the active user-specific missions
-        return userMissions;
-    };
-
-    // Function to search for active user-specific missions for the caller
-    public query (msg) func searchActiveUserMissions(): async [MissionsUser] {
-        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
-        var userMissions = switch (userMissionProgress.get(msg.caller)) {
+        var userSpecificProgressList: [MissionsUser] = switch (userMissionProgress.get(user)) {
             case (null) { [] };
             case (?missions) { missions };
         };
 
-        var claimedRewardsForUser = switch (userClaimedRewards.get(msg.caller)) {
+        Debug.print("[assignUserMissions] User missions before update: " # debug_show(userSpecificProgressList));
+
+        var claimedRewardsForUser: [Nat] = switch (userClaimedRewards.get(user)) {
+            case (null) { [] };
+            case (?claimed) { claimed };
+        };
+
+        let now = Nat64.fromNat(Int.abs(Time.now()));
+        let buffer = Buffer.Buffer<MissionsUser>(0);
+
+        // Remove expired or claimed missions
+        for (mission in userSpecificProgressList.vals()) {
+            if (mission.expiration >= now and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id_mission, Utils._natEqual)) {
+                buffer.add(mission);
+            }
+        };
+
+        // Collect IDs of current missions to avoid duplication
+        let currentMissionIds = Buffer.Buffer<Nat>(buffer.size());
+        for (mission in buffer.vals()) {
+            currentMissionIds.add(mission.id_mission);
+        };
+
+        // Check if the user has missions and add new active missions to the user
+        switch (userMissions.get(user)) {
+            case (null) {};
+            case (?missions) {
+                for (mission in missions.vals()) {
+                    if (not Utils.arrayContains<Nat>(Buffer.toArray(currentMissionIds), mission.id, Utils._natEqual) and not Utils.arrayContains<Nat>(claimedRewardsForUser, mission.id, Utils._natEqual)) {
+                        buffer.add({
+                            id_mission = mission.id;
+                            reward_amount = mission.reward_amount;
+                            start_date = mission.start_date;
+                            progress = 0; // Initialize with 0 progress
+                            finish_date = 0; // Initialize finish date to 0
+                            expiration = mission.end_date;
+                            missionType = mission.missionType;
+                            finished = false;
+                            reward_type = mission.reward_type;
+                            total = mission.total;
+                        });
+                    }
+                };
+            };
+        };
+
+        userMissionProgress.put(user, Buffer.toArray(buffer));
+        Debug.print("[assignUserMissions] User missions after update: " # debug_show(userMissionProgress.get(user)));
+    };
+
+    // Function to get user-specific missions for a user
+    public shared ({ caller }) func getUserMissions(): async [MissionsUser] {
+        // Step 1: Assign new user-specific missions to the user
+        await assignUserMissions(caller);
+
+        // Step 2: Search for active user-specific missions assigned to the user
+        let activeMissions: [MissionsUser] = await searchActiveUserMissions(caller);
+
+        // Step 3: Get progress for each active user-specific mission
+        let missionsWithProgress = Buffer.Buffer<MissionsUser>(activeMissions.size());
+        for (mission in activeMissions.vals()) {
+            let missionProgress = await getUserMissionProgress(caller, mission.id_mission);
+            switch (missionProgress) {
+                case (null) {};
+                case (?progress) {
+                    missionsWithProgress.add(progress);
+                };
+            };
+        };
+
+        return Buffer.toArray(missionsWithProgress);
+    };
+
+    // Function to search for active user-specific missions
+    public query func searchActiveUserMissions(user: PlayerId): async [MissionsUser] {
+        let now: Nat64 = Nat64.fromNat(Int.abs(Time.now()));
+        var userMissions = switch (userMissionProgress.get(user)) {
+            case (null) { [] };
+            case (?missions) { missions };
+        };
+
+        var claimedRewardsForUser = switch (userClaimedRewards.get(user)) {
             case (null) { [] };
             case (?claimed) { claimed };
         };
@@ -1126,26 +1164,27 @@ shared actor class Cosmicrafts() {
         achievements: [Nat], 
         requiredProgress: Nat,
         rewards: [TypesAchievements.AchievementReward]
-        ): async (Bool, Text, Nat) {
-            let id = categoryIDCounter;
-            categoryIDCounter += 1;
+    ): async (Bool, Text, Nat) {
+        let id = categoryIDCounter;
+        categoryIDCounter += 1;
 
-            let newCategory: TypesAchievements.AchievementCategory = {
-                id = id;
-                name = name;
-                achievements = achievements;
-                tier = determineTier(0, requiredProgress); // Initial tier based on zero progress
-                progress = 0;
-                requiredProgress = requiredProgress;
-                reward = rewards; // Allowing multiple rewards
-                completed = false;
-            };
+        let newCategory: TypesAchievements.AchievementCategory = {
+            id = id;
+            name = name;
+            achievements = achievements;
+            tier = determineTier(0, requiredProgress); // Initial tier based on zero progress
+            progress = 0;
+            requiredProgress = requiredProgress;
+            reward = rewards; // Allowing multiple rewards
+            completed = false;
+        };
 
         categories.put(id, newCategory);
         Debug.print("[createCategory] Category created with ID: " # Nat.toText(id));
 
         return (true, "Category created successfully", id);
     };
+
 
     public func updateIndividualAchievementProgress(
         user: PlayerId, 
@@ -1524,6 +1563,8 @@ shared actor class Cosmicrafts() {
         // Implementation for minting cosmic power
         return (true, "Cosmic power minted successfully");
     };
+
+
 
     func mapPlayerStatsToAchievementProgress(user: Principal, playerStats: {
         secRemaining: Nat;
