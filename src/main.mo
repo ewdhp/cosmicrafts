@@ -22,6 +22,7 @@
     import TypesICRC7 "/icrc7/types";
     import TypesICRC1 "/icrc1/Types";
     import TypesAchievements "TypesAchievements";
+    import Int64 "mo:base/Int64";
    // import AchievementMissionsTemplate "AchievementMissionsTemplate";
     import Validator "Validator";
     import MissionOptions "MissionOptions";
@@ -3948,5 +3949,1497 @@ shared actor class Cosmicrafts() {
         };
 
 
+//--
+// Referrals
+  type UUID = Text;
+  type TierID = Nat;
 
+  type RefAccount = {
+    playerID : Principal;
+    refByUUID : UUID;
+    uuid : UUID;
+    alias : Text;
+    tiers : [Tier];
+    tokens : [Token];
+  };
+  type Tier = {
+    id : TierID;
+    title : Text;
+    desc : Text;
+    status : Text;
+    token : Token;
+  };
+  type Token = {
+    title : Text;
+    amount : Nat;
+  };
+  type RefAccView = {
+    playerID : Principal;
+    playerName : Text;
+    currentTier : Tier;
+    multiplier : Float;
+    netWorth : Nat;
+    topPlayers : [TopView];
+    topPosition : Nat;
+    topTokenAmount : (Nat, Text);
+    signupTokenSum : Nat;
+    tierTokenSum : Nat;
+    singupLink : Text;
+  };
+  type TopView = {
+    playerName : Text;
+    multiplier : Float;
+    netWorth : Nat;
+  };
+
+  type F = () -> Bool;
+  type BufferF = Buffer.Buffer<F>;
+  private var validateFunc : BufferF = Buffer.Buffer<F>(0);
+
+  private stable var _tiers : [Tier] = [];
+  private stable var _refTokens : [(Principal, [Token])] = [];
+  private stable var _accounts : [(Principal, RefAccount)] = [];
+
+  type Buffer = Buffer.Buffer<Tier>;
+  private var tiers : Buffer = Buffer.fromArray<Tier>(_tiers);
+
+  type HashMapRef = HashMap.HashMap<Principal, [Token]>;
+  type HashMapAcc = HashMap.HashMap<Principal, RefAccount>;
+
+  private var refTokens : HashMapRef = HashMap.fromIter(
+    Iter.fromArray(_refTokens),
+    0,
+    Principal.equal,
+    Principal.hash,
+  );
+  private var accounts : HashMapAcc = HashMap.fromIter(
+    Iter.fromArray(_accounts),
+    0,
+    Principal.equal,
+    Principal.hash,
+  );
+
+  system func preupgrade() {
+    _accounts := Iter.toArray(accounts.entries());
+    _refTokens := Iter.toArray(refTokens.entries());
+    _tiers := Buffer.toArray(tiers);
+  };
+  system func postupgrade() {
+    accounts := HashMap.fromIter(
+      Iter.fromArray(_accounts),
+      0,
+      Principal.equal,
+      Principal.hash,
+    );
+    refTokens := HashMap.fromIter(
+      Iter.fromArray(_refTokens),
+      0,
+      Principal.equal,
+      Principal.hash,
+    );
+    tiers := Buffer.fromArray<Tier>(_tiers);
+    _tiers := [];
+    _refTokens := [];
+  };
+
+  let signupToken : Token = {
+    title = "Referral Signup token";
+    amount = 10;
+  };
+
+  let missionTier : Tier = {
+    id = 0;
+    title = "Tier 1 Mission";
+    desc = "Complete mission 1 and get 10 tokens free";
+    status = "Progress";
+    token = { title = "Tier 1 mission token"; amount = 10 };
+  };
+  tiers.add(missionTier);
+
+  let discordTier : Tier = {
+    id = 1;
+    title = "Tier 2 Discord";
+    desc = "Join Cosmicrafts Discord server and recieve 10 tokens for free";
+    status = "Progress";
+    token = { title = "Tier 2 Discord token"; amount = 10 };
+  };
+  tiers.add(discordTier);
+
+  let tweeterTier : Tier = {
+    id = 2;
+    title = "Tier 3 Tweeter";
+    desc = "Three Tweeter tags and recieve 20 tokens for free";
+    status = "Progress";
+    token = { title = "Tier 3 Tweeter token"; amount = 10 };
+  };
+  tiers.add(tweeterTier);
+
+  let tiersCompleted : Tier = {
+    id = 3;
+    title = "All tiers defeated";
+    desc = "You reached a Master referral record";
+    status = "Waiting for more tiers";
+    token = { title = "No token"; amount = 0 };
+  };
+  tiers.add(tiersCompleted);
+
+  private func validateMissionTier() : Bool {
+    return true;
+  };
+  private func validateDiscordTier() : Bool {
+    return true;
+  };
+  private func validateTweeterTier() : Bool {
+    return true;
+  };
+
+  validateFunc.add(validateMissionTier);
+  validateFunc.add(validateDiscordTier);
+  validateFunc.add(validateTweeterTier);
+
+  public shared ({ caller }) func enroll(signupCode : ?Text, alias : Text) : async (Bool, Text) {
+    switch (accounts.get(caller)) {
+      case null {
+        let code : Text = switch (signupCode) {
+          case (null) { "" };
+          case (?value) { value };
+        };
+
+        switch (id_from_uuid(code)) {
+          case (null) {
+
+            accounts.put(
+              caller,
+              {
+                playerID = caller;
+                refByUUID = "";
+                uuid = await uuid_gen();
+                tiers = await tier_all();
+                alias = alias;
+                tokens = [];
+                netWorth = 0.0;
+                multiplier = 0.0; //not implemented
+              },
+            );
+
+            _accounts := Iter.toArray(accounts.entries());
+
+            let textNotfound = "Referral code not provided or code not found";
+            return (true, "Account enrrolled" # ", " # textNotfound);
+          };
+
+          case (?_) {
+
+            let (minted, text) = await claim_referral(
+              code,
+              signupToken,
+            );
+
+            if (minted) {
+
+              accounts.put(
+                caller,
+                {
+                  playerID = caller;
+                  refByUUID = if (minted) { code } else { "" };
+                  uuid = await uuid_gen();
+                  alias = alias;
+                  tiers = await tier_all();
+                  tokens = [];
+                  netWorth = 0.0;
+                  multiplier = 0.0;
+                },
+              );
+
+              _accounts := Iter.toArray(accounts.entries());
+
+              return (true, "Account enrrolled" # ", " # text);
+            };
+            return (false, text);
+          };
+        };
+      };
+      case (?_) { return (false, "Error. Account exists.") };
+    };
+  };
+  public func enroll_by(uuid : ?Text, principal : Principal, alias : Text) : async (Bool, Text) {
+    switch (accounts.get(principal)) {
+      case null {
+        let code : Text = switch (uuid) {
+          case (null) { "" };
+          case (?value) { value };
+        };
+
+        var id = id_from_uuid(code);
+
+        switch (id) {
+          case (null) {
+
+            accounts.put(
+              principal,
+              {
+                playerID = principal;
+                refByUUID = "";
+                uuid = await uuid_gen();
+                alias = alias;
+                tiers = await tier_all();
+                tokens = [];
+                netWorth = 0.0;
+                multiplier = 0.0; //not implemented
+              },
+            );
+
+            _accounts := Iter.toArray(accounts.entries());
+
+            let nullUUID = "Signup code no provided or code not found";
+            return (true, "Account enrrolled" # ", " # nullUUID);
+          };
+
+          case (?id) {
+
+            let (minted, text) = await claim_referral(
+              code,
+              signupToken,
+            );
+
+            if (minted) {
+              accounts.put(
+                principal,
+                {
+                  playerID = principal;
+                  refByUUID = if (minted) { code } else { "" };
+                  uuid = await uuid_gen();
+                  alias = alias;
+                  tiers = await tier_all();
+                  tokens = [];
+                  netWorth = 0.0;
+                  multiplier = 0.0; //not implemented
+                },
+              );
+              _accounts := Iter.toArray(accounts.entries());
+              return (true, "Account enrrolled" # ", " # text);
+            };
+
+            return (false, text);
+          };
+        };
+      };
+      case (?_) { (false, "Error. Account exists.") };
+    };
+  };
+  public query func account_view(id : Principal) : async ?RefAccView {
+    let account = switch (accounts.get(id)) {
+      case null { return null };
+      case (?acc) { acc };
+    };
+    let currentTier = switch (tier_p(id)) {
+      case null { tiersCompleted };
+      case (?tier) tier;
+    };
+    let (
+      multiplier,
+      networth,
+      tierTokenSum,
+      signupTokenSum,
+    ) = tokenomics(account);
+
+    let pageTop10 = 0;
+
+    return ?({
+      playerID = id;
+      playerName = account.alias;
+      currentTier = currentTier;
+      multiplier = multiplier;
+      netWorth = networth;
+      tierTokenSum = tierTokenSum;
+      signupTokenSum = signupTokenSum;
+      topPlayers = top_view(pageTop10);
+      topPosition = player_rank(id);
+      topTokenAmount = top_prize(id);
+      singupLink = signup_link(id);
+    });
+  };
+  public query func account_by(id : Principal) : async ?RefAccount {
+    return accounts.get(id);
+  };
+  public query ({ caller }) func account() : async ?RefAccount {
+    return accounts.get(caller);
+  };
+  public query func account_all() : async [(Text, Principal)] {
+    let account = Iter.toArray(accounts.vals());
+    let buffer = Buffer.Buffer<(Text, Principal)>(account.size());
+    for (acc in account.vals()) buffer.add(acc.alias, acc.playerID);
+    return Buffer.toArray(buffer);
+  };
+  public func claim_top(id : Principal, day : Nat) : async (Bool, Text) {
+    let account = switch (accounts.get(id)) {
+      case null { return (false, "Account not found") };
+      case (?account) { account };
+    };
+
+    if (day == 1) {
+      let (tokenAmount, _) = top_prize(id);
+      if (tokenAmount > 0) {
+
+        let (multiplier, _, _, _) = tokenomics(account);
+        let total = token_amount(multiplier, tokenAmount);
+        let (minted, _) = await mint(id, total);
+
+        if (minted) {
+          let token : Token = {
+            title = "Weekly Top Player Token";
+            amount = total;
+          };
+          let updatedTokens = Array.append(
+            account.tokens,
+            [token],
+          );
+          let updatedAccount : RefAccount = {
+            playerID = account.playerID;
+            refByUUID = account.refByUUID;
+            uuid = account.uuid;
+            alias = account.alias;
+            tiers = account.tiers;
+            tokens = updatedTokens;
+          };
+
+          accounts.put(id, updatedAccount);
+          _accounts := Iter.toArray(accounts.entries());
+
+          return (true, "Weekly top player token claimed: ");
+        } else {
+          return (false, "Error minting weekly top player token");
+        };
+      } else {
+        return (false, "Player not in top 10.");
+      };
+    } else {
+      return (false, "Only on moday's may be claimed");
+    };
+  };
+  public func claim_tier(id : Principal) : async (Bool, Text) {
+
+    let (tierStatus, tierID) = switch (tier_p(id)) {
+      case null { return (false, "Reached all tiers.") };
+      case (?tier) { (tier.status, tier.id) };
+    };
+
+    if (tierStatus == "No more tiers") { return (false, "No more tiers") };
+    if (tierStatus == "complete") { return (false, "Tier already completed") };
+
+    if (validateFunc.get(tierID)()) {
+      switch (accounts.get(id)) {
+        case null { return (false, "Player not found.") };
+
+        case (?account) {
+
+          let tokenAmount = account.tiers[tierID].token.amount;
+          let (multiplier, _, _, _) = tokenomics(account);
+          let total = token_amount(multiplier, tokenAmount);
+          let (minted, result) = await mint(id, total);
+
+          if (minted) {
+            let updTiers = Array.tabulate<Tier>(
+              Array.size(account.tiers),
+              func(i : Nat) : Tier {
+                if (i == tierID) {
+                  let updTier : Tier = {
+                    id = account.tiers[i].id;
+                    title = account.tiers[i].title;
+                    desc = account.tiers[i].desc;
+                    status = "Complete";
+                    token = {
+                      title = account.tiers[i].token.title;
+                      amount = total;
+                    };
+                  };
+                  return updTier;
+                } else {
+                  return account.tiers[i];
+                };
+              },
+            );
+
+            let updAcc : RefAccount = {
+              playerID = account.playerID;
+              refByUUID = account.refByUUID;
+              uuid = account.uuid;
+              alias = account.alias;
+              tiers = updTiers;
+              tokens = account.tokens;
+            };
+
+            accounts.put(id, updAcc);
+            _accounts := Iter.toArray(accounts.entries());
+
+            return (true, "Tier complete, token minted");
+          } else {
+            return (false, result);
+          };
+        };
+      };
+    } else { return (false, "Tier not completed yet.") };
+  };
+  public query func tier_all() : async [Tier] {
+    return Buffer.toArray(tiers);
+  };
+  public func id_gen() : async Principal {
+    let randomBytes = await Random.blob();
+    let randomArray = Blob.toArray(randomBytes);
+    let truncatedBytes = Array.tabulate<Nat8>(
+      29,
+      func(i : Nat) : Nat8 {
+        if (i < Array.size(randomArray)) randomArray[i] else 0;
+      },
+    );
+    return Principal.fromBlob(Blob.fromArray(truncatedBytes));
+  };
+
+  private func tier_p(playerId : Principal) : ?Tier {
+    let player = accounts.get(playerId);
+    switch (player) {
+      case (null) { return null };
+
+      case (?player) {
+        for (tier in player.tiers.vals()) {
+          if (tier.status == "Progress") {
+            return ?tier;
+          };
+        };
+
+        return null;
+      };
+    };
+  };
+  private func player_rank(id : Principal) : Nat {
+    let playersArray = Buffer.fromArray<(Principal, RefAccount)>(Iter.toArray(accounts.entries()));
+    var playersWithTokenSums : [(Principal, Nat)] = [];
+
+    for (i in Iter.range(0, playersArray.size() - 1)) {
+      let (principal, account) = playersArray.get(i);
+      let (_, tokenSum, _, _) = tokenomics(account);
+      playersWithTokenSums := Array.append(playersWithTokenSums, [(principal, tokenSum)]);
+    };
+
+    let sortedPlayers = Array.sort(
+      playersWithTokenSums,
+      func(a : (Principal, Nat), b : (Principal, Nat)) : {
+        #less;
+        #equal;
+        #greater;
+      } {
+        if (a.1 > b.1) {
+          #less;
+        } else if (a.1 < b.1) {
+          #greater;
+        } else {
+          #equal;
+        };
+      },
+    );
+
+    var position : Nat = 0;
+    for ((principal, _) in sortedPlayers.vals()) {
+      if (principal == id) {
+        return position + 1;
+      };
+      position += 1;
+    };
+
+    0;
+  };
+  private func top_prize(id : Principal) : (Nat, Text) {
+    let topPlayers = top_view(0);
+    switch (accounts.get(id)) {
+      case (null) { return (0, "Account not found") };
+
+      case (?account) {
+        for (player in topPlayers.vals()) {
+          if (player.playerName == account.alias) {
+            for (token in account.tokens.vals()) {
+              if (token.title == "Weekly Top Player Token") {
+                return (token.amount, "Tokens claimed");
+              };
+            };
+            let prizeAmount = 10;
+            let (multiplier, _, _, _) = tokenomics(account);
+            let total = token_amount(multiplier, prizeAmount);
+            return (total, "You are in, waiting for monday.");
+          };
+        };
+
+        return (0, "Not clasified");
+      };
+    };
+  };
+  private func tokenomics(acc : RefAccount) : (Float, Nat, Nat, Nat) {
+    var multiplier : Float = 0.0;
+    let tierTokenSum : Nat = tier_token_sum(acc);
+    let signupTokenSum : Nat = ref_token_sum(acc);
+    let networth : Nat = tierTokenSum + signupTokenSum;
+
+    if (networth <= 10) {
+      multiplier := 1.3;
+    } else if (networth <= 20) {
+      multiplier := 2.2;
+    } else {
+      multiplier := 3.7;
+    };
+
+    (
+      multiplier,
+      networth,
+      tierTokenSum,
+      signupTokenSum,
+    );
+  };
+  private func token_amount(multiplier : Float, nTokens : Nat) : Nat {
+    let nat64 = Nat64.fromNat(nTokens);
+    let int64 = Int64.fromNat64(nat64);
+    let totalTokens = Float.fromInt64(int64);
+    let total = Float.toInt64(multiplier * totalTokens);
+    let nat = Int64.toNat64(total);
+    return Nat64.toNat(nat);
+  };
+  private func ref_token_sum(account : RefAccount) : Nat {
+    return Array.foldLeft<Token, Nat>(
+      account.tokens,
+      0,
+      func(acc, token) {
+        acc + token.amount;
+      },
+    );
+  };
+  private func tier_token_sum(account : RefAccount) : Nat {
+    return Array.foldLeft<Tier, Nat>(
+      account.tiers,
+      0,
+      func(acc, tier) {
+        if (tier.status == "Complete") {
+          acc + tier.token.amount;
+        } else {
+          acc;
+        };
+      },
+    );
+  };
+  private func top_view(page : Nat) : [TopView] {
+    var playersWithTokenSums : [(Principal, RefAccount, Nat)] = [];
+    let playersArray = Buffer.fromArray<(Principal, RefAccount)>(
+      Iter.toArray(accounts.entries())
+    );
+
+    for (i in Iter.range(0, playersArray.size() - 1)) {
+      let (principal, account) = playersArray.get(i);
+      let (multiplier, networth, _, _) = tokenomics(account);
+      let tokenSum = networth;
+
+      playersWithTokenSums := Array.append(
+        playersWithTokenSums,
+        [(
+          principal,
+          {
+            playerID = account.playerID;
+            refByUUID = account.refByUUID;
+            uuid = account.uuid;
+            alias = account.alias;
+            tiers = account.tiers;
+            tokens = account.tokens;
+            netWorth = networth;
+            multiplier = multiplier;
+          },
+          tokenSum,
+        )],
+      );
+    };
+
+    let sorted = Array.sort(
+      playersWithTokenSums,
+      func(
+        a : (Principal, RefAccount, Nat),
+        b : (Principal, RefAccount, Nat),
+      ) : {
+        #less;
+        #equal;
+        #greater;
+      } {
+        if (a.2 > b.2) {
+          #less;
+        } else if (a.2 < b.2) {
+          #greater;
+        } else {
+          #equal;
+        };
+      },
+    );
+
+    let start = page * 10;
+    let end = if (start + 10 > Array.size(sorted)) {
+      Array.size(sorted);
+    } else { start + 10 };
+
+    let paginated = Iter.toArray(
+      Array.slice(
+        sorted,
+        start,
+        end,
+      )
+    );
+
+    var viewArray : [TopView] = [];
+
+    for ((_, refAccount, _) in paginated.vals()) {
+      let (m, n, _, _) = tokenomics(refAccount);
+      let rowView : TopView = {
+        playerName = refAccount.alias;
+        multiplier = m;
+        netWorth = n;
+      };
+      viewArray := Array.append(viewArray, [rowView]);
+    };
+
+    viewArray;
+  };
+  private func claim_referral(code : UUID, token : Token) : async (Bool, Text) {
+    let id = switch (id_from_uuid(code)) {
+      case null { return (false, "Code not found") };
+      case (?id) { id };
+    };
+
+    switch (accounts.get(id)) {
+      case null { return (false, "Player principal not found.") };
+      case (?account) {
+
+        if (account.refByUUID == code) {
+          return (false, "Error. Code already redeemed");
+        };
+
+        let size = (Array.size(account.tokens));
+
+        if (Array.size(account.tokens) > 3) {
+          return (false, "Reached max referral per player");
+        };
+
+        if (size > 0) {
+
+          let (multiplier, _, _, _) = tokenomics(account);
+          let total = token_amount(multiplier, signupToken.amount);
+          let (minted, result) = await mint(id, total);
+
+          if (minted) {
+
+            let updAcc : RefAccount = {
+              playerID = account.playerID;
+              refByUUID = account.refByUUID;
+              uuid = account.uuid;
+              alias = account.alias;
+              tiers = account.tiers;
+              tokens = Array.append(
+                Iter.toArray(refTokens.vals())[0],
+                [{ title = token.title; amount = total }],
+              );
+            };
+
+            refTokens.put(account.playerID, updAcc.tokens);
+            _refTokens := Iter.toArray(refTokens.entries());
+            accounts.put(account.playerID, updAcc);
+            _accounts := Iter.toArray(accounts.entries());
+
+            return (true, "Referral token added to account.");
+          } else {
+            return (false, "Error miniting tokens." # result);
+          };
+        } else {
+
+          let (multiplier, _, _, _) = tokenomics(account);
+          let total = token_amount(multiplier, signupToken.amount);
+          let (minted, result) = await mint(id, total);
+
+          if (minted) {
+            let updAcc : RefAccount = {
+              playerID = account.playerID;
+              refByUUID = account.refByUUID;
+              uuid = account.uuid;
+              alias = account.alias;
+              tiers = account.tiers;
+              tokens = [{ title = token.title; amount = total }];
+            };
+
+            refTokens.put(account.playerID, updAcc.tokens);
+            _refTokens := Iter.toArray(refTokens.entries());
+            accounts.put(account.playerID, updAcc);
+            _accounts := Iter.toArray(accounts.entries());
+
+            return (true, "First referral token added to account. ");
+          } else {
+            return (false, "Error miniting tokens." # result);
+          };
+        };
+        return (false, "Mint token error.");
+      };
+    };
+  };
+  private func signup_link(id : Principal) : Text {
+    let route = "https://cosmicrafts.com/signup_prom/";
+    let err = "Account not found";
+    switch (accounts.get(id)) {
+      case (?refAccount) {
+        let uuid : Text = refAccount.uuid;
+        route # uuid;
+      };
+      case null err;
+    };
+  };
+  private func id_from_uuid(uuid : UUID) : ?Principal {
+    let mappedIter = Iter.filter<(Principal, RefAccount)>(
+      Iter.fromArray(_accounts),
+      func(x : (Principal, RefAccount)) : Bool {
+        let acc = x.1;
+        if (acc.uuid == uuid) {
+          return true;
+        };
+        return false;
+      },
+    );
+    switch (mappedIter.next()) {
+      case (null) { null };
+      case (?(principal, _)) { ?principal };
+    };
+  };
+  private func uuid_gen() : async Text {
+    var uuid : Nat = 0;
+    let randomBytes = await Random.blob();
+    let byteArray = Blob.toArray(randomBytes);
+    for (i in Iter.range(0, 7)) {
+      uuid := Nat.add(
+        Nat.bitshiftLeft(uuid, 8),
+        Nat8.toNat(
+          byteArray[i]
+        ),
+      );
+    };
+    uuid := uuid % 2147483647;
+    return Nat.toText(uuid);
+  };
+
+  //Matches
+
+  type RPlayer = {
+    id : Principal;
+    name : Text;
+    balance : Float;
+  };
+
+  type Status = {
+    #waiting;
+    #progress;
+    #complete;
+  };
+
+  type RMatch = {
+    id : Text;
+    name : Text;
+    player1 : Principal;
+    player2 : ?Principal;
+    fee : Float;
+    entry : Float;
+    price : Float;
+    status : Status;
+    winner : ?Principal;
+    date : Time.Time;
+  };
+
+  stable var _matches : [RMatch] = [];
+  var matchesBuffer : Buffer.Buffer<RMatch> = Buffer.Buffer<RMatch>(0);
+
+  public func createMatch(player1 : RPlayer, entry : Float) : async RMatch {
+
+    let matchId = await uuid_gen();
+    let fee = entry * 2.0 * 0.1;
+    let price = (entry * 2) - fee;
+
+    let newMatch : RMatch = {
+      id = matchId;
+      name = player1.name;
+      player1 = player1.id;
+      player2 = null;
+      fee = fee;
+      entry = entry;
+      price = price;
+      status = #waiting;
+      winner = null;
+      date = Time.now();
+    };
+
+    matchesBuffer.add(newMatch);
+    _matches := Array.append(_matches, [newMatch]);
+
+    let duration : Timer.Duration = #seconds(3600);
+    let _ = Timer.setTimer<system>(
+      duration,
+      func() : async () {
+
+        matchesBuffer.filterEntries(
+          func(_ : Nat, m : RMatch) : Bool {
+            m.id != matchId;
+          }
+        );
+
+        _matches := Array.foldLeft(
+          _matches,
+          [],
+          func(acc : [RMatch], m : RMatch) : [RMatch] {
+            if (m.id != matchId) {
+              Array.append(acc, [m]);
+            } else {
+              acc;
+            };
+          },
+        );
+      },
+    );
+    return newMatch;
+  };
+
+  public func joinMatch(player2 : RPlayer, matchId : Text) : async ?RMatch {
+
+    let maybeMatch = await findMatchById(matchId);
+
+    switch maybeMatch {
+      case null { return null };
+
+      case (?match) {
+        if (match.status == #waiting) {
+          let updatedMatch = {
+            match with
+            player2 = ?player2.id;
+            status = #progress;
+          };
+          updateMatchInBufferAndStable(updatedMatch);
+          return ?updatedMatch;
+        } else {
+          return null;
+        };
+      };
+    };
+  };
+
+  public func completeMatch(matchId : Text, winner : Principal) : async ?RMatch {
+
+    let maybeMatch = await findMatchById(matchId);
+
+    switch maybeMatch {
+      case null { return null };
+
+      case (?match) {
+        if (match.status == #progress) {
+
+          let updatedMatch = {
+            match with
+            winner = ?winner;
+            status = #complete;
+          };
+
+          updateMatchInBufferAndStable(updatedMatch);
+          // Grant the prize to the winner and commission to the host
+          _matches := Array.append(_matches, [updatedMatch]);
+
+          return ?updatedMatch;
+        } else {
+          return null;
+        };
+      };
+    };
+  };
+
+  public func findMatchById(matchId : Text) : async ?RMatch {
+    for (match in Iter.fromArray(Buffer.toArray(matchesBuffer))) {
+      if (match.id == matchId) {
+        return ?match;
+      };
+    };
+    return null;
+  };
+
+  public func grantPrize(match : RMatch) : async ?Principal {
+    return switch (match.winner) {
+      case null { return null };
+      case (winner) { winner };
+    };
+  };
+  private func updateMatchInBufferAndStable(updatedMatch : RMatch) {
+    for (i in Iter.range(0, matchesBuffer.size() - 1)) {
+      if (matchesBuffer.get(i).id == updatedMatch.id) {
+        matchesBuffer.put(i, updatedMatch);
+      };
+    };
+    _matches := Array.foldLeft(
+      _matches,
+      [],
+      func(acc : [RMatch], m : RMatch) : [RMatch] {
+        if (m.id == updatedMatch.id) {
+          Array.append(acc, [updatedMatch]);
+        } else {
+          Array.append(acc, [m]);
+        };
+      },
+    );
+  };
+
+
+  private func mint(principalId : Principal, amount : Nat) : async (Bool, Text) {
+    let _tokenXArgs : TypesICRC1.Mint = {
+      to = { owner = principalId; subaccount = null };
+      amount = amount;
+      memo = null;
+      created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+    };
+    let tokenXMinted = await shards.mint(_tokenXArgs);
+    let tokenXResult = switch (tokenXMinted) {
+      case (#Ok(_tid)) "{\"token\":\"Token X\", \"transaction_id\": " # Nat.toText(_tid) # ", \"amount\": " # Nat.toText(amount) # "}";
+      case (#Err(_e)) Utils.handleMintError("Token X", _e);
+    };
+    let success = switch (tokenXMinted) {
+      case (#Ok(_tid)) true;
+      case (#Err(_e)) false;
+    };
+    (success, tokenXResult);
+  };
+
+//--
+// Tournaments
+stable var tournaments: [Tournament] = [];
+    stable var matches: [Match] = [];
+    stable var feedback: [{ principal: Principal; tournamentId: Nat; feedback: Text }] = [];
+    stable var disputes: [{ principal: Principal; matchId: Nat; reason: Text; status: Text }] = [];
+
+    type Tournament = {
+        id: Nat;
+        name: Text;
+        startDate: Time.Time;
+        prizePool: Text;
+        expirationDate: Time.Time;
+        participants: [Principal];
+        registeredParticipants: [Principal];
+        isActive: Bool;
+        bracketCreated: Bool;
+        matchCounter: Nat; // Add matchCounter to each tournament
+    };
+
+    type Match = {
+        id: Nat;
+        tournamentId: Nat;
+        participants: [Principal];
+        result: ?{winner: Principal; score: Text};
+        status: Text;
+        nextMatchId: ?Nat; // Track the next match
+    };
+
+    public shared ({caller}) func createTournament(name: Text, startDate: Time.Time, prizePool: Text, expirationDate: Time.Time) : async Nat {
+        if (caller != Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae") and
+            caller != Principal.fromText("bdycp-b54e6-fvsng-ouies-a6zfm-khbnh-wcq3j-pv7qt-gywe2-em245-3ae")) {
+            return 0;
+        };
+
+        let id = tournaments.size();
+        let buffer = Buffer.Buffer<Tournament>(tournaments.size() + 1);
+        for (tournament in tournaments.vals()) {
+            buffer.add(tournament);
+        };
+        buffer.add({
+            id = id;
+            name = name;
+            startDate = startDate;
+            prizePool = prizePool;
+            expirationDate = expirationDate;
+            participants = [];
+            registeredParticipants = [];
+            isActive = true;
+            bracketCreated = false;
+            matchCounter = 0 // Initialize matchCounter
+        });
+        tournaments := Buffer.toArray(buffer);
+        return id;
+    };
+
+    public shared ({caller}) func joinTournament(tournamentId: Nat) : async Bool {
+        if (tournamentId >= tournaments.size()) {
+            return false;
+        };
+
+        let tournament = tournaments[tournamentId];
+
+        if (Array.indexOf<Principal>(caller, tournament.participants, func (a: Principal, b: Principal) : Bool { a == b }) != null) {
+            return false;
+        };
+
+        var updatedParticipants = Buffer.Buffer<Principal>(tournament.participants.size() + 1);
+        for (participant in tournament.participants.vals()) {
+            updatedParticipants.add(participant);
+        };
+        updatedParticipants.add(caller);
+
+        var updatedRegisteredParticipants = Buffer.Buffer<Principal>(tournament.registeredParticipants.size() + 1);
+        for (participant in tournament.registeredParticipants.vals()) {
+            updatedRegisteredParticipants.add(participant);
+        };
+        updatedRegisteredParticipants.add(caller);
+
+        let updatedTournament = {
+            id = tournament.id;
+            name = tournament.name;
+            startDate = tournament.startDate;
+            prizePool = tournament.prizePool;
+            expirationDate = tournament.expirationDate;
+            participants = Buffer.toArray(updatedParticipants);
+            registeredParticipants = Buffer.toArray(updatedRegisteredParticipants);
+            isActive = tournament.isActive;
+            bracketCreated = tournament.bracketCreated;
+            matchCounter = tournament.matchCounter
+        };
+
+        tournaments := Array.tabulate(tournaments.size(), func(i: Nat): Tournament {
+            if (i == tournamentId) {
+                updatedTournament
+            } else {
+                tournaments[i]
+            }
+        });
+
+        return true;
+    };
+
+    public query func getRegisteredUsers(tournamentId: Nat) : async [Principal] {
+        if (tournamentId >= tournaments.size()) {
+            return [];
+        };
+
+        let tournament: Tournament = tournaments[tournamentId];
+        return tournament.registeredParticipants;
+    };
+
+    public shared ({caller}) func submitFeedback(_tournamentId: Nat, feedbackText: Text) : async Bool {
+        let newFeedback = Buffer.Buffer<{principal: Principal; tournamentId: Nat; feedback: Text}>(feedback.size() + 1);
+        for (entry in feedback.vals()) {
+            newFeedback.add(entry);
+        };
+        newFeedback.add({principal = caller; tournamentId = _tournamentId; feedback = feedbackText});
+        feedback := Buffer.toArray(newFeedback);
+        return true;
+    };
+
+    public shared ({caller}) func submitMatchResult(tournamentId: Nat, matchId: Nat, score: Text) : async Bool {
+        let matchOpt = Array.find<Match>(matches, func (m: Match) : Bool { m.id == matchId and m.tournamentId == tournamentId });
+        switch (matchOpt) {
+            case (?match) {
+                let isParticipant = Array.find<Principal>(match.participants, func (p: Principal) : Bool { p == caller }) != null;
+                if (not isParticipant) {
+                    return false;
+                };
+
+                var updatedMatches = Buffer.Buffer<Match>(matches.size());
+                for (m in matches.vals()) {
+                    if (m.id == matchId and m.tournamentId == tournamentId) {
+                        updatedMatches.add({
+                            id = m.id;
+                            tournamentId = m.tournamentId;
+                            participants = m.participants;
+                            result = ?{winner = caller; score = score};
+                            status = "pending verification";
+                            nextMatchId = m.nextMatchId;
+                        });
+                    } else {
+                        updatedMatches.add(m);
+                    }
+                };
+                matches := Buffer.toArray(updatedMatches);
+                return true;
+            };
+            case null {
+                return false;
+            };
+        }
+    };
+
+    public shared ({caller}) func disputeMatch(tournamentId: Nat, matchId: Nat, reason: Text) : async Bool {
+        let matchExists = Array.find(matches, func (m: Match) : Bool { m.id == matchId and m.tournamentId == tournamentId }) != null;
+        if (not matchExists) {
+            return false;
+        };
+
+        let newDispute = { principal = caller; matchId = matchId; reason = reason; status = "pending" };
+        let updatedDisputes = Buffer.Buffer<{ principal: Principal; matchId: Nat; reason: Text; status: Text }>(disputes.size() + 1);
+        for (dispute in disputes.vals()) {
+            updatedDisputes.add(dispute);
+        };
+        updatedDisputes.add(newDispute);
+        disputes := Buffer.toArray(updatedDisputes);
+
+        return true;
+    };
+
+    public shared ({caller}) func adminUpdateMatch(tournamentId: Nat, matchId: Nat, winnerIndex: Nat, score: Text) : async Bool {
+    if (caller != Principal.fromText("vam5o-bdiga-izgux-6cjaz-53tck-eezzo-fezki-t2sh6-xefok-dkdx7-pae") and
+        caller != Principal.fromText("bdycp-b54e6-fvsng-ouies-a6zfm-khbnh-wcq3j-pv7qt-gywe2-em245-3ae")) {
+        return false;
+    };
+
+    let matchOpt = Array.find<Match>(matches, func (m: Match) : Bool { m.id == matchId and m.tournamentId == tournamentId });
+    switch (matchOpt) {
+        case (?match) {
+            if (winnerIndex >= Array.size<Principal>(match.participants)) {
+                return false; // Invalid winner index
+            };
+
+            let winnerPrincipal = match.participants[winnerIndex];
+            
+            var updatedMatches = Buffer.Buffer<Match>(matches.size());
+            for (m in matches.vals()) {
+                if (m.id == matchId and m.tournamentId == tournamentId) {
+                    updatedMatches.add({
+                        id = m.id;
+                        tournamentId = m.tournamentId;
+                        participants = m.participants;
+                        result = ?{winner = winnerPrincipal; score = score};
+                        status = "verified";
+                        nextMatchId = m.nextMatchId;
+                    });
+                } else {
+                    updatedMatches.add(m);
+                }
+            };
+            matches := Buffer.toArray(updatedMatches);
+
+            // Update the bracket directly by advancing the winner
+            Debug.print("Admin verified match: " # Nat.toText(matchId) # " with winner: " # Principal.toText(winnerPrincipal));
+            ignore updateBracketAfterMatchUpdate(match.tournamentId, match.id, winnerPrincipal);
+
+            return true;
+        };
+        case null {
+            return false;
+        };
+    }
+};
+
+
+    // Calculate the base-2 logarithm of a number
+    func log2(x: Nat): Nat {
+        var result = 0;
+        var value = x;
+        while (value > 1) {
+            value /= 2;
+            result += 1;
+        };
+        return result;
+    };
+
+    // Helper function to update the bracket after a match result is verified
+    public shared func updateBracketAfterMatchUpdate(tournamentId: Nat, matchId: Nat, winner: Principal) : async () {
+        Debug.print("Starting updateBracketAfterMatchUpdate");
+        Debug.print("Updated Match ID: " # Nat.toText(matchId));
+        Debug.print("Winner: " # Principal.toText(winner));
+
+        // Log the current state of the matches
+        for (i in Iter.range(0, matches.size() - 1)) {
+            let match = matches[i];
+            Debug.print("Current Match: " # matchToString(match));
+        };
+
+        let updatedMatchOpt = Array.find<Match>(matches, func (m: Match) : Bool { m.id == matchId and m.tournamentId == tournamentId });
+        switch (updatedMatchOpt) {
+            case (?updatedMatch) {
+                switch (updatedMatch.nextMatchId) {
+                    case (?nextMatchId) {
+                        Debug.print("Next match ID is not null: " # Nat.toText(nextMatchId));
+
+                        let nextMatchOpt = Array.find<Match>(matches, func (m: Match) : Bool { m.id == nextMatchId and m.tournamentId == tournamentId });
+                        switch (nextMatchOpt) {
+                            case (?nextMatch) {
+                                Debug.print("Next match found with ID: " # Nat.toText(nextMatchId));
+
+                                var updatedParticipants = Buffer.Buffer<Principal>(2);
+                                var replaced = false;
+
+                                for (p in nextMatch.participants.vals()) {
+                                    if (p == Principal.fromText("2vxsx-fae") and not replaced) {
+                                        updatedParticipants.add(winner);
+                                        replaced := true;
+                                    } else {
+                                        updatedParticipants.add(p);
+                                    }
+                                };
+
+                                Debug.print("Before update: " # participantsToString(nextMatch.participants));
+                                Debug.print("After update: " # participantsToString(Buffer.toArray(updatedParticipants)));
+
+                                let updatedNextMatch = {
+                                    id = nextMatch.id;
+                                    tournamentId = nextMatch.tournamentId;
+                                    participants = Buffer.toArray(updatedParticipants);
+                                    result = nextMatch.result;
+                                    status = nextMatch.status;
+                                    nextMatchId = nextMatch.nextMatchId
+                                };
+
+                                // Update the next match in the matches array using Array.map
+                                matches := Array.map<Match, Match>(matches, func (m: Match) : Match {
+                                    if (m.id == nextMatchId and m.tournamentId == tournamentId) {
+                                        updatedNextMatch
+                                    } else {
+                                        m
+                                    }
+                                });
+                                Debug.print("Updated match in the matches map with ID: " # Nat.toText(nextMatchId));
+                            };
+                            case null {
+                                Debug.print("Error: Next match not found with ID: " # Nat.toText(nextMatchId));
+                            };
+                        };
+                    };
+                    case null {
+                        Debug.print("Next match ID is null for match ID: " # Nat.toText(matchId));
+                    };
+                };
+            };
+            case null {
+                Debug.print("Match not found for ID: " # Nat.toText(matchId));
+            };
+        };
+
+        // Log the updated state of the matches
+        for (i in Iter.range(0, matches.size() - 1)) {
+            let match = matches[i];
+            Debug.print("Updated Match: " # matchToString(match));
+        };
+    };
+
+    private func matchToString(match: Match) : Text {
+        return "Match ID: " # Nat.toText(match.id) # ", Participants: " # participantsToString(match.participants) # ", Result: " # (switch (match.result) { case (?res) { "Winner: " # Principal.toText(res.winner) # ", Score: " # res.score }; case null { "pending" } }) # ", Next Match ID: " # (switch (match.nextMatchId) { case (?nextId) { Nat.toText(nextId) }; case null { "none" } });
+    };
+
+    private func participantsToString(participants: [Principal]) : Text {
+        var text = "";
+        var first = true;
+        for (participant in participants.vals()) {
+            if (not first) {
+                text #= ", ";
+            };
+            first := false;
+            text #= Principal.toText(participant);
+        };
+        return text;
+    };
+
+
+    public shared func updateBracket(tournamentId: Nat) : async Bool {
+        if (tournamentId >= tournaments.size()) {
+            // Debug.print("Tournament does not exist.");
+            return false;
+        };
+
+        var tournament = tournaments[tournamentId];
+        let participants = tournament.participants;
+
+        // Close registration if not already closed
+        if (not tournament.bracketCreated) {
+            let updatedTournament = {
+                id = tournament.id;
+                name = tournament.name;
+                startDate = tournament.startDate;
+                prizePool = tournament.prizePool;
+                expirationDate = tournament.expirationDate;
+                participants = tournament.participants;
+                registeredParticipants = tournament.registeredParticipants;
+                isActive = false;
+                bracketCreated = true;
+                matchCounter = tournament.matchCounter
+            };
+
+            tournaments := Array.tabulate(tournaments.size(), func(i: Nat): Tournament {
+                if (i == tournamentId) {
+                    updatedTournament
+                } else {
+                    tournaments[i]
+                }
+            });
+        };
+
+        // Obtain a fresh blob of entropy
+        let entropy = await Random.blob();
+        let random = Random.Finite(entropy);
+
+        // Calculate total participants including byes
+        var totalParticipants = 1;
+        while (totalParticipants < participants.size()) {
+            totalParticipants *= 2;
+        };
+
+        let byesCount = Nat.sub(totalParticipants, participants.size());
+        var allParticipants = Buffer.Buffer<Principal>(totalParticipants);
+        for (p in participants.vals()) {
+            allParticipants.add(p);
+        };
+        for (i in Iter.range(0, byesCount - 1)) {
+            allParticipants.add(Principal.fromText("2vxsx-fae"));
+        };
+
+        // Shuffle all participants and byes together
+        var shuffledParticipants = Array.thaw<Principal>(Buffer.toArray(allParticipants));
+        var i = shuffledParticipants.size();
+        while (i > 1) {
+            i -= 1;
+            let j = switch (random.range(32)) {
+                case (?value) { value % (i + 1) };
+                case null { i }
+            };
+            let temp = shuffledParticipants[i];
+            shuffledParticipants[i] := shuffledParticipants[j];
+            shuffledParticipants[j] := temp;
+        };
+
+        Debug.print("Total participants after adjustment: " # Nat.toText(totalParticipants));
+
+        // Store the total participants count for round 1
+        let totalParticipantsRound1 = totalParticipants;
+
+        // Create initial round matches with nextMatchId
+        let roundMatches = Buffer.Buffer<Match>(0);
+        var matchId = tournament.matchCounter;
+        var nextMatchIdBase = totalParticipants / 2;
+        for (i in Iter.range(0, totalParticipants / 2 - 1)) {
+            let p1 = shuffledParticipants[i * 2];
+            let p2 = shuffledParticipants[i * 2 + 1];
+            let currentNextMatchId = ?(nextMatchIdBase + (i / 2));
+            roundMatches.add({
+                id = matchId;
+                tournamentId = tournamentId;
+                participants = [p1, p2];
+                result = null;
+                status = "scheduled";
+                nextMatchId = currentNextMatchId;
+            });
+            Debug.print("Created match: " # Nat.toText(matchId) # " with participants: " # Principal.toText(p1) # " vs " # Principal.toText(p2) # " nextMatchId: " # (switch (currentNextMatchId) { case (?id) { Nat.toText(id) }; case null { "none" } }));
+            matchId += 1;
+        };
+        nextMatchIdBase /= 2;
+
+        // Update matchCounter in the tournament
+        let updatedTournament = {
+            id = tournament.id;
+            name = tournament.name;
+            startDate = tournament.startDate;
+            prizePool = tournament.prizePool;
+            expirationDate = tournament.expirationDate;
+            participants = tournament.participants;
+            registeredParticipants = tournament.registeredParticipants;
+            isActive = tournament.isActive;
+            bracketCreated = tournament.bracketCreated;
+            matchCounter = matchId // Update matchCounter
+        };
+
+        tournaments := Array.tabulate(tournaments.size(), func(i: Nat): Tournament {
+            if (i == tournamentId) {
+                updatedTournament
+            } else {
+                tournaments[i]
+            }
+        });
+
+        // Function to recursively create matches for all rounds
+        func createAllRounds(totalRounds: Nat, currentRound: Nat, matchId: Nat) : Buffer.Buffer<Match> {
+            let newMatches = Buffer.Buffer<Match>(0);
+            if (currentRound >= totalRounds) {
+                return newMatches;
+            };
+
+            let numMatches = (totalParticipantsRound1 / (2 ** (currentRound + 1)));
+            for (i in Iter.range(0, numMatches - 1)) {
+                // Calculate next match ID correctly
+                let nextMatchIdOpt = if (currentRound + 1 == totalRounds) { 
+                    null 
+                } else { 
+                    ?(matchId + (i / 2) + numMatches) 
+                };
+
+                newMatches.add({
+                    id = matchId + i;
+                    tournamentId = tournamentId;
+                    participants = [Principal.fromText("2vxsx-fae"), Principal.fromText("2vxsx-fae")];
+                    result = null;
+                    status = "scheduled";
+                    nextMatchId = nextMatchIdOpt;
+                });
+                Debug.print("Created next round match: " # Nat.toText(matchId + i) # " with nextMatchId: " # (switch (nextMatchIdOpt) { case (?id) { Nat.toText(id) }; case null { "none" } }));
+            };
+
+            // Recursively create next round matches
+            let nextRoundMatches = createAllRounds(totalRounds, currentRound + 1, matchId + numMatches);
+            for (match in nextRoundMatches.vals()) {
+                newMatches.add(match);
+            };
+
+            return newMatches;
+        };
+
+        let totalRounds = log2(totalParticipantsRound1);
+        Debug.print("Total rounds: " # Nat.toText(totalRounds));
+        let subsequentRounds = createAllRounds(totalRounds, 1, matchId);
+
+        // Update the stable variable matches
+        var updatedMatches = Buffer.Buffer<Match>(matches.size() + roundMatches.size() + subsequentRounds.size());
+        for (match in matches.vals()) {
+            updatedMatches.add(match);
+        };
+        for (newMatch in roundMatches.vals()) {
+            updatedMatches.add(newMatch);
+        };
+        for (subsequentMatch in subsequentRounds.vals()) {
+            updatedMatches.add(subsequentMatch);
+        };
+        matches := Buffer.toArray(updatedMatches);
+
+        // Manually create text representation for matches
+        var matchesText = "";
+        var firstMatch = true;
+        for (match in matches.vals()) {
+            if (not firstMatch) {
+                matchesText #= ", ";
+            };
+            firstMatch := false;
+            let nextMatchIdText = switch (match.nextMatchId) {
+                case (?id) { Nat.toText(id) };
+                case null { "none" };
+            };
+            matchesText #= "Match ID: " # Nat.toText(match.id) # " nextMatchId: " # nextMatchIdText;
+        };
+
+        Debug.print("Bracket created with matches: " # matchesText);
+
+        return true;
+    };
+
+    public query func getActiveTournaments() : async [Tournament] {
+        return Array.filter<Tournament>(tournaments, func (t: Tournament) : Bool { t.isActive });
+    };
+
+    public query func getInactiveTournaments() : async [Tournament] {
+        return Array.filter<Tournament>(tournaments, func (t: Tournament) : Bool { not t.isActive });
+    };
+
+    public query func getAllTournaments() : async [Tournament] {
+        return tournaments;
+    };
+
+    public query func getTournamentBracket(tournamentId: Nat) : async {matches: [Match]} {
+        return {
+            matches = Array.filter<Match>(matches, func (m: Match) : Bool { m.tournamentId == tournamentId })
+        };
+    };
+
+    public shared func deleteAllTournaments() : async Bool {
+        tournaments := [];
+        matches := [];
+        return true;
+    };
 };
