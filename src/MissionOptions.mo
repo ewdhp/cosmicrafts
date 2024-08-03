@@ -235,27 +235,27 @@ module MissionOptions {
         missionType = #GamesCompleted; // Not tied to gameplay
         rewardType = #Chest;
         minReward = 1;
-        maxReward = 1;
+        maxReward = 2;
         total = 0; // No gameplay required
-        hoursActive = 24;
+        hoursActive = 4;
         },
         {
         name = "Daily Free Shards";
         missionType = #GamesCompleted; // Not tied to gameplay
-        rewardType = #Shards;
-        minReward = 10;
-        maxReward = 20;
+        rewardType = #Chest;
+        minReward = 1;
+        maxReward = 2;
         total = 0; // No gameplay required
-        hoursActive = 24;
+        hoursActive = 4;
         },
         {
         name = "Daily Free Flux";
         missionType = #GamesCompleted; // Not tied to gameplay
-        rewardType = #Flux;
-        minReward = 4;
-        maxReward = 8;
+        rewardType = #Chest;
+        minReward = 1;
+        maxReward = 3;
         total = 0; // No gameplay required
-        hoursActive = 24;
+        hoursActive = 4;
         }
     ];
 }

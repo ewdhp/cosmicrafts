@@ -148,6 +148,7 @@ shared actor class Cosmicrafts() {
 
     var lastDailyMissionCreationTime: Nat64 = 0;
     var lastWeeklyMissionCreationTime: Nat64 = 0;
+    stable var lastDailyFreeRewardMissionCreationTime: Nat64 = 0;
 
     stable var shuffledDailyIndices: [Nat] = [];
     stable var currentDailyIndex: Nat = 0;
@@ -266,8 +267,6 @@ shared actor class Cosmicrafts() {
         if (now - lastDailyMissionCreationTime >= ONE_DAY) {
             let dailyResults = await createDailyMissions();
             await Utils.logMissionResults(dailyResults, "Daily");
-            let dailyFreeResults = await createDailyFreeRewardMissions();
-            await Utils.logMissionResults(dailyFreeResults, "Daily Free Reward");
             lastDailyMissionCreationTime := now;
         };
 
@@ -276,6 +275,13 @@ shared actor class Cosmicrafts() {
             let weeklyResults = await createWeeklyMissions();
             await Utils.logMissionResults(weeklyResults, "Weekly");
             lastWeeklyMissionCreationTime := now;
+        };
+
+        // Create and assign daily free reward missions every 4 hours
+        if (now - lastDailyFreeRewardMissionCreationTime >= ONE_HOUR * 4) {
+            let dailyFreeResults = await createDailyFreeRewardMissions();
+            await Utils.logMissionResults(dailyFreeResults, "Daily Free Reward");
+            lastDailyFreeRewardMissionCreationTime := now;
         };
 
         // Set the timer to call this function again after 1 hour
@@ -418,6 +424,7 @@ shared actor class Cosmicrafts() {
         // Add new active missions to the user
         for ((id, mission) in activeMissions.entries()) {
             if (not Utils.arrayContains<Nat>(Buffer.toArray(currentMissionIds), id, Utils._natEqual) and not Utils.arrayContains<Nat>(claimedRewardsForUser, id, Utils._natEqual)) {
+                let isDailyFreeReward = checkIfDailyFreeRewardMission(mission); // Check if the mission is a daily free reward mission
                 buffer.add({
                     id_mission = id;
                     reward_amount = mission.reward_amount;
@@ -426,17 +433,28 @@ shared actor class Cosmicrafts() {
                     finish_date = 0; // Initialize finish date to 0
                     expiration = mission.end_date;
                     missionType = mission.missionType;
-                    finished = false;
+                    finished = isDailyFreeReward; // Set finished based on mission type
                     reward_type = mission.reward_type;
                     total = mission.total;
                 });
             }
         };
 
+        // Update user missions
         generalUserProgress.put(user, Buffer.toArray(buffer));
-
-        Debug.print("[assignGeneralMissions] User missions after update: " # debug_show(generalUserProgress.get(user)));
+        Debug.print("[assignGeneralMissions] User missions after update: " # debug_show(Buffer.toArray(buffer)));
     };
+
+    // Helper function to check if a mission is a daily free reward mission
+    func checkIfDailyFreeRewardMission(mission: Mission): Bool {
+        for (template in MissionOptions.dailyFreeReward.vals()) {
+            if (mission.name == template.name and mission.missionType == template.missionType and mission.reward_type == template.rewardType) {
+                return true;
+            }
+        };
+        return false;
+    };
+
 
     // Function to get general missions for a user
     public shared ({ caller }) func getGeneralMissions(): async [MissionsUser] {
