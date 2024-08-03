@@ -774,7 +774,7 @@ shared actor class Cosmicrafts() {
             updatedMission := { mission with progress = mission.progress + 1 };
           };
           case (#GamesWon) {
-            if (playerStats.secRemaining > 0) {
+            if (playerStats.wonGame) {
               updatedMission := { mission with progress = mission.progress + 1 };
             };
           };
